@@ -4,8 +4,7 @@ import { FaUser, FaEnvelope, FaPhone, FaLock, FaAddressCard } from 'react-icons/
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
-
-
+import BackButton from '../../components/Backbutton';
 const Register = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -41,6 +40,20 @@ const Register = () => {
         return errs;
     };
 
+    const saveToLocalStorage = (userData) => {
+        // Get existing users or initialize empty array
+        const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        
+        // Add new user
+        existingUsers.push(userData);
+        
+        // Save back to localStorage
+        localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+        
+        // Also save as current user if needed
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -64,13 +77,21 @@ const Register = () => {
                 setMessage(data.message);
                 if (data.errors) setErrors(data.errors);
             } else {
+                // Save user data to localStorage
+                saveToLocalStorage(form);
+                
                 setMessage('✅ Registered Successfully! Redirecting...');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
             }
         } catch (err) {
-            setMessage('Server error, try again later.');
+            // If server is down, save to localStorage only
+            saveToLocalStorage(form);
+            setMessage('⚠️ Saved locally (server unavailable). You can login offline.');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
         }
 
         setIsLoading(false);
@@ -80,15 +101,14 @@ const Register = () => {
         try {
             const decoded = jwtDecode(credentialResponse.credential);
 
-            // Pre-fill form with Google data (optional)
+            // Pre-fill form with Google data
             setForm(prev => ({
                 ...prev,
                 name: decoded.name || '',
                 email: decoded.email || '',
-                // Google doesn't provide phone or address
             }));
 
-            // Alternatively, automatically register the user
+            // Try to register with Google
             const res = await fetch('http://localhost:5000/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -100,6 +120,16 @@ const Register = () => {
             const data = await res.json();
 
             if (res.ok) {
+                // Save to localStorage
+                const userData = {
+                    name: decoded.name || '',
+                    email: decoded.email || '',
+                    phone: '',
+                    address: '',
+                    password: '' // No password for Google users
+                };
+                saveToLocalStorage(userData);
+                
                 setMessage('✅ Registration successful with Google! Redirecting...');
                 localStorage.setItem('token', data.token);
                 setTimeout(() => {
@@ -120,84 +150,122 @@ const Register = () => {
 
     return (
         <div className="register-container">
-            <form className="register-form" onSubmit={handleSubmit}>
-                <h1 className="brand-name">Pankhudi</h1>
-                <h2>Create Account</h2>
-                {message && <p className="form-message">{message}</p>}
+            {/* <BackButton variant="outline" position="relative" align="left" /> */}
+            <div className="register-card">
+                <form className="register-form" onSubmit={handleSubmit}>
+                    <h1 className="brand-name">Pankhudi</h1>
+                    <h2>Create Account</h2>
+                    <p className="subtitle">Join our community today</p>
+                    
+                    {message && <div className={`form-message ${message.includes('✅') ? 'success' : 'error'}`}>{message}</div>}
 
-                <div className="input-group">
-                    <FaUser className="input-icon" />
-                    <input type="text" name="name" placeholder="Full Name" value={form.name} onChange={handleChange} />
-                </div>
-                {errors.name && <p className="error">{errors.name}</p>}
+                    <div className="input-group">
+                        <FaUser className="input-icon" />
+                        <input 
+                            type="text" 
+                            name="name" 
+                            placeholder="Full Name" 
+                            value={form.name} 
+                            onChange={handleChange}
+                            className={errors.name ? 'error-input' : ''}
+                        />
+                    </div>
+                    {errors.name && <p className="error">{errors.name}</p>}
 
-                <div className="input-group">
-                    <FaEnvelope className="input-icon" />
-                    <input type="email" name="email" placeholder="Email Address" value={form.email} onChange={handleChange} />
-                </div>
-                {errors.email && <p className="error">{errors.email}</p>}
+                    <div className="input-group">
+                        <FaEnvelope className="input-icon" />
+                        <input 
+                            type="email" 
+                            name="email" 
+                            placeholder="Email Address" 
+                            value={form.email} 
+                            onChange={handleChange}
+                            className={errors.email ? 'error-input' : ''}
+                        />
+                    </div>
+                    {errors.email && <p className="error">{errors.email}</p>}
 
-                <div className="input-group">
-                    <FaPhone className="input-icon" />
-                    <input type="text" name="phone" placeholder="Phone Number" value={form.phone} onChange={handleChange} />
-                </div>
-                {errors.phone && <p className="error">{errors.phone}</p>}
+                    <div className="input-group">
+                        <FaPhone className="input-icon" />
+                        <input 
+                            type="text" 
+                            name="phone" 
+                            placeholder="Phone Number" 
+                            value={form.phone} 
+                            onChange={handleChange}
+                            className={errors.phone ? 'error-input' : ''}
+                        />
+                    </div>
+                    {errors.phone && <p className="error">{errors.phone}</p>}
 
-                <div className="input-group textarea-group">
-                    <FaAddressCard className="input-icon" />
-                    <textarea
-                        name="address"
-                        placeholder="Full Address"
-                        value={form.address}
-                        onChange={handleChange}
-                    ></textarea>
-                </div>
-                {errors.address && <p className="error">{errors.address}</p>}
+                    <div className="input-group">
+                        <FaAddressCard className="input-icon" />
+                        <textarea
+                            name="address"
+                            placeholder="Full Address"
+                            value={form.address}
+                            onChange={handleChange}
+                            className={errors.address ? 'error-input' : ''}
+                        ></textarea>
+                    </div>
+                    {errors.address && <p className="error">{errors.address}</p>}
 
-                <div className="input-group">
-                    <FaLock className="input-icon" />
-                    <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="password"
-                        placeholder="Password"
-                        value={form.password}
-                        onChange={handleChange}
-                    />
-                    <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-                    </span>
-                </div>
-                {errors.password && <p className="error">{errors.password}</p>}
+                    <div className="input-group">
+                        <FaLock className="input-icon" />
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            placeholder="Password"
+                            value={form.password}
+                            onChange={handleChange}
+                            className={errors.password ? 'error-input' : ''}
+                        />
+                        <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                        </span>
+                    </div>
+                    {errors.password && <p className="error">{errors.password}</p>}
 
-                <label className="terms">
-                    <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} />
-                    I agree to the <a href="/terms">Terms & Conditions</a>
-                </label>
-                {errors.terms && <p className="error">{errors.terms}</p>}
+                    <div className="terms-group">
+                        <label className="terms">
+                            <input 
+                                type="checkbox" 
+                                name="terms" 
+                                checked={form.terms} 
+                                onChange={handleChange}
+                                className={errors.terms ? 'error-checkbox' : ''}
+                            />
+                            <span>I agree to the <a href="/terms">Terms & Conditions</a></span>
+                        </label>
+                    </div>
+                    {errors.terms && <p className="error">{errors.terms}</p>}
 
-                <button type="submit" className="btn" disabled={isLoading}>
-                    {isLoading ? 'Registering...' : 'Register'}
-                </button>
+                    <button type="submit" className="btn-register" disabled={isLoading}>
+                        {isLoading ? 'Registering...' : 'Register'}
+                    </button>
 
-                {/* Divider */}
-                <div className="divider">
-                    <span>or</span>
-                </div>
+                    <div className="divider">
+                        <span>or</span>
+                    </div>
 
-                {/* Google Login Button */}
-                <div className="google-login">
-                    <GoogleLogin
-                        onSuccess={handleGoogleLoginSuccess}
-                        onError={handleGoogleLoginFailure}
-                        text="signup_with"
-                    />
-                </div>
+                    <div className="google-login">
+                        <GoogleLogin
+                            onSuccess={handleGoogleLoginSuccess}
+                            onError={handleGoogleLoginFailure}
+                            text="signup_with"
+                            theme="filled_blue"
+                            shape="rectangular"
+                            size="large"
+                            width="100%"
+                        />
+                    </div>
 
-                <div className="links">
-                    <a href="/login">Already have an account? Login</a>
-                    <a href="/forgot">Forgot Password?</a>
-                </div>
-            </form>
+                    <div className="links">
+                        <a href="/login">Already have an account? Login</a>
+                        <a href="/forgot">Forgot Password?</a>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

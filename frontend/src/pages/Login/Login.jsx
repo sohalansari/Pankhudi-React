@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
-import { FaEnvelope, FaLock, FaPhone, FaGoogle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaPhone, FaGoogle, FaUser } from 'react-icons/fa';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import Footer from '../../components/Footer';
 import { Link } from 'react-router-dom';
+import BackButton from '../../components/Backbutton';
 
 const Login = () => {
     const [form, setForm] = useState({
@@ -27,6 +28,13 @@ const Login = () => {
         if (rememberedEmail) {
             setForm(prev => ({ ...prev, emailOrPhone: rememberedEmail }));
             setRememberMe(true);
+        }
+        
+        // Check if user is already logged in
+        const userData = localStorage.getItem('user');
+        if (userData) {
+            // Redirect to home if already logged in
+            window.location.href = '/';
         }
     }, []);
 
@@ -87,6 +95,16 @@ const Login = () => {
             if (res.ok) {
                 setMessage('✅ Login successful! Redirecting...');
                 localStorage.setItem('token', data.token);
+                
+                // Store user data in localStorage
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify({
+                        name: data.user.name,
+                        email: data.user.email,
+                        id: data.user.id,
+                        is_premium: data.user.is_premium || false
+                    }));
+                }
 
                 if (rememberMe) {
                     localStorage.setItem('rememberedEmail', form.emailOrPhone);
@@ -95,7 +113,7 @@ const Login = () => {
                 }
 
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = data.user?.is_premium ? '/dashboard' : '/';
                 }, 2000);
             } else {
                 setMessage(data.message || 'Login failed');
@@ -135,9 +153,14 @@ const Login = () => {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('authMethod', 'google'); // Store auth method
 
-                // Store user data if needed
+                // Store user data in localStorage
                 if (data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('user', JSON.stringify({
+                        name: data.user.name,
+                        email: data.user.email,
+                        id: data.user.id,
+                        is_premium: data.user.is_premium || false
+                    }));
                 }
 
                 // Redirect to dashboard or home page
@@ -172,6 +195,7 @@ const Login = () => {
     return (
         <div className="login-page">
             <div className="login-container">
+                {/* <BackButton variant="text" position="absolute" align="left" top /> */}
                 <form className="login-form" onSubmit={handleSubmit}>
                     <div className="brand-header">
                         <h1 className="brand-name">Pankhudi</h1>

@@ -38,13 +38,47 @@ const Header = () => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
 
-    useEffect(() => {
+    // Function to fetch user data from localStorage
+    const fetchUserData = () => {
         const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user'));
         setIsLoggedIn(!!token);
-        if (user) {
-            setUserData(user);
+        
+        // Try to get user data from localStorage
+        try {
+            // Check for user data in localStorage
+            const userFromStorage = localStorage.getItem('user');
+            
+            if (userFromStorage) {
+                // If we have user data in localStorage, parse and set it
+                const parsedUser = JSON.parse(userFromStorage);
+                setUserData(parsedUser);
+            } else {
+                // If no user data in localStorage, check for registeredUsers
+                const registeredUsers = localStorage.getItem('registeredUsers');
+                if (registeredUsers) {
+                    const users = JSON.parse(registeredUsers);
+                    if (users.length > 0) {
+                        // Use the first user (you might want to implement proper user identification)
+                        setUserData(users[0]);
+                        localStorage.setItem('user', JSON.stringify(users[0]));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing user data:', error);
         }
+    };
+
+    useEffect(() => {
+        fetchUserData();
+        
+        // Set up listener for storage changes
+        const handleStorageChange = () => {
+            fetchUserData();
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     useEffect(() => {
@@ -131,9 +165,7 @@ const Header = () => {
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                // Here you would typically upload the image to your image recognition service
                 alert(`Image search for ${file.name} would be processed here`);
-                // navigate(`/search?image=${file.name}`);
             }
         };
         input.click();
@@ -408,12 +440,13 @@ const Header = () => {
                                                 <div className="user-info-section">
                                                     <p className="user-fullname-text">{userData?.name || 'Hi, User'}</p>
                                                     <p className="user-email-text">{userData?.email || 'youremail@gmail.com'}</p>
+                                                    {userData?.phone && <p className="user-phone-text">{userData.phone}</p>}
                                                 </div>
                                             </div>
                                             <div className="dropdown-items-container">
                                                 <motion.div whileHover={{ scale: 1.02 }}>
                                                     <NavLink
-                                                        to="/profile/:id"
+                                                        to={`/profile/${userData?.id || 'user'}`}
                                                         className="dropdown-item-link"
                                                         onClick={closeMobileMenu}
                                                     >
@@ -489,7 +522,7 @@ const Header = () => {
                             </div>
                         )}
 
-                        {/* <motion.div
+                        <motion.div
                             className="nav-icon-wrapper"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -511,7 +544,7 @@ const Header = () => {
                                     </motion.span>
                                 )}
                             </NavLink>
-                        </motion.div> */}
+                        </motion.div>
 
                         <motion.div
                             className="nav-icon-wrapper"
@@ -576,6 +609,7 @@ const Header = () => {
                                         <div className="mobile-user-info-section">
                                             <p className="mobile-user-name-text">{userData?.name || 'Hi, User'}</p>
                                             <p className="mobile-user-email-text">{userData?.email || 'yourmail@gmail.com'}</p>
+                                            {userData?.phone && <p className="mobile-user-phone-text">{userData.phone}</p>}
                                         </div>
                                     </div>
                                 ) : (
@@ -727,7 +761,7 @@ const Header = () => {
                                                 whileTap={{ scale: 0.98 }}
                                             >
                                                 <NavLink
-                                                    to="/profile"
+                                                    to={`/profile/${userData?.id || 'user'}`}
                                                     className="mobile-nav-link-item"
                                                     onClick={closeMobileMenu}
                                                     activeClassName="mobile-active-link"

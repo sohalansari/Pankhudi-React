@@ -1,191 +1,187 @@
+/* Register.css */
 .register-container {
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #fcd1e2, #c3bfff);
-    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.register-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 450px;
+    overflow: hidden;
 }
 
 .register-form {
-    background: #fff;
-    padding: 40px;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.8s ease-in-out;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    padding: 30px;
 }
 
 .brand-name {
     text-align: center;
+    color: #6a11cb;
     font-size: 32px;
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 10px;
-    color: #e91e63;
-    font-family: 'Georgia', serif;
+    letter-spacing: 1px;
 }
 
 .register-form h2 {
     text-align: center;
+    margin-bottom: 5px;
     color: #333;
+    font-size: 24px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
     margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.form-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.form-message.success {
+    background-color: #e6f7ee;
+    color: #28a745;
+    border: 1px solid #b7e4c7;
+}
+
+.form-message.error {
+    background-color: #fde8e8;
+    color: #dc3545;
+    border: 1px solid #f5c6cb;
 }
 
 .input-group {
     position: relative;
-    margin-bottom: 16px;
-}
-
-.input-group input,
-.input-group textarea {
-    width: 100%;
-    padding: 14px 45px 14px 40px;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    font-size: 15px;
-    resize: none;
-}
-
-.input-group.textarea-group textarea {
-    height: 80px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
 }
 
 .input-icon {
     position: absolute;
-    top: 50%;
-    left: 12px;
-    transform: translateY(-50%);
-    font-size: 18px;
-    color: #999;
+    left: 15px;
+    color: #6a11cb;
+    font-size: 16px;
+    z-index: 1;
 }
 
-.toggle-password {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
-    font-size: 20px;
-    cursor: pointer;
-    color: #999;
+.input-group input, 
+.input-group textarea {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+    background-color: #f9f9f9;
+}
+
+.input-group textarea {
+    min-height: 80px;
+    resize: vertical;
 }
 
 .input-group input:focus,
 .input-group textarea:focus {
-    border-color: #e91e63;
-    box-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
     outline: none;
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+    background-color: #fff;
 }
 
-.btn {
-    width: 100%;
-    padding: 14px;
-    background-color: #e91e63;
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 12px;
+.error-input {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
     cursor: pointer;
-    transition: background 0.3s;
+    color: #777;
+    font-size: 18px;
 }
 
-.btn:hover {
-    background-color: #d81b60;
+.toggle-password:hover {
+    color: #6a11cb;
+}
+
+.terms-group {
+    margin: 20px 0;
 }
 
 .terms {
     display: flex;
     align-items: center;
     font-size: 14px;
-    margin-bottom: 10px;
-    color: #333;
+    color: #555;
+    cursor: pointer;
 }
 
 .terms input {
-    margin-right: 8px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.error-checkbox {
+    outline: 2px solid #dc3545 !important;
 }
 
 .terms a {
-    color: #e91e63;
+    color: #6a11cb;
     text-decoration: none;
-    font-weight: bold;
 }
 
-.links {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-top: 16px;
-}
-
-.links a {
-    color: #e91e63;
-    text-decoration: none;
-    transition: 0.2s ease;
-}
-
-.links a:hover {
+.terms a:hover {
     text-decoration: underline;
 }
 
-.error {
-    color: #d32f2f;
-    font-size: 13px;
-    margin-top: -10px;
-    margin-bottom: 8px;
+.btn-register {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 10px;
 }
 
-.form-message {
-    background: #fbe9e7;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 14px;
-    margin-bottom: 10px;
-    text-align: center;
-    color: #e65100;
-    font-weight: 500;
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
 }
 
-.btn[disabled] {
-    background-color: #aaa;
+.btn-register:disabled {
+    background: #ccc;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
-.btn[disabled]:after {
-    content: " ⏳";
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-/* Divider - Same as in Login.css */
 .divider {
     display: flex;
     align-items: center;
-    margin: 1rem 0;
-    color: #666;
+    margin: 25px 0;
+    color: #777;
 }
 
 .divider::before,
@@ -196,36 +192,46 @@
 }
 
 .divider span {
-    padding: 0 1rem;
+    padding: 0 15px;
+    font-size: 14px;
 }
 
-/* Google Login Button */
 .google-login {
-    margin: 1rem 0;
     display: flex;
     justify-content: center;
+    margin-bottom: 20px;
 }
 
-/* Adjust the Google button to match your theme */
-.google-login button {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
 }
 
-.google-login button:hover {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.links a {
+    color: #6a11cb;
+    text-decoration: none;
 }
 
-/* Textarea specific styles */
-.textarea-group {
-    align-items: flex-start;
+.links a:hover {
+    text-decoration: underline;
 }
 
-.textarea-group textarea {
-    resize: vertical;
-    min-height: 80px;
-    padding: 0.5rem;
+.error {
+    color: #dc3545;
+    font-size: 14px;
+    margin: -10px 0 15px 0;
+    padding-left: 5px;
+}
+
+@media (max-width: 480px) {
+    .register-form {
+        padding: 20px;
+    }
+    
+    .links {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
 }
