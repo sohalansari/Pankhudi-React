@@ -419,7 +419,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'sohalansari4934@gmail.com', // Myemail
-        pass: 'gybu ddgs jyec nlgd'   // My password
+        pass: 'kqye ofib adts xngc'   // My password
     }
 });
 // POST route to handle forgot password (OTP generation and email)
