@@ -1,0 +1,87 @@
+frontend/
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── assets/ (for images, fonts, etc.)
+├── src/
+│   ├── components/
+│   │   ├── Header/
+│   │   │   ├── Header.jsx
+│   │   │   ├── Header.css
+│   │   │   └── index.js
+│   │   ├── Footer/
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Footer.css
+│   │   │   └── index.js
+│   │   ├── ProductCard/
+│   │   │   ├── ProductCard.jsx
+│   │   │   ├── ProductCard.css
+│   │   │   └── index.js
+│   │   └── common/
+│   │       ├── Button.jsx
+│   │       ├── Input.jsx
+│   │       └── ...
+│   ├── pages/
+│   │   ├── Home/
+│   │   │   ├── Home.jsx
+│   │   │   ├── Home.css
+│   │   │   └── index.js
+│   │   ├── Products/
+│   │   │   ├── Products.jsx
+│   │   │   ├── Products.css
+│   │   │   └── index.js
+│   │   ├── ProductDetail/
+│   │   │   ├── ProductDetail.jsx
+│   │   │   ├── ProductDetail.css
+│   │   │   └── index.js
+│   │   ├── Cart/
+│   │   │   ├── Cart.jsx
+│   │   │   ├── Cart.css
+│   │   │   └── index.js
+│   │   ├── Checkout/
+│   │   │   ├── Checkout.jsx
+│   │   │   ├── Checkout.css
+│   │   │   └── index.js
+│   │   ├── Login/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Login.css
+│   │   │   └── index.js
+│   │   └── 404/
+│   │       ├── NotFound.jsx
+│   │       ├── NotFound.css
+│   │       └── index.js
+│   ├── context/
+│   │   ├── CartContext.js
+│   │   └── AuthContext.js
+│   ├── utils/
+│   │   ├── api.js
+│   │   └── helpers.js
+│   ├── App.js
+│   ├── App.css
+│   ├── index.js
+│   └── routes.js
+├── package.json
+└── README.md
+
+
+..................................................public/images...............................................................
+
+images/
+├── banners/
+│   └── premium-banner.jpg
+├── categories/
+│   ├── dresses.jpg
+│   ├── home-decor.jpg
+│   ├── jewelry.jpg
+│   └── sarees.jpg
+├── products/
+│   ├── decor1.jpg
+│   ├── dress1.jpg
+│   ├── earrings1.jpg
+│   ├── jewelry1.jpg
+│   ├── kurti1.jpg
+│   └── saree1.jpg
+└── slider/
+    ├── slide1.jpg
+    ├── slide2.jpg
+    └── slide3.jpg

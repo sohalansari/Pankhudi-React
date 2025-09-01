@@ -1,0 +1,20 @@
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `phone` varchar(15) NOT NULL,
+  `address` text NOT NULL,
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `otp` varchar(10) DEFAULT NULL,
+  `otp_expiration` datetime DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0,
+  `is_premium` tinyint(1) DEFAULT 0,
+  `two_factor_enabled` tinyint(1) DEFAULT 0,
+  `is_active` tinyint(1) DEFAULT 1,
+  `is_deleted` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `last_login` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
