@@ -1,0 +1,70 @@
+.loading-spinners {
+    text-align: center;
+    color: #2d79f3;
+    font-weight: bold;
+    margin-bottom: 10px;
+    animation: pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.4;
+    }
+}
+
+/* Add these to your Forget.css file */
+
+.error-input {
+    border-color: #ff4444 !important;
+}
+
+.error-message {
+    color: #ff4444;
+    font-size: 0.8rem;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.password-strength {
+    text-align: left;
+    margin: 5px 0 15px;
+    font-size: 0.8rem;
+    padding-left: 10px;
+}
+
+.password-strength span {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.password-strength .valid {
+    color: #00C851;
+}
+
+.password-strength .invalid {
+    color: #ff4444;
+}
+
+.form-message.success {
+    color: #00C851;
+}
+
+.form-message.error {
+    color: #ff4444;
+}
+
+/* Disabled button style */
+.btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}

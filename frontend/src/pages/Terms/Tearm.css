@@ -1,0 +1,157 @@
+.terms-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.7;
+    color: #333;
+    background: #fafafa;
+}
+
+.terms-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.terms-title {
+    font-size: 2.8rem;
+    color: #1a237e;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.terms-effective-date {
+    color: #616161;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.terms-summary {
+    color: #424242;
+    font-size: 1.1rem;
+    font-style: italic;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.terms-content {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 3px 20px rgba(0, 0, 0, 0.08);
+    padding: 3rem;
+}
+
+.terms-section {
+    margin-bottom: 2.5rem;
+}
+
+.terms-section h2 {
+    color: #1a237e;
+    font-size: 1.7rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid #ffab00;
+    font-weight: 500;
+}
+
+.terms-section h3 {
+    color: #303f9f;
+    font-size: 1.3rem;
+    margin: 1.8rem 0 1rem;
+    font-weight: 500;
+}
+
+.text-large {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.text-medium {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.text-small {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    padding-left: 1.2rem;
+}
+
+.data-security {
+    background: #f5f5f5;
+    padding: 1.8rem;
+    border-radius: 8px;
+    border-left: 5px solid #ffab00;
+    margin: 1.5rem 0;
+}
+
+.contact-details {
+    background: #e8eaf6;
+    padding: 1.5rem;
+    border-radius: 6px;
+}
+
+.terms-acknowledgement {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: #e3f2fd;
+    border-radius: 8px;
+    border-left: 4px solid #1976d2;
+}
+
+a {
+    color: #1a237e;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+a:hover {
+    color: #ffab00;
+}
+
+ol,
+ul {
+    margin: 0.8rem 0 1.2rem 1.5rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .terms-container {
+        padding: 1rem;
+    }
+
+    .terms-title {
+        font-size: 2rem;
+    }
+
+    .terms-content {
+        padding: 1.5rem;
+    }
+
+    .terms-section h2 {
+        font-size: 1.4rem;
+    }
+}
+
+@media print {
+    .terms-container {
+        background: #fff;
+        padding: 0;
+    }
+
+    .terms-content {
+        box-shadow: none;
+        padding: 0;
+    }
+
+    a {
+        text-decoration: none;
+    }
+}

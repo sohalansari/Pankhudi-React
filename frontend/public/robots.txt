@@ -1,0 +1,21 @@
+# Pankhudi robots.txt
+# Last updated: [Current Date]
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /about
+Allow: /products
+Allow: /contact
+
+Disallow: /admin/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /api/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://www.pankhudi.com/sitemap.xml
+
+# Crawl delay (requests per second)
+Crawl-delay: 2

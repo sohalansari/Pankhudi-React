@@ -1,0 +1,871 @@
+/* Base Styles */
+:root {
+    --primary-color: #6d28d9;
+    --primary-light: #8b5cf6;
+    --primary-dark: #5b21b6;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --text-color: #333;
+    --text-light: #666;
+    --text-lighter: #999;
+    --border-color: #e5e7eb;
+    --bg-light: #f9fafb;
+    --bg-lighter: #f3f4f6;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --radius-sm: 0.25rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    background-color: var(--bg-light);
+}
+
+/* Container */
+.pankhudi-confirmation-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Header */
+.pankhudi-confirmation-header {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-confirmation-header.animate {
+    animation: fadeInUp 0.5s ease;
+}
+
+.pankhudi-confirmation-success {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-success-icon-container {
+    position: relative;
+    margin-right: 1.5rem;
+}
+
+.pankhudi-success-icon {
+    font-size: 3rem;
+    color: var(--success-color);
+    z-index: 2;
+    position: relative;
+}
+
+.pankhudi-icon-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(16, 185, 129, 0.3);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    z-index: 1;
+}
+
+.pankhudi-confirmation-success h1 {
+    font-size: 1.75rem;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.pankhudi-order-id {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.pankhudi-order-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-meta-item {
+    background: var(--bg-lighter);
+    padding: 1rem;
+    border-radius: var(--radius);
+}
+
+.pankhudi-meta-item span {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.pankhudi-meta-item strong {
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.pankhudi-total-amount {
+    color: var(--primary-color);
+    font-size: 1.25rem !important;
+}
+
+.pankhudi-order-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.pankhudi-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.pankhudi-action-btn.print {
+    background: var(--primary-color);
+    color: white;
+}
+
+.pankhudi-action-btn.share {
+    background: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.pankhudi-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.pankhudi-timer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* Tab Navigation */
+.pankhudi-tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-tab-btn {
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-light);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.pankhudi-tab-btn.active {
+    color: var(--primary-color);
+}
+
+.pankhudi-tab-btn.active:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary-color);
+}
+
+.pankhudi-tab-btn:hover:not(.active) {
+    color: var(--primary-light);
+}
+
+/* Tab Content */
+.pankhudi-tab-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-tab-content.animate {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Order Details */
+.pankhudi-payment-method {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.payment-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.pankhudi-payment-details {
+    flex: 1;
+}
+
+.pankhudi-payment-details p {
+    margin-bottom: 0.5rem;
+}
+
+.pankhudi-transaction-id span {
+    font-family: monospace;
+    background: var(--bg-lighter);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.pankhudi-payment-status span {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.pankhudi-payment-status span.paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pankhudi-payment-status span.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.pankhudi-payment-status span.failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Order Items */
+.pankhudi-order-items-section {
+    margin-bottom: 2rem;
+}
+
+.pankhudi-order-items-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.pankhudi-confirmation-item {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    background: var(--bg-lighter);
+    transition: all 0.2s ease;
+}
+
+.pankhudi-confirmation-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.pankhudi-item-image-container {
+    position: relative;
+    flex: 0 0 100px;
+    height: 100px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.pankhudi-item-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pankhudi-item-quantity {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-bottom-left-radius: var(--radius-sm);
+}
+
+.pankhudi-item-details {
+    flex: 1;
+}
+
+.pankhudi-item-details h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.pankhudi-item-attribute {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.pankhudi-item-attribute span {
+    font-weight: 500;
+}
+
+.pankhudi-item-price-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.pankhudi-item-price {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.pankhudi-original-price {
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.pankhudi-original-price del {
+    margin-right: 0.5rem;
+}
+
+.discount-percent {
+    color: var(--success-color);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.pankhudi-stock-status {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.pankhudi-stock-status.in-stock {
+    color: var(--success-color);
+}
+
+/* Order Summary */
+.pankhudi-order-summary {
+    background: var(--bg-lighter);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.pankhudi-summary-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pankhudi-summary-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pankhudi-summary-row span:first-child {
+    color: var(--text-light);
+}
+
+.pankhudi-summary-row.discount span:last-child {
+    color: var(--success-color);
+}
+
+.pankhudi-summary-row.coupon span:first-child {
+    color: var(--primary-color);
+}
+
+.pankhudi-summary-row.total {
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.pankhudi-summary-row.total span {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.pankhudi-summary-row.total span:last-child {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+/* Address Section */
+.pankhudi-address-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.pankhudi-address-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.pankhudi-address-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.address-icon {
+    color: var(--primary-color);
+}
+
+.pankhudi-address-details {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pankhudi-address-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.pankhudi-address-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.pankhudi-address-street {
+    line-height: 1.5;
+}
+
+.pankhudi-address-phone,
+.pankhudi-address-email {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-light);
+}
+
+.pankhudi-same-address {
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* Timeline Section */
+.pankhudi-timeline-section {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.pankhudi-timeline-progress {
+    position: relative;
+}
+
+.pankhudi-progress-bar {
+    position: absolute;
+    top: 2rem;
+    left: 0.75rem;
+    width: calc(100% - 1.5rem);
+    height: 4px;
+    background: var(--border-color);
+    z-index: 1;
+}
+
+.pankhudi-progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: all 0.5s ease;
+}
+
+.pankhudi-timeline-steps {
+    display: grid;
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.pankhudi-timeline-step {
+    display: flex;
+    gap: 1rem;
+}
+
+.pankhudi-step-marker {
+    flex: 0 0 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--border-color);
+    position: relative;
+    margin-top: 0.25rem;
+}
+
+.pankhudi-timeline-step.active .pankhudi-step-marker {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+}
+
+.pankhudi-timeline-step h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.pankhudi-timeline-step p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.pankhudi-tracking {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.pankhudi-tracking span {
+    font-family: monospace;
+    background: var(--bg-lighter);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.pankhudi-delivery-estimate {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-lighter);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.estimate-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.pankhudi-delivery-estimate h4 {
+    margin-bottom: 0.25rem;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-processing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-shipped {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Footer CTA */
+.pankhudi-confirmation-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.pankhudi-footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.pankhudi-footer-btn.continue-shopping {
+    background: var(--primary-color);
+    color: white;
+    flex: 1;
+    justify-content: center;
+}
+
+.pankhudi-footer-btn.view-orders {
+    background: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    flex: 1;
+    justify-content: center;
+}
+
+.pankhudi-footer-btn.cancel-order {
+    background: white;
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    flex: 1;
+    justify-content: center;
+}
+
+.pankhudi-footer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Offer Banner */
+.pankhudi-offer-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+}
+
+.offer-icon {
+    font-size: 2rem;
+    flex: 0 0 2rem;
+}
+
+.pankhudi-offer-content {
+    flex: 1;
+}
+
+.pankhudi-offer-content h4 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.pankhudi-offer-btn {
+    background: white;
+    color: var(--primary-color);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pankhudi-offer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Loading and Error States */
+.pankhudi-loading-screen,
+.pankhudi-error-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    text-align: center;
+}
+
+.pankhudi-loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-error-screen h2 {
+    color: var(--danger-color);
+    margin-bottom: 1rem;
+}
+
+.pankhudi-home-link {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pankhudi-home-link:hover {
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-md);
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.7;
+    }
+
+    70% {
+        transform: scale(1.2);
+        opacity: 0.2;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.7;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .pankhudi-confirmation-header {
+        padding: 1.5rem;
+    }
+
+    .pankhudi-confirmation-success {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .pankhudi-success-icon-container {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+
+    .pankhudi-order-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .pankhudi-order-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pankhudi-timer {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .pankhudi-tab-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.5rem;
+    }
+
+    .pankhudi-confirmation-item {
+        flex-direction: column;
+    }
+
+    .pankhudi-item-image-container {
+        flex: 0 0 100%;
+        height: 200px;
+    }
+
+    .pankhudi-confirmation-footer {
+        flex-direction: column;
+    }
+}
+
+@media print {
+
+    .pankhudi-tab-nav,
+    .pankhudi-confirmation-footer,
+    .pankhudi-offer-banner,
+    .pankhudi-timer {
+        display: none !important;
+    }
+
+    .pankhudi-confirmation-header {
+        box-shadow: none;
+        border-bottom: 2px solid var(--border-color);
+        border-radius: 0;
+    }
+
+    .pankhudi-tab-content {
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+    }
+}

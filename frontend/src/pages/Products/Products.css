@@ -1,0 +1,1193 @@
+/* Products.css - Enhanced Premium Styling */
+
+/* Base Styles */
+.pankhudi-products-container {
+    font-family: 'Playfair Display', serif;
+    color: #333;
+    background-color: #f9f5f0;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Header Styles */
+.pankhudi-products-header {
+    background: linear-gradient(135deg, #f5e6d8 0%, #e8d5c0 100%);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.pankhudi-products-brand-section {
+    text-align: center;
+}
+
+.pankhudi-products-brand-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.pankhudi-products-main-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #5a3921;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.pankhudi-products-tagline {
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    color: #8c6e5d;
+    margin: 0;
+    font-style: italic;
+}
+
+.pankhudi-products-search-cart {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.pankhudi-products-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pankhudi-search-icon {
+    position: absolute;
+    left: 15px;
+    color: #8c6e5d;
+}
+
+.pankhudi-products-search-bar input {
+    padding: 0.8rem 1.5rem 0.8rem 40px;
+    border: 1px solid #d4c1b1;
+    border-radius: 30px;
+    width: 250px;
+    font-family: 'Montserrat', sans-serif;
+    background-color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pankhudi-products-search-bar input:focus {
+    outline: none;
+    border-color: #b89b84;
+    width: 300px;
+    background-color: white;
+}
+
+.pankhudi-header-icons {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.pankhudi-profile-icon {
+    position: relative;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-profile-icon:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.pankhudi-profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 0;
+    min-width: 180px;
+    z-index: 10;
+    display: none;
+}
+
+.pankhudi-profile-dropdown a {
+    display: block;
+    padding: 0.7rem 1.5rem;
+    color: #5a3921;
+    text-decoration: none;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-profile-dropdown a:hover {
+    background-color: #f9f5f0;
+    color: #3a2213;
+}
+
+.pankhudi-profile-icon:hover .pankhudi-profile-dropdown {
+    display: block;
+}
+
+.pankhudi-products-cart-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #5a3921;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    background-color: rgba(255, 255, 255, 0.7);
+    position: relative;
+}
+
+.pankhudi-cart-count {
+    background-color: #5a3921;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+}
+
+.pankhudi-products-cart-link:hover {
+    background-color: white;
+    color: #3a2213;
+}
+
+/* Collection Header */
+.pankhudi-collection-header {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    background: url('https://images.unsplash.com/photo-1516762689617-e1cffcef479d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+    position: relative;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.pankhudi-collection-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(58, 34, 19, 0.6);
+}
+
+.pankhudi-collection-title,
+.pankhudi-collection-description {
+    position: relative;
+    z-index: 1;
+}
+
+.pankhudi-collection-title {
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.pankhudi-collection-description {
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+}
+
+.pankhudi-filter-status {
+    position: relative;
+    z-index: 1;
+    margin-top: 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.pankhudi-clear-filters-btn {
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-clear-filters-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Controls */
+.pankhudi-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 82px;
+    z-index: 90;
+}
+
+.pankhudi-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f5e6d8;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    position: relative;
+}
+
+.pankhudi-filter-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #5a3921;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.pankhudi-filter-btn:hover {
+    background: #e8d5c0;
+}
+
+.pankhudi-sort {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pankhudi-sort label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+}
+
+.pankhudi-sort select {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border: 1px solid #d4c1b1;
+    font-family: 'Montserrat', sans-serif;
+    background-color: white;
+    cursor: pointer;
+}
+
+/* Filter Sidebar */
+.pankhudi-filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100vh;
+    background-color: white;
+    z-index: 1000;
+    padding: 1.5rem;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+}
+
+.pankhudi-filter-sidebar.show {
+    transform: translateX(0);
+}
+
+.pankhudi-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.pankhudi-filter-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #5a3921;
+}
+
+.pankhudi-filter-header button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #8c6e5d;
+    transition: transform 0.3s ease;
+}
+
+.pankhudi-filter-header button:hover {
+    transform: rotate(90deg);
+}
+
+.pankhudi-filter-section {
+    margin-bottom: 2rem;
+}
+
+.pankhudi-filter-section h4 {
+    margin-bottom: 1rem;
+    color: #5a3921;
+    font-size: 1.1rem;
+}
+
+.pankhudi-category-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pankhudi-category-option {
+    padding: 0.5rem 1rem;
+    background: #f5e6d8;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-category-option.selected {
+    background: #5a3921;
+    color: white;
+}
+
+.pankhudi-price-range-values {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.pankhudi-price-range-sliders {
+    position: relative;
+    height: 20px;
+}
+
+.pankhudi-price-range-sliders input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    background: transparent;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.pankhudi-price-range-sliders input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #5a3921;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
+}
+
+.pankhudi-price-range-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: #d4c1b1;
+    border-radius: 5px;
+    transform: translateY(-50%);
+}
+
+.pankhudi-price-range-progress {
+    position: absolute;
+    top: 50%;
+    left: var(--min);
+    right: calc(100% - var(--max));
+    height: 5px;
+    background: #5a3921;
+    border-radius: 5px;
+    transform: translateY(-50%);
+}
+
+.pankhudi-apply-filters {
+    width: 100%;
+    padding: 0.8rem;
+    background: #5a3921;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.pankhudi-apply-filters:hover {
+    background: #3a2213;
+}
+
+/* Product Grid */
+.pankhudi-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.pankhudi-product-card {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.pankhudi-product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pankhudi-product-badges {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 2;
+}
+
+.pankhudi-new-badge {
+    background: #5a3921;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.pankhudi-discount-badge {
+    background: #b89b84;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.pankhudi-product-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 2/3;
+}
+
+.pankhudi-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.pankhudi-product-card:hover .pankhudi-product-image {
+    transform: scale(1.05);
+}
+
+.pankhudi-quick-view-btn {
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    padding: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    color: #5a3921;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.pankhudi-product-card:hover .pankhudi-quick-view-btn {
+    bottom: 0;
+}
+
+.pankhudi-product-info {
+    padding: 1.5rem;
+}
+
+.pankhudi-product-name {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #3a2213;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pankhudi-price-section {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.pankhudi-current-price {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #5a3921;
+}
+
+.pankhudi-original-price {
+    font-size: 0.9rem;
+    text-decoration: line-through;
+    color: #8c6e5d;
+}
+
+.pankhudi-rating-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.pankhudi-stars {
+    display: flex;
+    gap: 0.1rem;
+}
+
+.pankhudi-star {
+    color: #d4c1b1;
+    font-size: 0.9rem;
+}
+
+.pankhudi-star-filled {
+    color: #f8c455;
+}
+
+.pankhudi-star-half-filled {
+    position: relative;
+}
+
+.pankhudi-star-half-filled::after {
+    content: '★';
+    position: absolute;
+    left: 0;
+    width: 50%;
+    overflow: hidden;
+    color: #f8c455;
+}
+
+.pankhudi-review-count {
+    font-size: 0.8rem;
+    color: #8c6e5d;
+}
+
+.pankhudi-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pankhudi-cart-btn,
+.pankhudi-remove-btn,
+.pankhudi-buy-now-btn,
+.pankhudi-wishlist-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-cart-btn {
+    background: #f5e6d8;
+    color: #5a3921;
+    flex-grow: 1;
+}
+
+.pankhudi-cart-btn:hover {
+    background: #e8d5c0;
+}
+
+.pankhudi-remove-btn {
+    background: #f0f0f0;
+    color: #8c6e5d;
+    flex-grow: 1;
+}
+
+.pankhudi-remove-btn:hover {
+    background: #e0e0e0;
+}
+
+.pankhudi-buy-now-btn {
+    background: #5a3921;
+    color: white;
+}
+
+.pankhudi-buy-now-btn:hover {
+    background: #3a2213;
+}
+
+.pankhudi-wishlist-btn {
+    background: white;
+    color: #8c6e5d;
+    border: 1px solid #d4c1b1;
+    padding: 0.6rem;
+    flex: 0 0 auto;
+}
+
+.pankhudi-wishlist-btn.pankhudi-liked {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.pankhudi-wishlist-btn:hover {
+    background: #f9f5f0;
+}
+
+/* Quick View Modal */
+.pankhudi-quick-view-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-quick-view-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.pankhudi-quick-view-content {
+    background: white;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    overflow: hidden;
+    border-radius: 10px;
+    position: relative;
+}
+
+.pankhudi-close-quick-view {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #8c6e5d;
+    z-index: 3;
+    transition: transform 0.3s ease;
+}
+
+.pankhudi-close-quick-view:hover {
+    transform: rotate(90deg);
+}
+
+.pankhudi-quick-view-images {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f9f5f0;
+    padding: 2rem;
+}
+
+.pankhudi-main-image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.pankhudi-main-image img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+.pankhudi-thumbnails {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.pankhudi-thumbnails img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-thumbnails img:hover {
+    border-color: #b89b84;
+}
+
+.pankhudi-thumbnails img.active {
+    border-color: #5a3921;
+}
+
+.pankhudi-quick-view-details {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.pankhudi-quick-view-details h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: #3a2213;
+}
+
+.pankhudi-price-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.pankhudi-discount-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.pankhudi-rating-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-product-details-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    margin: 1.5rem 0;
+}
+
+.pankhudi-product-details-toggle h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #5a3921;
+}
+
+.pankhudi-expanded-details {
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.pankhudi-expanded-details p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: #5a3921;
+}
+
+.pankhudi-detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.pankhudi-detail-row span:first-child {
+    font-weight: 500;
+    color: #5a3921;
+}
+
+.pankhudi-detail-row span:last-child {
+    color: #8c6e5d;
+}
+
+/* Product Options */
+.pankhudi-product-options {
+    margin: 1.5rem 0;
+}
+
+.pankhudi-option {
+    margin-bottom: 1.5rem;
+}
+
+.pankhudi-option h4 {
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+    color: #5a3921;
+}
+
+.pankhudi-color-options {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.pankhudi-color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.pankhudi-color-option.selected {
+    border-color: #5a3921;
+    transform: scale(1.1);
+}
+
+.pankhudi-color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.8rem;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.pankhudi-size-options {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.pankhudi-size-option {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d4c1b1;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.pankhudi-size-option.selected {
+    background: #5a3921;
+    color: white;
+    border-color: #5a3921;
+}
+
+.pankhudi-selected-option {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #8c6e5d;
+    font-style: italic;
+}
+
+/* Quick View Actions */
+.pankhudi-quick-view-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.pankhudi-quick-view-actions button {
+    flex: 1;
+    min-width: 150px;
+    padding: 0.8rem;
+}
+
+/* No Products */
+.pankhudi-no-products {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+}
+
+.pankhudi-no-products h3 {
+    margin-bottom: 1.5rem;
+    color: #5a3921;
+}
+
+.pankhudi-clear-filters {
+    background: #5a3921;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-clear-filters:hover {
+    background: #3a2213;
+}
+
+/* View All Section */
+.pankhudi-view-all-section {
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.pankhudi-view-all-link {
+    color: #5a3921;
+    text-decoration: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    position: relative;
+    padding-bottom: 0.3rem;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.pankhudi-view-all-link:hover {
+    color: #3a2213;
+}
+
+.pankhudi-view-all-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: #5a3921;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+}
+
+.pankhudi-view-all-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Notifications */
+.pankhudi-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.pankhudi-notification-show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.pankhudi-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pankhudi-notification-content img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.pankhudi-notification-content div {
+    flex: 1;
+}
+
+.pankhudi-notification-content p {
+    margin: 0 0 0.2rem;
+    font-weight: 500;
+    color: #5a3921;
+}
+
+.pankhudi-notification-content small {
+    color: #8c6e5d;
+    font-size: 0.9rem;
+}
+
+/* Filter Overlay */
+.pankhudi-filter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+}
+
+.pankhudi-filter-overlay.show {
+    display: block;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .pankhudi-products-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        position: relative;
+    }
+
+    .pankhudi-products-search-cart {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .pankhudi-products-search-bar input {
+        width: 180px;
+    }
+
+    .pankhudi-products-search-bar input:focus {
+        width: 200px;
+    }
+
+    .pankhudi-controls {
+        top: 0;
+    }
+
+    .pankhudi-quick-view-content {
+        flex-direction: column;
+        max-height: 90vh;
+        width: 95%;
+    }
+
+    .pankhudi-quick-view-images {
+        padding: 1rem;
+    }
+
+    .pankhudi-main-image {
+        min-height: 300px;
+    }
+
+    .pankhudi-products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .pankhudi-controls {
+        padding: 1rem;
+    }
+
+    .pankhudi-product-info {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pankhudi-products-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pankhudi-product-card {
+        max-width: 100%;
+    }
+
+    .pankhudi-thumbnails img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .pankhudi-quick-view-actions button {
+        min-width: 100%;
+    }
+}
+
+.pankhudi-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.pankhudi-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #5a4bda;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
