@@ -89,7 +89,7 @@ const sliderItems = [
     },
     {
         id: 2,
-        image: 'https://www.suratifabric.com/blog/wp-content/uploads/2022/06/15-Forever-Classic-Hues-in-Ethnic-Wear-for-Women-in-India-768x576.jpg',
+        image: 'https://i.pinimg.com/736x/d0/78/70/d078705c172a131d88c67bd19986172d.jpg',
         title: 'Ethnic Wear',
         subtitle: 'New traditional designs for festive season',
         link: '/ethnic-wear',
