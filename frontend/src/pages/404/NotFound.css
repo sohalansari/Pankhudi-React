@@ -402,13 +402,13 @@
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
-.button-icon {
+.button-icons {
     margin-right: 0.8rem;
     font-size: 1.3rem;
     transition: var(--transition);
 }
 
-.home-button:hover .button-icon {
+.home-button:hover .button-icons {
     transform: scale(1.2);
 }
 

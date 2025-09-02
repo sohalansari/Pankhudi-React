@@ -97,7 +97,7 @@ const NotFound = () => {
                         <span className="button-icon">🏠</span> Return to Homepage
                     </Link>
                     <button onClick={() => window.history.back()} className="back-button">
-                        <span className="button-icon">↩️</span> Go Back
+                        <span className="button-icons">↩️</span> Go Back
                     </button>
                     <Link to="/contact" className="contact-button">
                         <span className="button-icon">📞</span> Contact Support

@@ -77,7 +77,7 @@ const Cart = () => {
     };
 
     const navigateToProduct = (productId) => {
-        navigate(`/product/${productId}`);
+        navigate(`/ProductDetail/${productId}`);
     };
 
     const proceedToCheckout = () => {
