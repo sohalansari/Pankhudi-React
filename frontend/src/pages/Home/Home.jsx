@@ -372,15 +372,6 @@ const Home = () => {
                     </button>
                 </section>
 
-
-
-
-
-
-
-
-
-
                 <section id="categories-section" className="categories-section">
                     <div className="section-header">
                         <h2>Shop by Category</h2>
