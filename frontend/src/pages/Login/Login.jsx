@@ -96,15 +96,15 @@ const Login = () => {
                 setMessage('✅ Login successful! Redirecting...');
                 localStorage.setItem('token', data.token);
                 
-                // Store user data in localStorage
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify({
-                        name: data.user.name,
-                        email: data.user.email,
-                        id: data.user.id,
-                        is_premium: data.user.is_premium || false
-                    }));
-                }
+                // // Store user data in localStorage
+                // if (data.user) {
+                //     localStorage.setItem('user', JSON.stringify({
+                //         name: data.user.name,
+                //         email: data.user.email,
+                //         id: data.user.id,
+                //         is_premium: data.user.is_premium || false
+                //     }));
+                // }
 
                 if (rememberMe) {
                     localStorage.setItem('rememberedEmail', form.emailOrPhone);
@@ -153,15 +153,15 @@ const Login = () => {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('authMethod', 'google'); // Store auth method
 
-                // Store user data in localStorage
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify({
-                        name: data.user.name,
-                        email: data.user.email,
-                        id: data.user.id,
-                        is_premium: data.user.is_premium || false
-                    }));
-                }
+                // // Store user data in localStorage
+                // if (data.user) {
+                //     localStorage.setItem('user', JSON.stringify({
+                //         name: data.user.name,
+                //         email: data.user.email,
+                //         id: data.user.id,
+                //         is_premium: data.user.is_premium || false
+                //     }));
+                // }
 
                 // Redirect to dashboard or home page
                 setTimeout(() => {
