@@ -152,22 +152,22 @@
     font-size: 14px;
     margin: 8px;
   }
-  
+
   .back-button-text {
     display: none;
   }
-  
+
   .back-button-icon {
     margin-right: 0;
     font-size: 18px;
   }
-  
+
   /* Show text on mobile for specific variants */
   .back-button-text .back-button-text,
   .back-button-outline .back-button-text {
     display: inline;
   }
-  
+
   .back-button-sticky {
     padding: 8px 0;
   }
@@ -179,11 +179,11 @@
     font-size: 12px;
     margin: 5px;
   }
-  
+
   .back-button-icon {
     font-size: 16px;
   }
-  
+
   /* Ensure button doesn't overflow on very small screens */
   .back-button {
     max-width: calc(100% - 10px);

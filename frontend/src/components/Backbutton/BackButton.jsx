@@ -3,11 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import './BackButton.css';
 
-const BackButton = ({ 
-  text = "Back", 
-  onClick, 
-  className = "", 
-  to, 
+const BackButton = ({
+  text = "Back",
+  onClick,
+  className = "",
+  to,
   replace = false,
   variant = "default",
   position = "relative", // relative, absolute, fixed, sticky
@@ -34,8 +34,8 @@ const BackButton = ({
   // Determine button text based on current page
   const getButtonText = () => {
     if (text !== "Back") return text;
-    
-    switch(location.pathname) {
+
+    switch (location.pathname) {
       case '/login':
         return 'Back to Home';
       case '/register':
@@ -49,7 +49,7 @@ const BackButton = ({
 
   return (
     <div className={`back-button-container back-button-${position} back-button-${align}`}>
-      <button 
+      <button
         className={`back-button back-button-${variant} ${className}`}
         onClick={handleClick}
         aria-label="Go back"
