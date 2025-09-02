@@ -29,13 +29,13 @@ const Login = () => {
             setForm(prev => ({ ...prev, emailOrPhone: rememberedEmail }));
             setRememberMe(true);
         }
-        
+
         // Check if user is already logged in
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            // Redirect to home if already logged in
-            window.location.href = '/';
-        }
+        // const userData = localStorage.getItem('user');
+        // if (userData) {
+        //     // Redirect to home if already logged in
+        //     window.location.href = '/';
+        // }
     }, []);
 
     const handleChange = (e) => {
@@ -95,16 +95,19 @@ const Login = () => {
             if (res.ok) {
                 setMessage('✅ Login successful! Redirecting...');
                 localStorage.setItem('token', data.token);
-                
-                // // Store user data in localStorage
-                // if (data.user) {
-                //     localStorage.setItem('user', JSON.stringify({
-                //         name: data.user.name,
-                //         email: data.user.email,
-                //         id: data.user.id,
-                //         is_premium: data.user.is_premium || false
-                //     }));
-                // }
+
+                const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+                const loginInput = form.emailOrPhone.trim().toLowerCase();
+
+                const foundUser = allUsers.find(u =>
+                    (u.email && u.email.toLowerCase() === loginInput) ||
+                    (u.phone && u.phone === loginInput) // phone as is (numbers)
+                );
+
+                if (foundUser) {
+                    localStorage.setItem('user', JSON.stringify(foundUser));
+                }
+
 
                 if (rememberMe) {
                     localStorage.setItem('rememberedEmail', form.emailOrPhone);
@@ -124,6 +127,7 @@ const Login = () => {
 
         setIsLoading(false);
     };
+
 
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {

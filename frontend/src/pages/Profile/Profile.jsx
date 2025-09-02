@@ -1,469 +1,541 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  FaUser, FaEnvelope, FaPhone, FaAddressCard, FaEdit, 
-  FaArrowLeft, FaSave, FaTimes, FaCopy, FaCheck, FaCrown,
-  FaShieldAlt, FaTrash, FaKey, FaLock, FaBell, FaPalette,
-  FaCreditCard, FaStar, FaHistory, FaDownload, FaUpload
-} from 'react-icons/fa';
-import './Profile.css';
-import BackButton from '../../components/Backbutton';
+import React, { useEffect, useState } from "react";
+import {
+  FaArrowLeft, FaCopy, FaEdit, FaSave, FaUser, FaCrown,
+  FaCheck, FaTimes, FaEye, FaEyeSlash, FaUpload, FaSignOutAlt,
+  FaEnvelope, FaPhone, FaMapMarkerAlt, FaLock, FaUserTag
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import "./Profile.css";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState(null);
+  const [user, setUser] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editedData, setEditedData] = useState({});
+  const [formData, setFormData] = useState({});
   const [copiedField, setCopiedField] = useState(null);
-  const [saveStatus, setSaveStatus] = useState('');
-  const [activeTab, setActiveTab] = useState('profile');
-  const [isPremium, setIsPremium] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [saveStatus, setSaveStatus] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [profileCompletion, setProfileCompletion] = useState(0);
 
+  // Load user data from localStorage
   useEffect(() => {
-    // Get user data from localStorage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    
-    // If no user data, try to get from registered users
-    if (!currentUser || Object.keys(currentUser).length === 0) {
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      if (registeredUsers.length > 0) {
-        const user = registeredUsers[registeredUsers.length - 1];
-        setUserData(user);
-        setEditedData(user);
-        setIsPremium(user.isPremium || false);
+    const loadUserData = () => {
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      if (currentUser && currentUser.email) {
+        setUser(currentUser);
+        setFormData(currentUser);
+        calculateProfileCompletion(currentUser);
       } else {
-        // Redirect to register if no user data found
-        navigate('/register');
+        // If "user" key not found, check registeredUsers
+        const registeredUsers = JSON.parse(localStorage.getItem("registeredUsers")) || [];
+        const rememberedEmail = localStorage.getItem("rememberedEmail");
+
+        const foundUser = registeredUsers.find((u) => u.email === rememberedEmail);
+        if (foundUser) {
+          setUser(foundUser);
+          setFormData(foundUser);
+          calculateProfileCompletion(foundUser);
+        }
       }
-    } else {
-      setUserData(currentUser);
-      setEditedData(currentUser);
-      setIsPremium(currentUser.isPremium || false);
-    }
+    };
 
-    // Get theme preference
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }, [navigate]);
+    loadUserData();
+  }, []);
 
-  const handleEdit = () => {
-    setEditMode(true);
-  };
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = (userData) => {
+    const fields = ['name', 'email', 'phone', 'address'];
+    let completedFields = 0;
 
-  const handleCancel = () => {
-    setEditedData(userData);
-    setEditMode(false);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditedData({
-      ...editedData,
-      [name]: value
+    fields.forEach(field => {
+      if (userData[field] && userData[field].trim() !== '') {
+        completedFields++;
+      }
     });
+
+    setProfileCompletion(Math.round((completedFields / fields.length) * 100));
   };
 
-  const handleSave = () => {
-    // Update localStorage
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const updatedUsers = registeredUsers.map(user => 
-      user.email === userData.email ? {...editedData, isPremium} : user
-    );
-    
-    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
-    localStorage.setItem('currentUser', JSON.stringify({...editedData, isPremium}));
-    
-    // Update state
-    setUserData({...editedData, isPremium});
-    setEditMode(false);
-    
-    // Show success message
-    setSaveStatus('Profile updated successfully!');
-    setTimeout(() => setSaveStatus(''), 3000);
-  };
-
-  const copyToClipboard = (text, fieldName) => {
+  // Copy function with visual feedback
+  const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
+    setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const togglePremium = () => {
-    const newPremiumStatus = !isPremium;
-    setIsPremium(newPremiumStatus);
-    
-    // Update user data with premium status
-    const updatedUserData = {...userData, isPremium: newPremiumStatus};
-    setUserData(updatedUserData);
-    
-    // Update localStorage
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const updatedUsers = registeredUsers.map(user => 
-      user.email === userData.email ? updatedUserData : user
+  // Input change handler
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const updatedUser = { ...formData, profileImage: event.target.result };
+        setFormData(updatedUser);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Save updated profile
+  const handleSave = () => {
+    const updatedUser = { ...formData, lastUpdated: new Date().toISOString() };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    // Update registeredUsers as well
+    let registeredUsers = JSON.parse(localStorage.getItem("registeredUsers")) || [];
+    registeredUsers = registeredUsers.map((u) =>
+      u.email === formData.email ? updatedUser : u
     );
-    
-    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
-    localStorage.setItem('currentUser', JSON.stringify(updatedUserData));
-    
-    setSaveStatus(newPremiumStatus ? 'Premium activated!' : 'Premium deactivated');
-    setTimeout(() => setSaveStatus(''), 3000);
+    localStorage.setItem("registeredUsers", JSON.stringify(registeredUsers));
+
+    setEditMode(false);
+    setSaveStatus("success");
+    calculateProfileCompletion(updatedUser);
+    setTimeout(() => setSaveStatus(""), 3000);
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+  // Cancel editing
+  const handleCancel = () => {
+    setFormData(user);
+    setEditMode(false);
   };
 
-  const exportData = () => {
-    const dataStr = JSON.stringify(userData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `user-data-${userData.name}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate("/");
   };
 
-  if (!userData) {
+  // Upgrade to premium
+  const handleUpgrade = () => {
+    const updatedUser = { ...user, isPremium: true };
+    setUser(updatedUser);
+    setFormData(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    let registeredUsers = JSON.parse(localStorage.getItem("registeredUsers")) || [];
+    registeredUsers = registeredUsers.map((u) =>
+      u.email === user.email ? updatedUser : u
+    );
+    localStorage.setItem("registeredUsers", JSON.stringify(registeredUsers));
+
+    setSaveStatus("upgraded");
+    setTimeout(() => setSaveStatus(""), 3000);
+  };
+
+  if (!user) {
     return (
-      <div className="profile-container">
-        <div className="profile-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading your profile...</p>
-        </div>
+      <div className="profile-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading your profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="profile-container">
-        {/* <BackButton text="Back to Dashboard" /> */}
+    <div className="profile-page">
+      {/* Header */}
       <div className="profile-header">
-        {/* <button className="back-button" onClick={() => navigate(-1)}>
+        <button className="back-btn" onClick={() => navigate(-1)}>
           <FaArrowLeft /> Back
-        </button> */}
-        
-        <div className="header-title">
-          <h1>User Profile</h1>
-          {isPremium && (
-            <span className="premium-badge">
-              <FaCrown /> PREMIUM
-            </span>
-          )}
-        </div>
-        
-        {!editMode ? (
-          <button className="edit-button" onClick={handleEdit}>
-            <FaEdit /> Edit Profile
-          </button>
-        ) : (
-          <div className="edit-actions">
-            <button className="cancel-button" onClick={handleCancel}>
-              <FaTimes /> Cancel
-            </button>
-            <button className="save-button" onClick={handleSave}>
-              <FaSave /> Save
-            </button>
-          </div>
-        )}
-      </div>
-
-      {saveStatus && (
-        <div className="save-status success">
-          {saveStatus}
-        </div>
-      )}
-
-      <div className="profile-tabs">
-        <button 
-          className={activeTab === 'profile' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('profile')}
-        >
-          <FaUser /> Profile
         </button>
-        <button 
-          className={activeTab === 'security' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('security')}
-        >
-          <FaLock /> Security
-        </button>
-        <button 
-          className={activeTab === 'preferences' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('preferences')}
-        >
-          <FaPalette /> Preferences
+        <h2 className="site-name">Pankhudi</h2>
+        <button className="logout-btn" onClick={handleLogout}>
+          <FaSignOutAlt /> Logout
         </button>
       </div>
 
-      <div className="profile-content">
-        {activeTab === 'profile' && (
-          <>
-            <div className="profile-card">
-              <h2>
-                <FaUser /> Personal Information
-                {isPremium && <FaStar className="premium-icon" />}
-              </h2>
-              
-              <div className="profile-field">
-                <label>
-                  <FaUser /> Full Name
-                </label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={editedData.name || ''}
-                    onChange={handleChange}
-                  />
+      {/* Profile Container */}
+      <div className="profile-container">
+        {/* Sidebar */}
+        <div className="profile-sidebar">
+          <div className="user-card">
+            <div className="avatar-container">
+              <div className="profile-avatar">
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt="Profile" />
                 ) : (
-                  <div className="field-value">
-                    <span>{userData.name}</span>
-                    <button 
-                      className="copy-btn"
-                      onClick={() => copyToClipboard(userData.name, 'name')}
-                      title="Copy to clipboard"
-                    >
-                      {copiedField === 'name' ? <FaCheck /> : <FaCopy />}
-                    </button>
-                  </div>
+                  <FaUser />
+                )}
+                {editMode && (
+                  <label className="avatar-upload">
+                    <FaUpload />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
                 )}
               </div>
-
-              <div className="profile-field">
-                <label>
-                  <FaEnvelope /> Email Address
-                </label>
-                {editMode ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={editedData.email || ''}
-                    onChange={handleChange}
-                  />
-                ) : (
-                  <div className="field-value">
-                    <span>{userData.email}</span>
-                    <button 
-                      className="copy-btn"
-                      onClick={() => copyToClipboard(userData.email, 'email')}
-                      title="Copy to clipboard"
-                    >
-                      {copiedField === 'email' ? <FaCheck /> : <FaCopy />}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-field">
-                <label>
-                  <FaPhone /> Phone Number
-                </label>
-                {editMode ? (
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={editedData.phone || ''}
-                    onChange={handleChange}
-                  />
-                ) : (
-                  <div className="field-value">
-                    <span>{userData.phone || 'Not provided'}</span>
-                    {userData.phone && (
-                      <button 
-                        className="copy-btn"
-                        onClick={() => copyToClipboard(userData.phone, 'phone')}
-                        title="Copy to clipboard"
-                      >
-                        {copiedField === 'phone' ? <FaCheck /> : <FaCopy />}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-field">
-                <label>
-                  <FaAddressCard /> Address
-                </label>
-                {editMode ? (
-                  <textarea
-                    name="address"
-                    value={editedData.address || ''}
-                    onChange={handleChange}
-                    rows="3"
-                    maxLength="200"
-                    placeholder="Enter your full address (max 200 characters)"
-                  />
-                ) : (
-                  <div className="field-value address-field">
-                    <span className="address-text">{userData.address || 'Not provided'}</span>
-                    {userData.address && (
-                      <button 
-                        className="copy-btn"
-                        onClick={() => copyToClipboard(userData.address, 'address')}
-                        title="Copy to clipboard"
-                      >
-                        {copiedField === 'address' ? <FaCheck /> : <FaCopy />}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {userData.registeredAt && (
-                <div className="profile-field">
-                  <label>Registered On</label>
-                  <div className="field-value">
-                    <span>{new Date(userData.registeredAt).toLocaleDateString()}</span>
-                  </div>
+              {user.isPremium && (
+                <div className="premium-badge">
+                  <FaCrown /> Premium
                 </div>
               )}
             </div>
 
-            <div className="profile-actions">
-              <h3><FaHistory /> Account Actions</h3>
-              <div className="action-buttons">
-                <button className="action-btn primary">
-                  <FaKey /> Change Password
-                </button>
-                <button className="action-btn secondary">
-                  <FaShieldAlt /> Privacy Settings
-                </button>
-                <button className="action-btn warning">
-                  <FaTrash /> Delete Account
-                </button>
-                <button className="action-btn special" onClick={exportData}>
-                  <FaDownload /> Export Data
-                </button>
-                <button 
-                  className={`action-btn premium ${isPremium ? 'active' : ''}`}
-                  onClick={togglePremium}
-                >
-                  <FaCrown /> {isPremium ? 'Premium Active' : 'Go Premium'}
-                </button>
+            <h2 className="user-name">{user.name || "User"}</h2>
+            <p className="user-email">{user.email}</p>
+
+            {!user.isPremium && (
+              <button className="upgrade-btn" onClick={handleUpgrade}>
+                <FaCrown /> Upgrade to Premium
+              </button>
+            )}
+
+            <div className="profile-completion">
+              <div className="completion-header">
+                <span>Profile Completion</span>
+                <span>{profileCompletion}%</span>
+              </div>
+              <div className="completion-bar">
+                <div
+                  className="completion-progress"
+                  style={{ width: `${profileCompletion}%` }}
+                ></div>
               </div>
             </div>
-          </>
-        )}
+          </div>
 
-        {activeTab === 'security' && (
-          <div className="profile-card">
-            <h2><FaLock /> Security Settings</h2>
-            
-            <div className="security-item">
-              <div className="security-info">
-                <h4><FaKey /> Two-Factor Authentication</h4>
-                <p>Add an extra layer of security to your account</p>
-              </div>
-              <label className="switch">
-                <input type="checkbox" />
-                <span className="slider"></span>
-              </label>
+          <div className="sidebar-nav">
+            <button
+              className={`nav-item ${activeTab === "profile" ? "active" : ""}`}
+              onClick={() => setActiveTab("profile")}
+            >
+              <FaUser /> Personal Info
+            </button>
+            <button
+              className={`nav-item ${activeTab === "security" ? "active" : ""}`}
+              onClick={() => setActiveTab("security")}
+            >
+              <FaLock /> Security
+            </button>
+            <button
+              className={`nav-item ${activeTab === "preferences" ? "active" : ""}`}
+              onClick={() => setActiveTab("preferences")}
+            >
+              <FaUserTag /> Preferences
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="profile-main">
+          {/* Save Status Notification */}
+          {saveStatus === "success" && (
+            <div className="save-notification success">
+              Profile updated successfully!
+            </div>
+          )}
+
+          {saveStatus === "upgraded" && (
+            <div className="save-notification success">
+              <FaCrown /> Congratulations! You've upgraded to Premium!
+            </div>
+          )}
+
+          {/* Profile Content */}
+          <div className="profile-content-card">
+            <div className="card-header">
+              <h2>
+                {activeTab === "profile" && "Personal Information"}
+                {activeTab === "security" && "Security Settings"}
+                {activeTab === "preferences" && "Preferences"}
+              </h2>
+
+              {activeTab === "profile" && !editMode && (
+                <button className="edit-btn" onClick={() => setEditMode(true)}>
+                  <FaEdit /> Edit Profile
+                </button>
+              )}
             </div>
 
-            <div className="security-item">
-              <div className="security-info">
-                <h4><FaBell /> Login Notifications</h4>
-                <p>Get alerted when someone logs into your account</p>
-              </div>
-              <label className="switch">
-                <input type="checkbox" defaultChecked />
-                <span className="slider"></span>
-              </label>
-            </div>
+            {activeTab === "profile" && (
+              <div className="profile-details">
+                <div className="detail-group">
+                  <h3><FaUserTag /> Basic Information</h3>
 
-            <div className="security-item">
-              <div className="security-info">
-                <h4><FaShieldAlt /> Security Questions</h4>
-                <p>Set up security questions for account recovery</p>
-              </div>
-              <button className="action-btn outline">Set Up</button>
-            </div>
+                  <div className="detail-item">
+                    <label>Full Name</label>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleChange}
+                        className="profile-input"
+                        placeholder="Enter your full name"
+                      />
+                    ) : (
+                      <div className="field-value-container">
+                        <span className="field-value">{user.name || "Not provided"}</span>
+                      </div>
+                    )}
+                  </div>
 
-            {isPremium && (
-              <div className="security-item premium-feature">
-                <div className="security-info">
-                  <h4><FaCrown /> Advanced Security Logs</h4>
-                  <p>Access detailed security history and login attempts (Premium Only)</p>
+                  <div className="detail-item">
+                    <label><FaEnvelope /> Email Address</label>
+                    {editMode ? (
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email || ""}
+                        onChange={handleChange}
+                        className="profile-input"
+                      />
+                    ) : (
+                      <div className="field-value-container">
+                        <span className="field-value">{user.email}</span>
+                        <button
+                          className={`copy-btn ${copiedField === "email" ? "copied" : ""}`}
+                          onClick={() => handleCopy(user.email, "email")}
+                          aria-label="Copy email"
+                        >
+                          <FaCopy />
+                          {copiedField === "email" && <span className="copy-tooltip">Copied!</span>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="detail-item">
+                    <label><FaPhone /> Phone Number</label>
+                    {editMode ? (
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone || ""}
+                        onChange={handleChange}
+                        className="profile-input"
+                        placeholder="Enter your phone number"
+                      />
+                    ) : (
+                      <div className="field-value-container">
+                        <span className="field-value">{user.phone || "Not provided"}</span>
+                        {user.phone && (
+                          <button
+                            className={`copy-btn ${copiedField === "phone" ? "copied" : ""}`}
+                            onClick={() => handleCopy(user.phone, "phone")}
+                            aria-label="Copy phone number"
+                          >
+                            <FaCopy />
+                            {copiedField === "phone" && <span className="copy-tooltip">Copied!</span>}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button className="action-btn outline">View Logs</button>
+
+                <div className="detail-group">
+                  <h3><FaMapMarkerAlt /> Address</h3>
+
+                  <div className="detail-item">
+                    <label>Full Address</label>
+                    {editMode ? (
+                      <textarea
+                        name="address"
+                        value={formData.address || ""}
+                        onChange={handleChange}
+                        className="profile-textarea"
+                        placeholder="Enter your full address"
+                        rows="3"
+                      />
+                    ) : (
+                      <div className="field-value-container">
+                        <span className="field-value">{user.address || "Not provided"}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="detail-group">
+                  <h3>Account Status</h3>
+
+                  <div className="status-items">
+                    <div className="status-item">
+                      <label>Terms Agreement</label>
+                      <span className={`status-badge ${user.terms ? "accepted" : "rejected"}`}>
+                        {user.terms ? <><FaCheck /> Accepted</> : <><FaTimes /> Not Accepted</>}
+                      </span>
+                    </div>
+
+                    <div className="status-item">
+                      <label>Premium Status</label>
+                      <span className={`status-badge ${user.isPremium ? "premium" : "standard"}`}>
+                        {user.isPremium ? <><FaCrown /> Premium</> : "Standard"}
+                      </span>
+                    </div>
+
+                    <div className="status-item">
+                      <label>Member Since</label>
+                      <span className="status-value">
+                        {user.joinDate || "Recent"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {editMode && (
+                  <div className="action-buttons">
+                    <button className="save-btn" onClick={handleSave}>
+                      <FaSave /> Save Changes
+                    </button>
+                    <button className="cancel-btn" onClick={handleCancel}>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "security" && (
+              <div className="security-settings">
+                <div className="detail-group">
+                  <h3><FaLock /> Password</h3>
+
+                  <div className="detail-item">
+                    <label>Current Password</label>
+                    <div className="password-field">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="profile-input"
+                        placeholder="Enter current password"
+                      />
+                      <button
+                        className="toggle-password"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="detail-item">
+                    <label>New Password</label>
+                    <div className="password-field">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="profile-input"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="detail-item">
+                    <label>Confirm New Password</label>
+                    <div className="password-field">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="profile-input"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                  </div>
+
+                  <button className="save-btn">
+                    Update Password
+                  </button>
+                </div>
+
+                <div className="detail-group">
+                  <h3>Two-Factor Authentication</h3>
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>Two-Factor Authentication</label>
+                      <p>Add an extra layer of security to your account</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "preferences" && (
+              <div className="preferences-settings">
+                <div className="detail-group">
+                  <h3>Notification Preferences</h3>
+
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>Email Notifications</label>
+                      <p>Receive important updates via email</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>Promotional Emails</label>
+                      <p>Receive offers and promotions</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>SMS Notifications</label>
+                      <p>Receive important updates via SMS</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="detail-group">
+                  <h3>Privacy Settings</h3>
+
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>Profile Visibility</label>
+                      <p>Make your profile visible to other users</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <label>Data Sharing</label>
+                      <p>Allow usage data to improve our services</p>
+                    </div>
+                    <label className="switch">
+                      <input type="checkbox" />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <button className="save-btn">
+                  Save Preferences
+                </button>
               </div>
             )}
           </div>
-        )}
-
-        {activeTab === 'preferences' && (
-          <div className="profile-card">
-            <h2><FaPalette /> Preferences</h2>
-            
-            <div className="preference-item">
-              <h4>Theme</h4>
-              <p>Choose between light and dark mode</p>
-              <div className="theme-switcher">
-                <button 
-                  className={theme === 'light' ? 'active' : ''}
-                  onClick={() => setTheme('light')}
-                >
-                  Light
-                </button>
-                <button 
-                  className={theme === 'dark' ? 'active' : ''}
-                  onClick={() => setTheme('dark')}
-                >
-                  Dark
-                </button>
-              </div>
-            </div>
-
-            <div className="preference-item">
-              <h4>Language</h4>
-              <p>Select your preferred language</p>
-              <select className="preference-select">
-                <option>English</option>
-                <option>Spanish</option>
-                <option>French</option>
-                <option>German</option>
-              </select>
-            </div>
-
-            <div className="preference-item">
-              <h4>Email Notifications</h4>
-              <p>Choose what emails you want to receive</p>
-              <div className="checkbox-group">
-                <label>
-                  <input type="checkbox" defaultChecked />
-                  <span>Product updates</span>
-                </label>
-                <label>
-                  <input type="checkbox" defaultChecked />
-                  <span>Security alerts</span>
-                </label>
-                <label>
-                  <input type="checkbox" />
-                  <span>Promotional offers</span>
-                </label>
-              </div>
-            </div>
-
-            {isPremium && (
-              <div className="preference-item premium-feature">
-                <h4><FaCrown /> Custom Themes</h4>
-                <p>Access exclusive color themes (Premium Only)</p>
-                <div className="theme-previews">
-                  <div className="theme-preview blue"></div>
-                  <div className="theme-preview green"></div>
-                  <div className="theme-preview purple"></div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

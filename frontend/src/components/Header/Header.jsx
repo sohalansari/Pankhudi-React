@@ -38,36 +38,20 @@ const Header = () => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
 
-    // Function to fetch user data from localStorage
-    const fetchUserData = () => {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
-        
-        // Try to get user data from localStorage
-        try {
-            // Check for user data in localStorage
-            const userFromStorage = localStorage.getItem('user');
-            
-            if (userFromStorage) {
-                // If we have user data in localStorage, parse and set it
-                const parsedUser = JSON.parse(userFromStorage);
-                setUserData(parsedUser);
-            } else {
-                // If no user data in localStorage, check for registeredUsers
-                const registeredUsers = localStorage.getItem('registeredUsers');
-                if (registeredUsers) {
-                    const users = JSON.parse(registeredUsers);
-                    if (users.length > 0) {
-                        // Use the first user (you might want to implement proper user identification)
-                        setUserData(users[0]);
-                        localStorage.setItem('user', JSON.stringify(users[0]));
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error parsing user data:', error);
+const fetchUserData = () => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+
+    try {
+        const userFromStorage = localStorage.getItem('user'); // ✅ always read "user"
+        if (userFromStorage) {
+            setUserData(JSON.parse(userFromStorage));
         }
-    };
+    } catch (error) {
+        console.error('Error parsing user data:', error);
+    }
+};
+
 
     useEffect(() => {
         fetchUserData();

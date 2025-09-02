@@ -5,6 +5,7 @@ import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import BackButton from '../../components/Backbutton';
+
 const Register = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -41,17 +42,12 @@ const Register = () => {
     };
 
     const saveToLocalStorage = (userData) => {
-        // Get existing users or initialize empty array
         const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        
-        // Add new user
         existingUsers.push(userData);
-        
-        // Save back to localStorage
         localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-        
-        // Also save as current user if needed
-        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        // ✅ Always save current user as "user"
+        localStorage.setItem('user', JSON.stringify(userData));
     };
 
     const handleSubmit = async (e) => {
@@ -77,16 +73,13 @@ const Register = () => {
                 setMessage(data.message);
                 if (data.errors) setErrors(data.errors);
             } else {
-                // Save user data to localStorage
                 saveToLocalStorage(form);
-                
                 setMessage('✅ Registered Successfully! Redirecting...');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
             }
         } catch (err) {
-            // If server is down, save to localStorage only
             saveToLocalStorage(form);
             setMessage('⚠️ Saved locally (server unavailable). You can login offline.');
             setTimeout(() => {
@@ -100,36 +93,30 @@ const Register = () => {
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {
             const decoded = jwtDecode(credentialResponse.credential);
-
-            // Pre-fill form with Google data
             setForm(prev => ({
                 ...prev,
                 name: decoded.name || '',
                 email: decoded.email || '',
             }));
 
-            // Try to register with Google
             const res = await fetch('http://localhost:5000/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: credentialResponse.credential
-                }),
+                body: JSON.stringify({ token: credentialResponse.credential }),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                // Save to localStorage
                 const userData = {
                     name: decoded.name || '',
                     email: decoded.email || '',
                     phone: '',
                     address: '',
-                    password: '' // No password for Google users
+                    password: ''
                 };
                 saveToLocalStorage(userData);
-                
+
                 setMessage('✅ Registration successful with Google! Redirecting...');
                 localStorage.setItem('token', data.token);
                 setTimeout(() => {
@@ -150,76 +137,41 @@ const Register = () => {
 
     return (
         <div className="register-container">
-            {/* <BackButton variant="outline" position="relative" align="left" /> */}
             <div className="register-card">
                 <form className="register-form" onSubmit={handleSubmit}>
                     <h1 className="brand-name">Pankhudi</h1>
                     <h2>Create Account</h2>
                     <p className="subtitle">Join our community today</p>
-                    
+
                     {message && <div className={`form-message ${message.includes('✅') ? 'success' : 'error'}`}>{message}</div>}
 
                     <div className="input-group">
                         <FaUser className="input-icon" />
-                        <input 
-                            type="text" 
-                            name="name" 
-                            placeholder="Full Name" 
-                            value={form.name} 
-                            onChange={handleChange}
-                            className={errors.name ? 'error-input' : ''}
-                        />
+                        <input type="text" name="name" placeholder="Full Name" value={form.name} onChange={handleChange} className={errors.name ? 'error-input' : ''} />
                     </div>
                     {errors.name && <p className="error">{errors.name}</p>}
 
                     <div className="input-group">
                         <FaEnvelope className="input-icon" />
-                        <input 
-                            type="email" 
-                            name="email" 
-                            placeholder="Email Address" 
-                            value={form.email} 
-                            onChange={handleChange}
-                            className={errors.email ? 'error-input' : ''}
-                        />
+                        <input type="email" name="email" placeholder="Email Address" value={form.email} onChange={handleChange} className={errors.email ? 'error-input' : ''} />
                     </div>
                     {errors.email && <p className="error">{errors.email}</p>}
 
                     <div className="input-group">
                         <FaPhone className="input-icon" />
-                        <input 
-                            type="text" 
-                            name="phone" 
-                            placeholder="Phone Number" 
-                            value={form.phone} 
-                            onChange={handleChange}
-                            className={errors.phone ? 'error-input' : ''}
-                        />
+                        <input type="text" name="phone" placeholder="Phone Number" value={form.phone} onChange={handleChange} className={errors.phone ? 'error-input' : ''} />
                     </div>
                     {errors.phone && <p className="error">{errors.phone}</p>}
 
                     <div className="input-group">
                         <FaAddressCard className="input-icon" />
-                        <textarea
-                            name="address"
-                            placeholder="Full Address"
-                            value={form.address}
-                            onChange={handleChange}
-                            className={errors.address ? 'error-input' : ''}
-                        ></textarea>
+                        <textarea name="address" placeholder="Full Address" value={form.address} onChange={handleChange} className={errors.address ? 'error-input' : ''}></textarea>
                     </div>
                     {errors.address && <p className="error">{errors.address}</p>}
 
                     <div className="input-group">
                         <FaLock className="input-icon" />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            name="password"
-                            placeholder="Password"
-                            value={form.password}
-                            onChange={handleChange}
-                            className={errors.password ? 'error-input' : ''}
-                        />
+                        <input type={showPassword ? 'text' : 'password'} name="password" placeholder="Password" value={form.password} onChange={handleChange} className={errors.password ? 'error-input' : ''} />
                         <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
                             {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
                         </span>
@@ -228,13 +180,7 @@ const Register = () => {
 
                     <div className="terms-group">
                         <label className="terms">
-                            <input 
-                                type="checkbox" 
-                                name="terms" 
-                                checked={form.terms} 
-                                onChange={handleChange}
-                                className={errors.terms ? 'error-checkbox' : ''}
-                            />
+                            <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} className={errors.terms ? 'error-checkbox' : ''} />
                             <span>I agree to the <a href="/terms">Terms & Conditions</a></span>
                         </label>
                     </div>
@@ -244,20 +190,10 @@ const Register = () => {
                         {isLoading ? 'Registering...' : 'Register'}
                     </button>
 
-                    <div className="divider">
-                        <span>or</span>
-                    </div>
+                    <div className="divider"><span>or</span></div>
 
                     <div className="google-login">
-                        <GoogleLogin
-                            onSuccess={handleGoogleLoginSuccess}
-                            onError={handleGoogleLoginFailure}
-                            text="signup_with"
-                            theme="filled_blue"
-                            shape="rectangular"
-                            size="large"
-                            width="100%"
-                        />
+                        <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={handleGoogleLoginFailure} text="signup_with" theme="filled_blue" shape="rectangular" size="large" width="100%" />
                     </div>
 
                     <div className="links">
