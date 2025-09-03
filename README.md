@@ -78,7 +78,3 @@ reviews (id, user_id, product_id, rating, comment)
 
 Pull requests welcome!
 
-📜 License
-
-MIT License
-
