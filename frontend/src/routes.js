@@ -16,6 +16,7 @@ import DummyPayment from './pages/Payment/DummyPayment';
 import OrderConfirmation from './pages/OrderConfirmation/OrderConfirmation';
 import OrderHistory from './pages/OrderHistory/OrderHistory';
 import AIChatbot from './pages/AIChatbot/AIChatbot'
+import Collections from './pages/Collection/Collections';
 
 const AppRoutes = () => {
     return (
@@ -35,6 +36,7 @@ const AppRoutes = () => {
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/ai-chat" element={<AIChatbot />} />
+            <Route path='/collections' element={<Collections />} />
         </Routes>
     );
 };

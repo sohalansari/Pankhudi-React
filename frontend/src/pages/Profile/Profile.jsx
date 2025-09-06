@@ -905,7 +905,7 @@ const Profile = () => {
                 <div className="detail-group">
                   <h3><FaCreditCard /> Payment Methods</h3>
 
-                  <div className="payment-methods">
+                  <div className="payment-method">
                     <div className="payment-method">
                       <div className="payment-info">
                         <h4>Visa ending in 4321</h4>
