@@ -1,40 +1,190 @@
+/* Navbar.css */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* Gradient background */
     padding: 0 20px;
-    height: 60px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-}
-
-.navbar-left h3 {
-    margin: 0;
-    color: #2c3e50;
-}
-
-.navbar-right {
+    /* Horizontal padding */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* Light border */
+    height: 70px;
+    /* Fixed height */
     display: flex;
+    /* Flex layout */
     align-items: center;
+    /* Center vertically */
+    justify-content: space-between;
+    /* Space between items */
+    color: white;
+    /* White text color */
+    position: sticky;
+    /* Sticky positioning */
+    top: 0;
+    /* Stick to top */
+    z-index: 100;
+    /* High z-index */
+}
+
+.navbar-content {
+    display: flex;
+    /* Flex layout */
+    align-items: center;
+    /* Center vertically */
+    justify-content: space-between;
+    /* Space between items */
+    width: 100%;
+    /* Full width */
+}
+
+.navbar-title {
+    margin: 0;
+    /* Remove default margin */
+    font-size: 1.5rem;
+    /* Font size */
+    font-weight: 600;
+    /* Semi-bold weight */
+    letter-spacing: 0.5px;
+    /* Letter spacing */
+}
+
+.navbar-user-info {
+    display: flex;
+    /* Flex layout */
+    align-items: center;
+    /* Center vertically */
     gap: 15px;
+    /* Space between elements */
 }
 
 .user-name {
-    color: #7f8c8d;
     font-size: 0.9rem;
+    /* Font size */
+    opacity: 0.9;
+    /* Slight transparency */
+}
+
+.user-avatar {
+    width: 40px;
+    /* Fixed width */
+    height: 40px;
+    /* Fixed height */
+    border-radius: 50%;
+    /* Circular shape */
+    background: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent background */
+    display: flex;
+    /* Flex layout */
+    align-items: center;
+    /* Center vertically */
+    justify-content: center;
+    /* Center horizontally */
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    /* Border */
+}
+
+.user-avatar i {
+    font-size: 1.2rem;
+    /* Icon size */
 }
 
 .logout-btn {
-    padding: 8px 15px;
-    background-color: #e74c3c;
+    background: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent background */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* Border */
     color: white;
-    border: none;
-    border-radius: 4px;
+    /* White text */
+    padding: 8px 15px;
+    /* Padding */
+    border-radius: 20px;
+    /* Rounded corners */
     cursor: pointer;
-    font-size: 0.9rem;
+    /* Pointer cursor */
+    display: flex;
+    /* Flex layout */
+    align-items: center;
+    /* Center vertically */
+    gap: 8px;
+    /* Space between icon and text */
+    transition: all 0.3s ease;
+    /* Smooth transitions */
+    font-weight: 500;
+    /* Medium weight */
 }
 
 .logout-btn:hover {
-    background-color: #c0392b;
+    background: rgba(255, 255, 255, 0.3);
+    /* Lighten background on hover */
+    transform: translateY(-2px);
+    /* Lift effect */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    /* Shadow on hover */
 }
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .navbar {
+        height: 60px;
+        /* Slightly smaller height */
+        padding: 0 15px;
+        /* Reduced padding */
+    }
+
+    .navbar-title {
+        font-size: 1.2rem;
+        /* Smaller font size */
+    }
+
+    .user-name {
+        display: none;
+        /* Hide username on mobile */
+    }
+
+    .user-avatar {
+        width: 35px;
+        /* Smaller avatar */
+        height: 35px;
+        /* Smaller avatar */
+    }
+
+    .logout-btn {
+        padding: 6px 12px;
+        /* Smaller padding */
+        font-size: 0.9rem;
+        /* Smaller font */
+    }
+
+    .logout-btn span {
+        display: none;
+        /* Hide "Logout" text on mobile */
+    }
+
+    .logout-btn i {
+        margin: 0;
+        /* Remove margin */
+        font-size: 1.1rem;
+        /* Icon size */
+    }
+}
+
+/* Animation for navbar */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.navbar {
+    animation: slideDown 0.5s ease-out;
+    /* Apply animation */
+}
+
+/* Font Awesome import */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');

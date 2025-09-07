@@ -1,45 +1,29 @@
-.user-table {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.users-page {
+    padding: 20px;
 }
 
-.user-table table {
+.users-table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 20px;
 }
 
-.user-table th,
-.user-table td {
-    padding: 12px 15px;
+.users-table th,
+.users-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
     text-align: left;
-    border-bottom: 1px solid #eee;
 }
 
-.user-table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: #2c3e50;
+.users-table th {
+    background: #333;
+    color: white;
 }
 
-.user-table tr:hover {
-    background-color: #f8f9fa;
-}
-
-.status {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.status.active {
-    background-color: #e3f2fd;
-    color: #1976d2;
-}
-
-.status.inactive {
-    background-color: #ffebee;
-    color: #d32f2f;
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
 }

@@ -1,36 +1,56 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import './Sidebar.css';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import "./Sidebar.css";
 
-function Sidebar() {
+function Sidebar({ isCollapsed, onToggleCollapse }) {
     const location = useLocation();
 
     const menuItems = [
-        { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-        { path: '/users', label: 'Users', icon: '👥' },
-        { path: '/settings', label: 'Settings', icon: '⚙️' },
+        { path: "/dashboard", name: "Dashboard", icon: "📊" },
+        { path: "/users", name: "Users", icon: "👥" },
+        { path: "/analytics", name: "Analytics", icon: "📈" },
+        { path: "/content", name: "Content", icon: "📝" },
+        { path: "/settings", name: "Settings", icon: "⚙️" },
+        { path: "/reports", name: "Reports", icon: "📄" },
+        { path: "/help", name: "Help & Support", icon: "❓" },
+
     ];
 
     return (
-        <div className="sidebar">
+        <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
             <div className="sidebar-header">
-                <h2>Pankhudi Admin</h2>
+                <h2>{isCollapsed ? "PA" : "Pankhudi Admin"}</h2>
+                <button className="toggle-btn" onClick={onToggleCollapse}>
+                    {isCollapsed ? "→" : "←"}
+                </button>
             </div>
-            <nav className="sidebar-nav">
-                <ul>
-                    {menuItems.map((item) => (
-                        <li key={item.path}>
-                            <Link
-                                to={item.path}
-                                className={location.pathname === item.path ? 'active' : ''}
-                            >
-                                <span className="icon">{item.icon}</span>
-                                <span className="label">{item.label}</span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+
+            <ul className="sidebar-menu">
+                {menuItems.map((item) => (
+                    <li key={item.path} className={location.pathname === item.path ? "active" : ""}>
+                        <Link to={item.path}>
+                            <span className="menu-icon">{item.icon}</span>
+                            <span className="menu-text">{item.name}</span>
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+
+            <div className="sidebar-footer">
+                <div className="user-profile">
+                    <div className="user-avatar">AD</div>
+                    {!isCollapsed && (
+                        <div className="user-info">
+                            <p className="user-name">Admin User</p>
+                            <p className="user-role">Super Admin</p>
+                        </div>
+                    )}
+                </div>
+                <button className="logout-btn">
+                    <span>🚪</span>
+                    {!isCollapsed && <span>Logout</span>}
+                </button>
+            </div>
         </div>
     );
 }

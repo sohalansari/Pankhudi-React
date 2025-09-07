@@ -6,6 +6,8 @@
   --light-bg: #2a2d37;
   --text-light: #ffffff;
   --text-muted: #a0a0a0;
+  --text-dark: #000000;
+  /* Added for black text */
   --accent-color: #7e57c2;
   --success-color: #4caf50;
   --error-color: #f44336;
@@ -14,11 +16,8 @@
   --glow: 0 0 15px rgba(126, 87, 194, 0.5);
 }
 
-
-
 .register-container {
   width: 100%;
-
   perspective: 1000px;
 }
 
@@ -52,6 +51,7 @@
     opacity: 0;
     transform: translateY(30px) rotateX(15deg);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) rotateX(0);
@@ -62,6 +62,7 @@
   0% {
     transform: rotate(45deg) translateX(-100%);
   }
+
   100% {
     transform: rotate(45deg) translateX(100%);
   }
@@ -125,6 +126,7 @@
   color: var(--accent-color);
 }
 
+/* FIX: Input text color changed to black when filled */
 .register-form input {
   width: 100%;
   padding: 15px 15px 15px 45px;
@@ -132,8 +134,14 @@
   border: 2px solid transparent;
   border-radius: 10px;
   color: var(--text-light);
+  /* Default color for placeholder */
   font-size: 16px;
   transition: var(--transition);
+}
+
+/* This ensures text turns black when user types */
+.register-form input:not(:placeholder-shown) {
+  color: var(--text-dark);
 }
 
 .register-form input:focus {
@@ -141,6 +149,8 @@
   border-color: var(--accent-color);
   background: rgba(255, 255, 255, 0.12);
   box-shadow: var(--glow);
+  color: var(--text-dark);
+  /* Ensure black text on focus too */
 }
 
 .register-form input::placeholder {
@@ -241,6 +251,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -271,9 +282,11 @@
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
+
   100% {
     opacity: 0.6;
   }
@@ -292,9 +305,21 @@
 }
 
 @keyframes shake {
-  0%, 100% {transform: translateX(0);}
-  20%, 60% {transform: translateX(-5px);}
-  40%, 80% {transform: translateX(5px);}
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .password-strength {
@@ -348,7 +373,7 @@
   .register-form {
     padding: 30px 20px;
   }
-  
+
   .brand-name {
     font-size: 2rem;
   }

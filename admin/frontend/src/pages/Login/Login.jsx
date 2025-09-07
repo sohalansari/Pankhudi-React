@@ -1,81 +1,187 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
-import './Login.css';
+import React, { useState } from "react";
+import "./Login.css";
 
 function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const { login } = useAuth();
-    const navigate = useNavigate();
-
-    const handleSubmit = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError("");
 
         // Basic validation
         if (!email || !password) {
-            setError('Please enter both email and password');
+            setError("Please fill in all fields");
+            setIsLoading(false);
             return;
         }
 
-        setLoading(true);
-        setError('');
-
-        const result = await login(email, password);
-
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            setError(result.message);
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("Please enter a valid email address");
+            setIsLoading(false);
+            return;
         }
 
-        setLoading(false);
+        // Password strength validation
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters long");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Demo: direct login check (In real app, use proper authentication)
+            if (email === "admin@pankhudi.com" && password === "Pankhudi@123") {
+                localStorage.setItem("auth", "true");
+                if (rememberMe) {
+                    localStorage.setItem("rememberMe", "true");
+                }
+                window.location.reload();
+            } else {
+                setError("Invalid credentials. Please try again.");
+            }
+        } catch (err) {
+            setError("Login failed. Please try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleForgotPassword = () => {
+        alert("Please contact system administrator to reset your password.");
     };
 
     return (
         <div className="login-container">
-            <div className="login-form">
-                <h2>Pankhudi Admin Login</h2>
-                <p className="demo-credentials">Demo: admin@pankhudi.com / admin123</p>
+            {/* Website Header */}
+            <div className="website-header">
+                <div className="logo-container">
+                    <i className="fas fa-dove logo-icon"></i>
+                    <h1 className="website-name">Pankhudi</h1>
+                </div>
+                <p className="website-tagline">Empowering Dreams, Transforming Lives</p>
+            </div>
 
-                {error && <div className="error-message">{error}</div>}
+            <div className="login-card">
+                <div className="login-header">
+                    <div className="login-logo">
+                        <i className="fas fa-shield-alt"></i>
+                    </div>
+                    <h2>Pankhudi Admin Portal</h2>
+                    <p>Sign in to your administrator account</p>
+                </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                <form className="login-form" onSubmit={handleLogin}>
+                    {error && <div className="error-message">{error}</div>}
+
+                    <div className="input-group">
+                        <i className="fas fa-envelope"></i>
                         <input
                             type="email"
-                            id="email"
+                            placeholder="Email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            disabled={loading}
+                            disabled={isLoading}
+                            autoComplete="email"
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                    <div className="input-group">
+                        <i className="fas fa-lock"></i>
                         <input
-                            type="password"
-                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            disabled={loading}
+                            disabled={isLoading}
+                            autoComplete="current-password"
                         />
+                        <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                        </button>
+                    </div>
+
+                    <div className="login-options">
+                        <label className="remember-me">
+                            <input
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                disabled={isLoading}
+                            />
+                            <span>Remember me</span>
+                        </label>
+
+                        <button
+                            type="button"
+                            className="forgot-password"
+                            onClick={handleForgotPassword}
+                            disabled={isLoading}
+                        >
+                            Forgot password?
+                        </button>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className={`login-btn ${loading ? 'loading' : ''}`}
+                        className="login-button"
+                        disabled={isLoading}
                     >
-                        {loading ? 'Logging in...' : 'Login'}
+                        {isLoading ? (
+                            <>
+                                <i className="fas fa-spinner fa-spin"></i>
+                                Signing in...
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-sign-in-alt"></i>
+                                Sign In
+                            </>
+                        )}
                     </button>
                 </form>
+
+                <div className="login-footer">
+                    <p>Secure access • Encrypted connection</p>
+                    <div className="security-badge">
+                        <i className="fas fa-lock"></i>
+                        <span>SSL Secured</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="login-background">
+                <div className="background-shapes">
+                    <div className="shape shape-1"></div>
+                    <div className="shape shape-2"></div>
+                    <div className="shape shape-3"></div>
+                </div>
+            </div>
+
+            {/* Website Footer */}
+            <div className="website-footer">
+                <p>&copy; 2024 Pankhudi Foundation. All rights reserved.</p>
+                <div className="footer-links">
+                    <a href="#privacy">Privacy Policy</a>
+                    <a href="#terms">Terms of Service</a>
+                    <a href="#contact">Contact Us</a>
+                </div>
             </div>
         </div>
     );

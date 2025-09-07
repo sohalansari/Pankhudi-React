@@ -1,39 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const mysql = require("mysql2");
+require("dotenv").config();
 
-// Load environment variables
-dotenv.config();
-
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-
-// Import middlewares
-const errorMiddleware = require('./middlewares/errorMiddleware');
-
-const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
+const db = mysql.createConnection({
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASS || "",
+    database: process.env.DB_NAME || "user_db",
 });
 
-// Error handling middleware
-app.use(errorMiddleware);
-
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
+db.connect((err) => {
+    if (err) {
+        console.error("Database connection failed:", err.message);
+    } else {
+        console.log("✅ Connected to MySQL Database");
+    }
 });
 
-module.exports = app;
+module.exports = db;
