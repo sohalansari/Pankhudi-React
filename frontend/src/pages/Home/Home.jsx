@@ -504,12 +504,12 @@ const Home = () => {
                                         {product.discount ? (
                                             <>
                                                 <span className="original-price">₹{product.price}</span>
-                                                <span className="discounted-price">
+                                                <span className="discounted-prices">
                                                     ₹{Math.round(product.price * (1 - product.discount / 100))}
                                                 </span>
                                             </>
                                         ) : (
-                                            <span className="price">₹{product.price}</span>
+                                            <span className="prices">₹{product.price}</span>
                                         )}
                                     </div>
                                     <div className="product-rating">
@@ -561,8 +561,8 @@ const Home = () => {
                     </div>
                     <div className="trending-grid">
                         {products
-                            .filter(p => p.rating >= 4.5)
-                            .slice(0, 4)
+                            .filter(p => p.rating >= 3.5)
+                            .slice(0, 5)
                             .map(product => (
                                 <div key={product.id} className="trending-card">
                                     <div className="trending-image">
@@ -573,7 +573,7 @@ const Home = () => {
                                             onError={(e) => {
                                                 e.target.src = getFallbackProductImage(product.category);
                                             }}
-                                            onClick={() => navigateTo(`/product/${product.id}`)}
+                                            onClick={() => navigateTo(`/ProductDetail/${product.id}`)}
                                         />
                                         <span className="trending-pattern">{product.pattern}</span>
                                     </div>

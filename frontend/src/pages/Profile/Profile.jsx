@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FaArrowLeft, FaCopy, FaEdit, FaSave, FaUser, FaCrown,
   FaCheck, FaTimes, FaEye, FaEyeSlash, FaUpload, FaSignOutAlt,
@@ -37,6 +37,14 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: ""
   });
+
+  // Create ref for the main content area
+  const mainContentRef = useRef(null);
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    scrollToTop();
+  }, [activeTab]);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -82,6 +90,14 @@ const Profile = () => {
     }
   }, [theme, user]);
 
+  // Scroll to top function
+  const scrollToTop = () => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Calculate profile completion percentage
   const calculateProfileCompletion = (userData) => {
     const fields = ['name', 'email', 'phone', 'address', 'profileImage'];
@@ -94,6 +110,11 @@ const Profile = () => {
     });
 
     setProfileCompletion(Math.round((completedFields / fields.length) * 100));
+  };
+
+  // Handle tab change with scroll to top
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
   };
 
   // Copy function with visual feedback
@@ -407,31 +428,31 @@ const Profile = () => {
           <div className="sidebar-nav">
             <button
               className={`nav-item ${activeTab === "profile" ? "active" : ""}`}
-              onClick={() => setActiveTab("profile")}
+              onClick={() => handleTabChange("profile")}
             >
               <FaUser /> Personal Info
             </button>
             <button
               className={`nav-item ${activeTab === "security" ? "active" : ""}`}
-              onClick={() => setActiveTab("security")}
+              onClick={() => handleTabChange("security")}
             >
               <FaLock /> Security
             </button>
             <button
               className={`nav-item ${activeTab === "preferences" ? "active" : ""}`}
-              onClick={() => setActiveTab("preferences")}
+              onClick={() => handleTabChange("preferences")}
             >
               <FaPalette /> Preferences
             </button>
             <button
               className={`nav-item ${activeTab === "billing" ? "active" : ""}`}
-              onClick={() => setActiveTab("billing")}
+              onClick={() => handleTabChange("billing")}
             >
               <FaCreditCard /> Billing
             </button>
             <button
               className={`nav-item ${activeTab === "data" ? "active" : ""}`}
-              onClick={() => setActiveTab("data")}
+              onClick={() => handleTabChange("data")}
             >
               <FaDatabase /> Data
             </button>
@@ -439,7 +460,7 @@ const Profile = () => {
         </div>
 
         {/* Main Content */}
-        <div className="profile-main">
+        <div className="profile-main" ref={mainContentRef}>
           {/* Save Status Notification */}
           {saveStatus === "success" && (
             <div className="save-notification success">

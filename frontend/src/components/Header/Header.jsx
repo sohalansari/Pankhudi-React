@@ -38,29 +38,29 @@ const Header = () => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
 
-const fetchUserData = () => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
+    const fetchUserData = () => {
+        const token = localStorage.getItem('token');
+        setIsLoggedIn(!!token);
 
-    try {
-        const userFromStorage = localStorage.getItem('user'); // ✅ always read "user"
-        if (userFromStorage) {
-            setUserData(JSON.parse(userFromStorage));
+        try {
+            const userFromStorage = localStorage.getItem('user'); // ✅ always read "user"
+            if (userFromStorage) {
+                setUserData(JSON.parse(userFromStorage));
+            }
+        } catch (error) {
+            console.error('Error parsing user data:', error);
         }
-    } catch (error) {
-        console.error('Error parsing user data:', error);
-    }
-};
+    };
 
 
     useEffect(() => {
         fetchUserData();
-        
+
         // Set up listener for storage changes
         const handleStorageChange = () => {
             fetchUserData();
         };
-        
+
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
@@ -506,7 +506,7 @@ const fetchUserData = () => {
                             </div>
                         )}
 
-                        <motion.div
+                        {/* <motion.div
                             className="nav-icon-wrapper"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -528,7 +528,7 @@ const fetchUserData = () => {
                                     </motion.span>
                                 )}
                             </NavLink>
-                        </motion.div>
+                        </motion.div> */}
 
                         <motion.div
                             className="nav-icon-wrapper"

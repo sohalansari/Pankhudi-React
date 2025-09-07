@@ -913,13 +913,13 @@ body {
     font-size: var(--text-base);
 }
 
-.discounted-price {
+.discounted-prices {
     color: var(--primary-color);
-    font-weight: 700;
+    font-weight: 900;
     font-size: var(--text-lg);
 }
 
-.price {
+.prices {
     color: var(--secondary-color);
     font-weight: 700;
     font-size: var(--text-lg);

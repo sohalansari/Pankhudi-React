@@ -638,12 +638,12 @@
     font-size: 1.5rem;
 }
 
-.social-links {
+/* .social {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
     flex-wrap: wrap;
-}
+} */
 
 .social-link {
     padding: 0.8rem 1.5rem;
@@ -831,16 +831,17 @@
         padding: 1.8rem;
     }
 
-    .social-links {
+    /* .social {
         flex-direction: column;
         align-items: center;
-    }
+    } */
 
-    .social-link {
+    /* .social-link {
         width: 100%;
         max-width: 200px;
         text-align: center;
-    }
+    } */
+
 }
 
 /* Reduced motion for accessibility */
