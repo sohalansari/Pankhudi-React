@@ -348,7 +348,7 @@ const Profile = () => {
 
       {/* Header */}
       <div className="profile-header">
-        <button className="back-btn" onClick={() => navigate(-1)}>
+        <button className="back-bt" onClick={() => navigate(-1)}>
           <FaArrowLeft /> Back
         </button>
         <h2 className="site-name">

@@ -522,7 +522,7 @@ const Collections = () => {
                     )}
                 </>
             )}
-            <div className="footer">
+            <div className="footers">
                 <Footer />
             </div>
         </div>

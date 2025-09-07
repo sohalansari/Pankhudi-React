@@ -133,7 +133,7 @@
   backdrop-filter: blur(10px);
 }
 
-.back-btn,
+.back-bt,
 .logout-btn {
   display: flex;
   align-items: center;
@@ -148,7 +148,7 @@
   font-weight: 500;
 }
 
-.back-btn:hover,
+.back-bt:hover,
 .logout-btn:hover {
   background: var(--bg-tertiary);
   transform: translateY(-1px);

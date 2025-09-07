@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { GoogleOAuthProvider } from '@react-oauth/google'; // ✅ Import this
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import "@fortawesome/fontawesome-free/css/all.min.css";
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
