@@ -1,0 +1,84 @@
+PANKHUDI/
+┣ admin/
+┃ ┣ frontend/                 # React app (Admin dashboard UI)
+┃ ┃ ┣ public/
+┃ ┃ ┃ ┣ index.html
+┃ ┃ ┃ ┗ favicon.ico
+┃ ┃ ┣ src/
+┃ ┃ ┃ ┣ pages/
+┃ ┃ ┃ ┃ ┣ Dashboard/
+┃ ┃ ┃ ┃ ┃ ┣ Dashboard.js
+┃ ┃ ┃ ┃ ┃ ┣ Dashboard.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┣ Users/
+┃ ┃ ┃ ┃ ┃ ┣ Users.js
+┃ ┃ ┃ ┃ ┃ ┣ Users.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┣ Settings/
+┃ ┃ ┃ ┃ ┃ ┣ Settings.js
+┃ ┃ ┃ ┃ ┃ ┣ Settings.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┣ Login/
+┃ ┃ ┃ ┃ ┃ ┣ Login.js
+┃ ┃ ┃ ┃ ┃ ┣ Login.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┣ components/
+┃ ┃ ┃ ┃ ┣ Sidebar/
+┃ ┃ ┃ ┃ ┃ ┣ Sidebar.js
+┃ ┃ ┃ ┃ ┃ ┣ Sidebar.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┣ Navbar/
+┃ ┃ ┃ ┃ ┃ ┣ Navbar.js
+┃ ┃ ┃ ┃ ┃ ┣ Navbar.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┣ UserTable/
+┃ ┃ ┃ ┃ ┃ ┣ UserTable.js
+┃ ┃ ┃ ┃ ┃ ┣ UserTable.css
+┃ ┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┣ utils/
+┃ ┃ ┃ ┃ ┣ api.js             # Axios instance for API calls
+┃ ┃ ┃ ┃ ┗ constants.js       # App constants
+┃ ┃ ┃ ┣ contexts/
+┃ ┃ ┃ ┃ ┗ AuthContext.js     # Authentication context
+┃ ┃ ┃ ┣ hooks/
+┃ ┃ ┃ ┃ ┗ useAuth.js         # Custom authentication hook
+┃ ┃ ┃ ┣ styles/
+┃ ┃ ┃ ┃ ┣ global.css         # Global styles
+┃ ┃ ┃ ┃ ┣ variables.css      # CSS variables
+┃ ┃ ┃ ┃ ┗ index.css
+┃ ┃ ┃ ┣ App.js
+┃ ┃ ┃ ┣ App.css
+┃ ┃ ┃ ┗ index.js
+┃ ┃ ┣ package.json
+┃ ┃ ┗ .env
+┃ ┣ backend/                  # Express backend with MySQL
+┃ ┃ ┣ src/
+┃ ┃ ┃ ┣ config/
+┃ ┃ ┃ ┃ ┣ db.js              # MySQL connection
+┃ ┃ ┃ ┃ ┗ constants.js       # Backend constants
+┃ ┃ ┃ ┣ controllers/
+┃ ┃ ┃ ┃ ┣ userController.js
+┃ ┃ ┃ ┃ ┣ authController.js
+┃ ┃ ┃ ┃ ┗ dashboardController.js
+┃ ┃ ┃ ┣ routes/
+┃ ┃ ┃ ┃ ┣ userRoutes.js
+┃ ┃ ┃ ┃ ┣ authRoutes.js
+┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┣ middlewares/
+┃ ┃ ┃ ┃ ┣ authMiddleware.js
+┃ ┃ ┃ ┃ ┣ validationMiddleware.js
+┃ ┃ ┃ ┃ ┗ errorMiddleware.js
+┃ ┃ ┃ ┣ models/
+┃ ┃ ┃ ┃ ┣ User.js
+┃ ┃ ┃ ┃ ┗ index.js
+┃ ┃ ┃ ┣ utils/
+┃ ┃ ┃ ┃ ┣ helpers.js
+┃ ┃ ┃ ┃ ┗ validators.js
+┃ ┃ ┃ ┣ app.js
+┃ ┃ ┃ ┗ server.js
+┃ ┃ ┣ package.json
+┃ ┃ ┗ .env
+┃ ┗ README.md
+┗ package.json
