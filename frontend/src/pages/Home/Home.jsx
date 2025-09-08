@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from "axios";
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
@@ -39,42 +40,498 @@ const convertToINR = (usdPrice) => {
     return Math.round(usdPrice * conversionRate);
 };
 
-const products = [
-    { id: 1, name: 'Floral Summer Dress', price: convertToINR(14.99), image: 'https://assets.myntassets.com/dpr_1.5,q_60,w_400,c_limit,fl_progressive/assets/images/2024/JULY/25/6fLiiEYH_6c261927f7fd4270a9060e769ebbab0b.jpg', rating: 4.5, discount: 20, category: 'dresses', pattern: 'floral' },
-    { id: 2, name: 'Party Gown with Sequins', price: convertToINR(24.99), image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=500&auto=format&fit=crop', rating: 4.7, category: 'dresses', pattern: 'sequins' },
-    { id: 3, name: 'Cotton Casual Dress', price: convertToINR(9.99), image: 'https://i5.walmartimages.com/asr/4d8598c6-2488-42b6-8f8f-dfbf9b6d2769.5c5d1aca409d9588f46e909c2e2c4bbe.jpeg', rating: 4.2, discount: 10, category: 'dresses', pattern: 'solid' },
-    { id: 4, name: 'Striped Summer Dress', price: convertToINR(12.99), image: 'https://i.pinimg.com/originals/56/45/58/56455805102cb325429c575bf9c3d8fd.jpg', rating: 4.3, category: 'dresses', pattern: 'striped' },
-    { id: 5, name: 'Denim Pinafore Dress', price: convertToINR(19.99), image: 'https://i.pinimg.com/originals/4f/1c/7e/4f1c7edd51fb92222f282d03f0871936.jpg', rating: 4.4, category: 'dresses', pattern: 'denim' },
-    { id: 6, name: 'Printed Cotton T-Shirt', price: convertToINR(7.99), image: 'https://assets.myntassets.com/h_200,w_200,c_fill,g_auto/h_1440,q_100,w_1080/v1/assets/images/29490844/2024/5/11/55863cee-6c8c-4c6c-8e81-60c2f0d573c91715423030221MonteCarloPrintTop1.jpg', rating: 4.3, discount: 15, category: 'tops', pattern: 'printed' },
-    { id: 7, name: 'Ruffled Blouse', price: convertToINR(12.99), image: 'https://cdnb.lystit.com/photos/2012/07/07/brooks-brothers-white-noniron-cotton-ruffle-blouse-with-xla-product-1-4115777-803265422.jpeg', rating: 4.5, category: 'tops', pattern: 'ruffled' },
-    { id: 8, name: 'Sleeveless Crop Top', price: convertToINR(8.99), image: 'https://academy.scene7.com/is/image/academy/20891745?$pdp-gallery-ng$', rating: 4.1, discount: 10, category: 'tops', pattern: 'solid' },
-    { id: 9, name: 'Striped Off-Shoulder Top', price: convertToINR(11.99), image: 'http://img.shein.com/images/shein.com/201609/43/14748542626230334483.jpg', rating: 4.4, category: 'tops', pattern: 'striped' },
-    { id: 10, name: 'Plaid Button-Down Shirt', price: convertToINR(14.99), image: 'https://i.pinimg.com/originals/0f/be/1c/0fbe1ca641a8e65e647b84dbc0cb04e4.png', rating: 4.6, discount: 10, category: 'tops', pattern: 'plaid' },
-    { id: 11, name: 'Geometric Pattern Blouse', price: convertToINR(16.99), image: 'https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg', rating: 4.3, category: 'tops', pattern: 'geometric' },
-    { id: 12, name: 'Pleated School Skirt', price: convertToINR(14.99), image: 'https://m.media-amazon.com/images/I/61fSRtbAFNL._AC_UY1100_.jpg', rating: 4.6, category: 'skirts', pattern: 'pleated' },
-    { id: 13, name: 'Denim Mini Skirt', price: convertToINR(11.99), image: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&auto=format&fit=crop', rating: 4.2, discount: 12, category: 'skirts', pattern: 'denim' },
-    { id: 14, name: 'Tiered Floral Skirt', price: convertToINR(17.99), image: 'https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg', rating: 4.5, category: 'skirts', pattern: 'floral' },
-    { id: 15, name: 'Tartan Pattern Skirt', price: convertToINR(15.99), image: 'https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg', rating: 4.3, discount: 5, category: 'skirts', pattern: 'tartan' },
-    { id: 16, name: 'Anarkali Suit Set', price: convertToINR(29.99), image: 'https://images.unsplash.com/photo-1595341595379-cf0f2a7ab4a4?w=500&auto=format&fit=crop', rating: 4.8, category: 'ethnicwear', pattern: 'embroidered' },
-    { id: 17, name: 'Lehenga Choli Set', price: convertToINR(49.99), image: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=500&auto=format&fit=crop', rating: 4.9, discount: 15, category: 'lehengas', pattern: 'zari' },
-    { id: 18, name: 'Kurta with Palazzo', price: convertToINR(19.99), image: 'https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=500&auto=format&fit=crop', rating: 4.5, category: 'suits', pattern: 'printed' },
-    { id: 19, name: 'Banarasi Silk Saree', price: convertToINR(59.99), image: 'https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg', rating: 4.9, category: 'ethnicwear', pattern: 'banarasi' },
-    { id: 20, name: 'Kalamkari Printed Suit', price: convertToINR(24.99), image: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg', rating: 4.7, discount: 10, category: 'suits', pattern: 'kalamkari' },
-    { id: 21, name: 'Bandhani Lehenga', price: convertToINR(39.99), image: 'https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg', rating: 4.8, category: 'lehengas', pattern: 'bandhani' },
-    { id: 22, name: 'Phulkari Dupatta Set', price: convertToINR(17.99), image: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg', rating: 4.6, category: 'ethnicwear', pattern: 'phulkari' },
-    { id: 23, name: 'Woolen Sweater', price: convertToINR(22.99), image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4iZ7RHloK-eEUU-EVu1rd7KzNgTM_CStu88RMOuVRVvrz2sy_x5F3KkItuIr-SGZhq5I&usqp=CAU', rating: 4.3, discount: 10, category: 'winterwear', pattern: 'cable-knit' },
-    { id: 24, name: 'Padded Jacket', price: convertToINR(34.99), image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop', rating: 4.6, category: 'winterwear', pattern: 'quilted' },
-    { id: 25, name: 'Fair Isle Pattern Sweater', price: convertToINR(27.99), image: 'https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg', rating: 4.5, category: 'winterwear', pattern: 'fair-isle' },
-    { id: 26, name: 'Houndstooth Coat', price: convertToINR(39.99), image: 'https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg', rating: 4.7, discount: 15, category: 'winterwear', pattern: 'houndstooth' },
-    { id: 27, name: 'Hair Clips Set', price: convertToINR(4.99), image: 'https://images.unsplash.com/photo-1607602132700-0681204692c5?w=500&auto=format&fit=crop', rating: 4.2, category: 'accessories', pattern: 'floral' },
-    { id: 28, name: 'Printed Scrunchies', price: convertToINR(3.99), image: 'https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop', rating: 4.0, discount: 5, category: 'accessories', pattern: 'printed' },
-    { id: 29, name: 'Polka Dot Party Dress', price: convertToINR(22.99), image: 'https://m.media-amazon.com/images/I/61DvVQH5VCL._AC_UY1100_.jpg', rating: 4.6, discount: 15, category: 'dresses', pattern: 'polka-dot' },
-    { id: 30, name: 'Tie-Dye Maxi Dress', price: convertToINR(18.99), image: 'https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg', rating: 4.3, category: 'dresses', pattern: 'tie-dye' },
-    { id: 31, name: 'Chevron Pattern Dress', price: convertToINR(16.99), image: 'https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg', rating: 4.5, discount: 10, category: 'dresses', pattern: 'chevron' },
-    { id: 32, name: 'Animal Print Dress', price: convertToINR(21.99), image: 'https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg', rating: 4.4, category: 'dresses', pattern: 'animal-print' },
-    { id: 33, name: 'Designer Handbag', price: convertToINR(39.99), image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&auto=format&fit=crop', rating: 4.4, category: 'accessories', pattern: 'embossed' },
-    { id: 34, name: 'Paisley Print Scarf', price: convertToINR(8.99), image: 'https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg', rating: 4.3, category: 'accessories', pattern: 'paisley' },
-    { id: 35, name: 'Zigzag Pattern Socks', price: convertToINR(5.99), image: 'https://m.media-amazon.com/images/I/61f+4SdZbIL._AC_UY1100_.jpg', rating: 4.1, discount: 10, category: 'accessories', pattern: 'zigzag' }
+const manualProducts = [
+    {
+        id: 1,
+        name: 'Floral Summer Dress',
+        price: convertToINR(14.99),
+        images: ['https://assets.myntassets.com/dpr_1.5,q_60,w_400,c_limit,fl_progressive/assets/images/2024/JULY/25/6fLiiEYH_6c261927f7fd4270a9060e769ebbab0b.jpg'],
+        rating: 4.5,
+        discount: 20,
+        category: 'dresses',
+        pattern: 'floral',
+        brand: 'Pankhudi',
+        stock: 15,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 2,
+        name: 'Party Gown with Sequins',
+        price: convertToINR(24.99),
+        images: ['https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=500&auto=format&fit=crop'],
+        rating: 4.7,
+        discount: 0,
+        category: 'dresses',
+        pattern: 'sequins',
+        brand: 'GlamourWear',
+        stock: 8,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 3,
+        name: 'Cotton Casual Dress',
+        price: convertToINR(9.99),
+        images: ['https://i5.walmartimages.com/asr/4d8598c6-2488-42b6-8f8f-dfbf9b6d2769.5c5d1aca409d9588f46e909c2e2c4bbe.jpeg'],
+        rating: 4.2,
+        discount: 10,
+        category: 'dresses',
+        pattern: 'solid',
+        brand: 'CasualCloth',
+        stock: 20,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 4,
+        name: 'Striped Summer Dress',
+        price: convertToINR(12.99),
+        images: ['https://i.pinimg.com/originals/56/45/58/56455805102cb325429c575bf9c3d8fd.jpg'],
+        rating: 4.3,
+        discount: 0,
+        category: 'dresses',
+        pattern: 'striped',
+        brand: 'SummerStyle',
+        stock: 12,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 5,
+        name: 'Denim Pinafore Dress',
+        price: convertToINR(19.99),
+        images: ['https://i.pinimg.com/originals/4f/1c/7e/4f1c7edd51fb92222f282d03f0871936.jpg'],
+        rating: 4.4,
+        discount: 0,
+        category: 'dresses',
+        pattern: 'denim',
+        brand: 'DenimWear',
+        stock: 10,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 6,
+        name: 'Printed Cotton T-Shirt',
+        price: convertToINR(7.99),
+        images: ['https://assets.myntassets.com/h_200,w_200,c_fill,g_auto/h_1440,q_100,w_1080/v1/assets/images/29490844/2024/5/11/55863cee-6c8c-4c6c-8e81-60c2f0d573c91715423030221MonteCarloPrintTop1.jpg'],
+        rating: 4.3,
+        discount: 15,
+        category: 'tops',
+        pattern: 'printed',
+        brand: 'MonteCarlo',
+        stock: 25,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 7,
+        name: 'Ruffled Blouse',
+        price: convertToINR(12.99),
+        images: ['https://cdnb.lystit.com/photos/2012/07/07/brooks-brothers-white-noniron-cotton-ruffle-blouse-with-xla-product-1-4115777-803265422.jpeg'],
+        rating: 4.5,
+        discount: 0,
+        category: 'tops',
+        pattern: 'ruffled',
+        brand: 'Brooks Brothers',
+        stock: 18,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 8,
+        name: 'Sleeveless Crop Top',
+        price: convertToINR(8.99),
+        images: ['https://academy.scene7.com/is/image/academy/20891745?$pdp-gallery-ng$'],
+        rating: 4.1,
+        discount: 10,
+        category: 'tops',
+        pattern: 'solid',
+        brand: 'TrendyFit',
+        stock: 22,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 9,
+        name: 'Striped Off-Shoulder Top',
+        price: convertToINR(11.99),
+        images: ['http://img.shein.com/images/shein.com/201609/43/14748542626230334483.jpg'],
+        rating: 4.4,
+        discount: 0,
+        category: 'tops',
+        pattern: 'striped',
+        brand: 'SheIn',
+        stock: 14,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 10,
+        name: 'Plaid Button-Down Shirt',
+        price: convertToINR(14.99),
+        images: ['https://i.pinimg.com/originals/0f/be/1c/0fbe1ca641a8e65e647b84dbc0cb04e4.png'],
+        rating: 4.6,
+        discount: 10,
+        category: 'tops',
+        pattern: 'plaid',
+        brand: 'ClassicWear',
+        stock: 16,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 11,
+        name: 'Geometric Pattern Blouse',
+        price: convertToINR(16.99),
+        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
+        rating: 4.3,
+        discount: 0,
+        category: 'tops',
+        pattern: 'geometric',
+        brand: 'GeoStyle',
+        stock: 20,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 12,
+        name: 'Pleated School Skirt',
+        price: convertToINR(14.99),
+        images: ['https://m.media-amazon.com/images/I/61fSRtbAFNL._AC_UY1100_.jpg'],
+        rating: 4.6,
+        discount: 0,
+        category: 'skirts',
+        pattern: 'pleated',
+        brand: 'SchoolWear',
+        stock: 30,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 13,
+        name: 'Denim Mini Skirt',
+        price: convertToINR(11.99),
+        images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&auto=format&fit=crop'],
+        rating: 4.2,
+        discount: 12,
+        category: 'skirts',
+        pattern: 'denim',
+        brand: 'DenimStyle',
+        stock: 18,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 14,
+        name: 'Tiered Floral Skirt',
+        price: convertToINR(17.99),
+        images: ['https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg'],
+        rating: 4.5,
+        discount: 0,
+        category: 'skirts',
+        pattern: 'floral',
+        brand: 'FloralWear',
+        stock: 14,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 15,
+        name: 'Tartan Pattern Skirt',
+        price: convertToINR(15.99),
+        images: ['https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg'],
+        rating: 4.3,
+        discount: 5,
+        category: 'skirts',
+        pattern: 'tartan',
+        brand: 'ClassicWear',
+        stock: 12,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 16,
+        name: 'Anarkali Suit Set',
+        price: convertToINR(29.99),
+        images: ['https://images.unsplash.com/photo-1595341595379-cf0f2a7ab4a4?w=500&auto=format&fit=crop'],
+        rating: 4.8,
+        discount: 0,
+        category: 'ethnicwear',
+        pattern: 'embroidered',
+        brand: 'EthnicElegance',
+        stock: 8,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 17,
+        name: 'Lehenga Choli Set',
+        price: convertToINR(49.99),
+        images: ['https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=500&auto=format&fit=crop'],
+        rating: 4.9,
+        discount: 15,
+        category: 'lehengas',
+        pattern: 'zari',
+        brand: 'RoyalLehenga',
+        stock: 5,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 18,
+        name: 'Kurta with Palazzo',
+        price: convertToINR(19.99),
+        images: ['https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=500&auto=format&fit=crop'],
+        rating: 4.5,
+        discount: 0,
+        category: 'suits',
+        pattern: 'printed',
+        brand: 'ComfortWear',
+        stock: 12,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 19,
+        name: 'Banarasi Silk Saree',
+        price: convertToINR(59.99),
+        images: ['https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg'],
+        rating: 4.9,
+        discount: 0,
+        category: 'ethnicwear',
+        pattern: 'banarasi',
+        brand: 'Banarasi',
+        stock: 7,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 20,
+        name: 'Kalamkari Printed Suit',
+        price: convertToINR(24.99),
+        images: ['https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg'],
+        rating: 4.7,
+        discount: 10,
+        category: 'suits',
+        pattern: 'kalamkari',
+        brand: 'HandCrafted',
+        stock: 10,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 21,
+        name: 'Bandhani Lehenga',
+        price: convertToINR(39.99),
+        images: ['https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg'],
+        rating: 4.8,
+        discount: 0,
+        category: 'lehengas',
+        pattern: 'bandhani',
+        brand: 'RoyalLehenga',
+        stock: 5,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 22,
+        name: 'Phulkari Dupatta Set',
+        price: convertToINR(17.99),
+        images: ['https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg'],
+        rating: 4.6,
+        discount: 0,
+        category: 'ethnicwear',
+        pattern: 'phulkari',
+        brand: 'EthnicElegance',
+        stock: 10,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 23,
+        name: 'Woolen Sweater',
+        price: convertToINR(22.99),
+        images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4iZ7RHloK-eEUU-EVu1rd7KzNgTM_CStu88RMOuVRVvrz2sy_x5F3KkItuIr-SGZhq5I&usqp=CAU'],
+        rating: 4.3,
+        discount: 10,
+        category: 'winterwear',
+        pattern: 'cable-knit',
+        brand: 'WinterCozy',
+        stock: 12,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 24,
+        name: 'Padded Jacket',
+        price: convertToINR(34.99),
+        images: ['https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop'],
+        rating: 4.6,
+        discount: 0,
+        category: 'winterwear',
+        pattern: 'quilted',
+        brand: 'WinterCozy',
+        stock: 8,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 25,
+        name: 'Fair Isle Pattern Sweater',
+        price: convertToINR(27.99),
+        images: ['https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg'],
+        rating: 4.5,
+        discount: 0,
+        category: 'winterwear',
+        pattern: 'fair-isle',
+        brand: 'WinterCozy',
+        stock: 10,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 26,
+        name: 'Houndstooth Coat',
+        price: convertToINR(39.99),
+        images: ['https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg'],
+        rating: 4.7,
+        discount: 15,
+        category: 'winterwear',
+        pattern: 'houndstooth',
+        brand: 'WinterCozy',
+        stock: 7,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 27,
+        name: 'Hair Clips Set',
+        price: convertToINR(4.99),
+        images: ['https://images.unsplash.com/photo-1607602132700-0681204692c5?w=500&auto=format&fit=crop'],
+        rating: 4.2,
+        discount: 0,
+        category: 'accessories',
+        pattern: 'floral',
+        brand: 'TrendyHair',
+        stock: 50,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 28,
+        name: 'Printed Scrunchies',
+        price: convertToINR(3.99),
+        images: ['https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop'],
+        rating: 4.0,
+        discount: 5,
+        category: 'accessories',
+        pattern: 'printed',
+        brand: 'TrendyHair',
+        stock: 45,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 29,
+        name: 'Polka Dot Party Dress',
+        price: convertToINR(22.99),
+        images: ['https://m.media-amazon.com/images/I/61DvVQH5VCL._AC_UY1100_.jpg'],
+        rating: 4.6,
+        discount: 15,
+        category: 'dresses',
+        pattern: 'polka-dot',
+        brand: 'PartyWear',
+        stock: 8,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 30,
+        name: 'Tie-Dye Maxi Dress',
+        price: convertToINR(18.99),
+        images: ['https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg'],
+        rating: 4.3,
+        discount: 0,
+        category: 'dresses',
+        pattern: 'tie-dye',
+        brand: 'SummerStyle',
+        stock: 10,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 31,
+        name: 'Chevron Pattern Dress',
+        price: convertToINR(16.99),
+        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
+        rating: 4.5,
+        discount: 10,
+        category: 'dresses',
+        pattern: 'chevron',
+        brand: 'FashionHub',
+        stock: 12,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 32,
+        name: 'Animal Print Dress',
+        price: convertToINR(21.99),
+        images: ['https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg'],
+        rating: 4.4,
+        discount: 0,
+        category: 'dresses',
+        pattern: 'animal-print',
+        brand: 'WildStyle',
+        stock: 9,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 33,
+        name: 'Designer Handbag',
+        price: convertToINR(39.99),
+        images: ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&auto=format&fit=crop'],
+        rating: 4.4,
+        discount: 0,
+        category: 'accessories',
+        pattern: 'embossed',
+        brand: 'LuxuryBag',
+        stock: 15,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 34,
+        name: 'Paisley Print Scarf',
+        price: convertToINR(8.99),
+        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
+        rating: 4.3,
+        discount: 0,
+        category: 'accessories',
+        pattern: 'paisley',
+        brand: 'FashionScarf',
+        stock: 20,
+        status: 'Active',
+        isApiProduct: false
+    },
+    {
+        id: 35,
+        name: 'Zigzag Pattern Socks',
+        price: convertToINR(5.99),
+        images: ['https://m.media-amazon.com/images/I/61f+4SdZbIL._AC_UY1100_.jpg'],
+        rating: 4.1,
+        discount: 10,
+        category: 'accessories',
+        pattern: 'zigzag',
+        brand: 'HappyFeet',
+        stock: 30,
+        status: 'Active',
+        isApiProduct: false
+    }
+
 ];
 
 const sliderItems = [
@@ -142,12 +599,109 @@ const Home = () => {
     const [progress, setProgress] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [activeFilter, setActiveFilter] = useState('all');
+    const [activeFilter, setActiveFilter] = useState("all");
     const [hoveredProduct, setHoveredProduct] = useState(null);
+    const [apiProducts, setApiProducts] = useState([]);
+    const [mergedProducts, setMergedProducts] = useState([]);
     const navigate = useNavigate();
     const testimonialsScrollRef = useRef(null);
+    const API = "http://localhost:5000"; // backend URL
 
-    // Scroll functions - add these
+    // ✅ Product image formatter
+    const getProductImage = (product) => {
+        if (product.images && product.images.length > 0) {
+            return product.images[0].startsWith("http")
+                ? product.images[0]
+                : `${API}${product.images[0]}`;
+        }
+        if (product.image) {
+            return product.image.startsWith("http")
+                ? product.image
+                : `${API}${product.image}`;
+        }
+        return "https://via.placeholder.com/300x300?text=No+Image";
+    };
+
+    useEffect(() => {
+        axios
+            .get(`${API}/api/products`)
+            .then((res) => {
+                if (Array.isArray(res.data)) {
+                    const sanitized = res.data.map((p, index) => {
+                        const productImage =
+                            Array.isArray(p.images) && p.images.length > 0
+                                ? p.images[0] // ✅ backend se first image
+                                : getFallbackProductImage(p.category);
+
+                        return {
+                            id: p.id || `api-${index}`,
+                            name: p.name || "No Name",
+                            description: p.description || "",
+                            price: Number(p.price) || 0,
+                            category: p.category || "General",
+                            pattern: p.pattern || "N/A",
+                            rating: p.rating || 0,
+                            discount: p.discount || 0,
+                            stock: p.stock || 0,
+                            brand: p.brand || "Unknown",
+                            status: p.status || "active",
+                            image: productImage, // ✅ sirf ek image
+                            images: p.images || [], // ✅ detail page ke liye pura array
+                            isApiProduct: true,
+                        };
+                    });
+                    setApiProducts(sanitized);
+                }
+            })
+            .catch((err) => {
+                console.error("❌ Fetch error:", err);
+                setApiProducts([]);
+            });
+    }, []);
+
+    // ✅ Merge API + Manual Products
+    useEffect(() => {
+        if (apiProducts.length > 0) {
+            const filteredManual = manualProducts.filter(
+                (manualP) =>
+                    !apiProducts.some(
+                        (apiP) =>
+                            apiP.name.toLowerCase() === manualP.name.toLowerCase() &&
+                            apiP.category.toLowerCase() === manualP.category.toLowerCase()
+                    )
+            );
+
+            const combined = [
+                ...apiProducts.map((p) => ({
+                    ...p,
+                    image: p.image || getFallbackProductImage(p.category), // ✅ direct image
+                })),
+                ...filteredManual.map((p) => ({
+                    ...p,
+                    image: p.image || getFallbackProductImage(p.category),
+                    isApiProduct: false,
+                })),
+            ];
+
+            setMergedProducts(combined);
+
+            const uniqueCategories = [...new Set(combined.map((p) => p.category))];
+            setCategories(uniqueCategories);
+        } else {
+            const fallbackManual = manualProducts.map((p) => ({
+                ...p,
+                image: p.image || getFallbackProductImage(p.category),
+                isApiProduct: false,
+            }));
+
+            setMergedProducts(fallbackManual);
+
+            const uniqueCategories = [...new Set(fallbackManual.map((p) => p.category))];
+            setCategories(uniqueCategories);
+        }
+    }, [apiProducts]);
+
+    // Scroll functions
     const scrollLeft = () => {
         if (testimonialsScrollRef.current) {
             testimonialsScrollRef.current.scrollBy({ left: -400, behavior: 'smooth' });
@@ -159,26 +713,30 @@ const Home = () => {
             testimonialsScrollRef.current.scrollBy({ left: 400, behavior: 'smooth' });
         }
     };
+
+    // Image loading and progress
     useEffect(() => {
-        const uniqueCategories = [...new Set(products.map(p => p.category))];
-        const totalImages = products.length + sliderItems.length + uniqueCategories.length;
+        const totalImages = mergedProducts.length + sliderItems.length + categories.length;
+        if (totalImages === 0) return;
+
         let loaded = 0;
 
         const onLoad = () => {
             loaded++;
+            setProgress(Math.round((loaded / totalImages) * 100));
             if (loaded >= totalImages) {
                 setImagesLoaded(true);
             }
         };
 
-        uniqueCategories.forEach(category => {
+        categories.forEach(category => {
             const img = new Image();
             img.src = getCategoryImage(category);
             img.onload = onLoad;
             img.onerror = onLoad;
         });
 
-        products.forEach(product => {
+        mergedProducts.forEach(product => {
             const img = new Image();
             img.src = product.image;
             img.onload = onLoad;
@@ -194,32 +752,14 @@ const Home = () => {
             img.onload = onLoad;
             img.onerror = onLoad;
         });
-    }, []);
+    }, [mergedProducts, categories]);
 
     useEffect(() => {
         if (!imagesLoaded) return;
 
-        const timer = setTimeout(() => setIsLoading(false), 2000);
-        const progressTimer = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(progressTimer);
-                    return 100;
-                }
-                return prev + (imagesLoaded ? 20 : 5);
-            });
-        }, 200);
-
-        return () => {
-            clearTimeout(timer);
-            clearInterval(progressTimer);
-        };
+        const timer = setTimeout(() => setIsLoading(false), 1000);
+        return () => clearTimeout(timer);
     }, [imagesLoaded]);
-
-    useEffect(() => {
-        const uniqueCategories = [...new Set(products.map(p => p.category))];
-        setCategories(uniqueCategories);
-    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -281,8 +821,8 @@ const Home = () => {
     };
 
     const getFilteredProducts = () => {
-        if (activeFilter === 'all') return products;
-        return products.filter(product => product.pattern === activeFilter);
+        if (activeFilter === 'all') return mergedProducts;
+        return mergedProducts.filter(product => product.pattern === activeFilter);
     };
 
     if (isLoading) {
@@ -294,8 +834,8 @@ const Home = () => {
                     <div className="loading-progress-bar">
                         <div className="loading-progress" style={{ width: `${progress}%` }} />
                     </div>
-                    <p>Loading your fashion world...</p>
-                    {!imagesLoaded && progress < 100 && (
+                    <p>Loading your fashion world... {progress}%</p>
+                    {progress < 100 && (
                         <p className="slow-internet-warning">Loading images... This may take longer on slow connections.</p>
                     )}
                 </div>
@@ -415,8 +955,6 @@ const Home = () => {
                     </div>
                 </section>
 
-
-
                 <section className="pattern-filter-section">
                     <h3>Shop by Pattern</h3>
                     <div className="pattern-filters">
@@ -462,27 +1000,29 @@ const Home = () => {
                 <section className="featured-section">
                     <div className="section-header">
                         <h2>All Products</h2>
-                        <button
-                            className="view-all"
-                            onClick={() => navigateTo('/products')}
-                        >
+                        <button className="view-all" onClick={() => navigateTo("/products")}>
                             View All
                         </button>
                     </div>
+
                     <div className="products-grid">
-                        {getFilteredProducts().map((product) => (
+                        {getFilteredProducts().map((product, index) => (
                             <div
-                                key={product.id}
-                                className="product-card"
+                                key={index}
+                                className={`product-card ${product.isApiProduct ? "api-product" : ""}`}
                                 onMouseEnter={() => setHoveredProduct(product.id)}
                                 onMouseLeave={() => setHoveredProduct(null)}
                             >
+                                {/* 🔥 Badges */}
+                                {product.isApiProduct && <span className="api-badge">New</span>}
                                 {product.discount && (
                                     <span className="discount-badge">-{product.discount}%</span>
                                 )}
+
+                                {/* 🔥 Product Image */}
                                 <div className="product-image">
                                     <img
-                                        src={product.image}
+                                        src={getProductImage(product)}
                                         alt={product.name}
                                         loading="lazy"
                                         onError={(e) => {
@@ -490,50 +1030,90 @@ const Home = () => {
                                         }}
                                         onClick={() => navigate(`/ProductDetail/${product.id}`)}
                                     />
+
                                     <button
-                                        className={`quick-view ${hoveredProduct === product.id ? 'visible' : ''}`}
+                                        className={`quick-view ${hoveredProduct === product.id ? "visible" : ""
+                                            }`}
                                         onClick={() => navigate(`/ProductDetail/${product.id}`)}
                                     >
                                         Quick View
                                     </button>
-                                    <span className="product-pattern">{product.pattern}</span>
+                                    {product.pattern && (
+                                        <span className="product-pattern">{product.pattern}</span>
+                                    )}
                                 </div>
+
+                                {/* 🔥 Product Info */}
                                 <div className="product-info">
                                     <h3>{product.name}</h3>
+                                    <p className="brand">Brand: {product.brand || "N/A"}</p>
+
+                                    {/* Price Section */}
                                     <div className="price-container">
                                         {product.discount ? (
                                             <>
                                                 <span className="original-price">₹{product.price}</span>
                                                 <span className="discounted-prices">
-                                                    ₹{Math.round(product.price * (1 - product.discount / 100))}
+                                                    ₹
+                                                    {Math.round(
+                                                        product.price * (1 - product.discount / 100)
+                                                    )}
                                                 </span>
                                             </>
                                         ) : (
                                             <span className="prices">₹{product.price}</span>
                                         )}
                                     </div>
+
+                                    {/* Ratings */}
                                     <div className="product-rating">
                                         {[...Array(5)].map((_, i) => (
                                             <span
                                                 key={i}
-                                                className={i < Math.floor(product.rating) ? 'star filled' : 'star'}
+                                                className={
+                                                    i < Math.floor(product.rating) ? "star filled" : "star"
+                                                }
                                             >
-                                                {i < Math.floor(product.rating) ? '★' : '☆'}
+                                                {i < Math.floor(product.rating) ? "★" : "☆"}
                                             </span>
                                         ))}
-                                        <span>({product.rating.toFixed(1)})</span>
+                                        <span>({product.rating?.toFixed(1) || "0.0"})</span>
                                     </div>
+
+                                    {/* Stock and Status */}
+                                    <div className="product-meta">
+                                        <p className="stock">
+                                            <span className="meta-label">Stock:</span>
+                                            <span
+                                                className={`stock-value ${product.stock > 0 ? "in-stock" : "out-of-stock"}`}
+                                            >
+                                                {product.stock > 0 ? `${product.stock} available` : "Out of stock"}
+                                            </span>
+                                        </p>
+                                        <p className="status">
+                                            <span className="meta-label">Status:</span>
+                                            <span className={`status-value ${product.status === "Active" ? "active" : "inactive"}`}>
+                                                {product.status || "Active"}
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    {/* Add to Cart */}
                                     <button
-                                        className="add-to-cart"
+                                        className={`add-to-cart ${product.stock <= 0 ? "disabled" : ""}`}
                                         onClick={() => handleAddToCart(product)}
+                                        disabled={product.stock <= 0}
                                     >
-                                        Add to Cart
+                                        {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </section>
+
+
+
 
                 <section className="offer-banner">
                     <div className="offer-content">
@@ -560,11 +1140,11 @@ const Home = () => {
                         </button>
                     </div>
                     <div className="trending-grid">
-                        {products
+                        {mergedProducts
                             .filter(p => p.rating >= 3.5)
                             .slice(0, 5)
-                            .map(product => (
-                                <div key={product.id} className="trending-card">
+                            .map((product, index) => (
+                                <div key={index} className="trending-card">
                                     <div className="trending-image">
                                         <img
                                             src={product.image}
@@ -660,41 +1240,6 @@ const Home = () => {
                                 <p>Resist dyeing technique</p>
                             </div>
                         </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('block-print')}>
-                            <div className="slide-content">
-                                <h3>Block Print</h3>
-                                <p>Handcrafted printing art</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('embroidered')}>
-                            <div className="slide-content">
-                                <h3>Embroidered</h3>
-                                <p>Intricate thread work</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('checkered')}>
-                            <div className="slide-content">
-                                <h3>Checkered</h3>
-                                <p>Classic check patterns</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('animal-print')}>
-                            <div className="slide-content">
-                                <h3>Animal Print</h3>
-                                <p>Wild & exotic patterns</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('tie-dye')}>
-                            <div className="slide-content">
-                                <h3>Tie Dye</h3>
-                                <p>Colorful dye patterns</p>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
@@ -705,15 +1250,12 @@ const Home = () => {
                     </div>
 
                     <div className="testimonials-container">
-                        {/* Left Scroll Button - Positioned at middle left */}
                         <button className="scroll-btn scroll-left" onClick={scrollLeft}>
                             ‹
                         </button>
 
-                        {/* Testimonials Scroll Container */}
                         <div className="testimonials-scroll-container">
                             <div className="testimonials-scroll" ref={testimonialsScrollRef}>
-                                {/* Testimonial 1 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★★
@@ -734,7 +1276,6 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial 2 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★★
@@ -745,7 +1286,7 @@ const Home = () => {
                                     </div>
                                     <div className="testimonial-author">
                                         <img
-                                            src="https://images.unsplash.com/photo-1516726817505-5ed934c485c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGluZGlhbiUyMHdvbWFufGVufDB8fDB8fHww&auto=format&fit=crop&w=400&q=60"
+                                            src="https://images.unsplash.com/photo-1516726817505-5ed934c485c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGluZGlhbiU20wd29tYW58ZW58MHx8MHx8fHww&auto=format&fit=crop&w=400&q=60"
                                             alt="Ananya Patel"
                                         />
                                         <div className="author-info">
@@ -755,7 +1296,6 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial 3 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★☆
@@ -776,7 +1316,6 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial 4 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★★
@@ -797,7 +1336,6 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial 5 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★☆
@@ -818,7 +1356,6 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial 6 */}
                                 <div className="testimonial-card">
                                     <div className="testimonial-rating">
                                         ★★★★★
@@ -841,13 +1378,11 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Right Scroll Button - Positioned at middle right */}
                         <button className="scroll-btn scroll-right" onClick={scrollRight}>
                             ›
                         </button>
                     </div>
                 </section>
-
 
                 <section className="newsletter-section">
                     <div className="newsletter-container">
@@ -876,6 +1411,7 @@ const Home = () => {
                         </form>
                     </div>
                 </section>
+
             </main>
             <Footer />
             <ChatBot isPremium={true} />

@@ -692,6 +692,81 @@ app.post('/api/chat', async (req, res) => {
 
 
 
+
+
+
+
+
+
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(express.json());
+
+// ✅ Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// List all products
+app.get("/api/products", (req, res) => {
+    const sql = "SELECT * FROM products ORDER BY created_at DESC";
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const parsed = results.map(r => ({
+            ...r,
+            images: JSON.parse(r.images || "[]").map(img => `${req.protocol}://${req.get('host')}/uploads/${img}`)
+        }));
+
+        res.json(parsed);
+    });
+});
+// Single product by ID
+app.get("/api/products/:id", (req, res) => {
+    const sql = "SELECT * FROM products WHERE id = ?";
+    db.query(sql, [req.params.id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!results.length) return res.status(404).json({ error: "Product not found" });
+
+        const product = {
+            ...results[0],
+            images: JSON.parse(results[0].images || "[]").map(img => `${req.protocol}://${req.get('host')}/uploads/${img}`)
+        };
+
+        res.json(product);
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

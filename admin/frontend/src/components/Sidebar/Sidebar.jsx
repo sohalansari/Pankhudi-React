@@ -8,11 +8,14 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
     const menuItems = [
         { path: "/dashboard", name: "Dashboard", icon: "📊" },
         { path: "/users", name: "Users", icon: "👥" },
+        { path: "/add-product", name: "Add Product", icon: "➕" },
+        { path: "/products", name: "Manage Products", icon: "🛒" },
+        { path: "/settings", name: "Settings", icon: "⚙️" },
         { path: "/analytics", name: "Analytics", icon: "📈" },
         { path: "/content", name: "Content", icon: "📝" },
-        { path: "/settings", name: "Settings", icon: "⚙️" },
         { path: "/reports", name: "Reports", icon: "📄" },
         { path: "/help", name: "Help & Support", icon: "❓" },
+
 
     ];
 
