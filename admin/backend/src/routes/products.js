@@ -20,7 +20,9 @@ const upload = multer({ storage });
 
 const BASE_URL = process.env.ADMIN_PUBLIC_URL || "http://localhost:5001";
 
-// ✅ Add product
+/* ================================
+   ✅ Add product with rating
+================================ */
 router.post("/add", upload.array("images", 4), (req, res) => {
     const {
         name,
@@ -31,6 +33,7 @@ router.post("/add", upload.array("images", 4), (req, res) => {
         category_id,
         brand,
         status,
+        rating,   // ⭐ added
     } = req.body;
 
     if (!name) return res.status(400).json({ error: "Name required" });
@@ -41,8 +44,8 @@ router.post("/add", upload.array("images", 4), (req, res) => {
 
     const sql = `
         INSERT INTO products 
-        (name, description, price, discount, stock, category_id, brand, images, status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (name, description, price, discount, stock, category_id, brand, images, status, rating) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -57,6 +60,7 @@ router.post("/add", upload.array("images", 4), (req, res) => {
             brand || "",
             JSON.stringify(images),
             status || "active",
+            rating || 0,  // ⭐ default 0
         ],
         (err, result) => {
             if (err) {
@@ -67,12 +71,15 @@ router.post("/add", upload.array("images", 4), (req, res) => {
                 message: "Product added",
                 id: result.insertId,
                 images,
+                rating: rating || 0,
             });
         }
     );
 });
 
-// ✅ List products
+/* ================================
+   ✅ List products
+================================ */
 router.get("/", (req, res) => {
     const sql = "SELECT * FROM products ORDER BY created_at DESC";
     db.query(sql, (err, results) => {
@@ -85,7 +92,9 @@ router.get("/", (req, res) => {
     });
 });
 
-// ✅ Update product (with image update)
+/* ================================
+   ✅ Update product with rating
+================================ */
 router.put("/:id", upload.array("images", 4), (req, res) => {
     const { id } = req.params;
     const {
@@ -97,8 +106,8 @@ router.put("/:id", upload.array("images", 4), (req, res) => {
         category_id,
         brand,
         status,
+        rating,  // ⭐ added
     } = req.body;
-
 
     let oldImages = [];
     if (req.body.oldImages) {
@@ -117,7 +126,7 @@ router.put("/:id", upload.array("images", 4), (req, res) => {
 
     const sql = `
         UPDATE products 
-        SET name=?, description=?, price=?, discount=?, stock=?, category_id=?, brand=?, status=?, images=?, updated_at=NOW()
+        SET name=?, description=?, price=?, discount=?, stock=?, category_id=?, brand=?, status=?, images=?, rating=?, updated_at=NOW()
         WHERE id=?
     `;
 
@@ -133,6 +142,7 @@ router.put("/:id", upload.array("images", 4), (req, res) => {
             brand,
             status,
             JSON.stringify(finalImages),
+            rating || 0,
             id,
         ],
         (err, result) => {
@@ -144,12 +154,15 @@ router.put("/:id", upload.array("images", 4), (req, res) => {
                 message: "Product updated",
                 affectedRows: result.affectedRows,
                 images: finalImages,
+                rating: rating || 0,
             });
         }
     );
 });
 
-// ✅ Delete product
+/* ================================
+   ✅ Delete product
+================================ */
 router.delete("/:id", (req, res) => {
     const { id } = req.params;
     const sql = "DELETE FROM products WHERE id=?";

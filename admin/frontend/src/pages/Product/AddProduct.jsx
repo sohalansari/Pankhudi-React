@@ -10,6 +10,7 @@ export default function AddProduct() {
         description: "",
         price: "",
         discount: "",
+        rating: "0",   // ⭐ NEW default rating
         stock: "",
         category_id: "",
         brand: "",
@@ -27,19 +28,17 @@ export default function AddProduct() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [showCategoryModal, setShowCategoryModal] = useState(false);
-    const [newCategory, setNewCategory] = useState({
-        name: "",
-        description: ""
-    });
+    const [newCategory, setNewCategory] = useState({ name: "", description: "" });
     const [categoryErrors, setCategoryErrors] = useState({});
     const [categoryLoading, setCategoryLoading] = useState(false);
 
+    // ✅ Validate Form
     const validateForm = () => {
         const newErrors = {};
-
         if (!form.name.trim()) newErrors.name = "Product name is required";
         if (!form.price || form.price <= 0) newErrors.price = "Valid price is required";
-        if (form.discount < 0 || form.discount > 100) newErrors.discount = "Discount must be between 0-100%";
+        if (form.discount < 0 || form.discount > 100) newErrors.discount = "Discount must be between 0–100%";
+        if (form.rating < 0 || form.rating > 5) newErrors.rating = "Rating must be between 0 and 5";
         if (form.stock < 0) newErrors.stock = "Stock cannot be negative";
         if (!form.category_id) newErrors.category_id = "Category is required";
         if (files.length === 0) newErrors.images = "At least one image is required";
@@ -48,57 +47,48 @@ export default function AddProduct() {
         return Object.keys(newErrors).length === 0;
     };
 
+    // ✅ Validate Category
     const validateCategoryForm = () => {
         const newErrors = {};
-
         if (!newCategory.name.trim()) newErrors.name = "Category name is required";
-
         setCategoryErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
+    // ✅ Handle Input Change
     const onChange = e => {
         const { name, value } = e.target;
         setForm({ ...form, [name]: value });
-        // Clear error when user starts typing
-        if (errors[name]) {
-            setErrors({ ...errors, [name]: "" });
-        }
+        if (errors[name]) setErrors({ ...errors, [name]: "" });
     };
 
+    // ✅ Handle Category Change
     const onCategoryChange = e => {
         const { name, value } = e.target;
         setNewCategory({ ...newCategory, [name]: value });
-        // Clear error when user starts typing
-        if (categoryErrors[name]) {
-            setCategoryErrors({ ...categoryErrors, [name]: "" });
-        }
+        if (categoryErrors[name]) setCategoryErrors({ ...categoryErrors, [name]: "" });
     };
 
+    // ✅ File Upload
     const onFiles = e => {
-        const list = Array.from(e.target.files).slice(0, 4); // max 4 images
+        const list = Array.from(e.target.files).slice(0, 4);
         setFiles(list);
         setPreviews(list.map(f => URL.createObjectURL(f)));
-        // Clear image error when files are selected
-        if (errors.images) {
-            setErrors({ ...errors, images: "" });
-        }
+        if (errors.images) setErrors({ ...errors, images: "" });
     };
 
-    const removeImage = (index) => {
+    const removeImage = index => {
         const newFiles = [...files];
         const newPreviews = [...previews];
-
         newFiles.splice(index, 1);
         newPreviews.splice(index, 1);
-
         setFiles(newFiles);
         setPreviews(newPreviews);
     };
 
+    // ✅ Submit Product
     const submit = async e => {
         e.preventDefault();
-
         if (!validateForm()) return;
 
         setLoading(true);
@@ -110,13 +100,13 @@ export default function AddProduct() {
             const res = await axios.post(`${API}/api/products/add`, fd, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-            alert("Product added successfully!");
-            // Reset form
+            alert("✅ Product added successfully!");
             setForm({
                 name: "",
                 description: "",
                 price: "",
                 discount: "",
+                rating: "0",  // reset rating
                 stock: "",
                 category_id: "",
                 brand: "",
@@ -128,44 +118,31 @@ export default function AddProduct() {
             console.log(res.data);
         } catch (err) {
             console.error("Error:", err.response?.data || err.message);
-            alert("Upload failed! " + (err.response?.data?.message || "Please check your connection."));
+            alert("❌ Upload failed! " + (err.response?.data?.message || "Please check your connection."));
         } finally {
             setLoading(false);
         }
     };
 
-    const addCategory = (e) => {
+    // ✅ Add Category
+    const addCategory = e => {
         e.preventDefault();
-
         if (!validateCategoryForm()) return;
 
         setCategoryLoading(true);
-
-        // Simulate API call with timeout
         setTimeout(() => {
-            // Create new category
             const newCat = {
                 id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
                 name: newCategory.name,
                 description: newCategory.description
             };
 
-            // Update categories list
-            const updatedCategories = [...categories, newCat];
-            setCategories(updatedCategories);
-
-            // Set the newly created category as selected
+            setCategories([...categories, newCat]);
             setForm({ ...form, category_id: newCat.id });
+            alert("✅ Category added successfully!");
 
-            alert("Category added successfully!");
-
-            // Close modal and reset form
             setShowCategoryModal(false);
-            setNewCategory({
-                name: "",
-                description: ""
-            });
-
+            setNewCategory({ name: "", description: "" });
             setCategoryLoading(false);
         }, 800);
     };
@@ -174,6 +151,7 @@ export default function AddProduct() {
         <div className="add-product-container">
             <h2>Add New Product</h2>
             <form className="add-product-form" onSubmit={submit}>
+                {/* Name */}
                 <div className="form-group">
                     <label htmlFor="name">Product Name *</label>
                     <input
@@ -187,6 +165,7 @@ export default function AddProduct() {
                     {errors.name && <span className="error-text">{errors.name}</span>}
                 </div>
 
+                {/* Price + Discount */}
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="price">Price ($) *</label>
@@ -203,7 +182,6 @@ export default function AddProduct() {
                         />
                         {errors.price && <span className="error-text">{errors.price}</span>}
                     </div>
-
                     <div className="form-group">
                         <label htmlFor="discount">Discount (%)</label>
                         <input
@@ -221,6 +199,25 @@ export default function AddProduct() {
                     </div>
                 </div>
 
+                {/* ⭐ Rating */}
+                <div className="form-group">
+                    <label htmlFor="rating">Rating (0–5)</label>
+                    <select
+                        id="rating"
+                        name="rating"
+                        value={form.rating}
+                        onChange={onChange}
+                        className={errors.rating ? "error" : ""}
+                    >
+                        {["0", "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "4.6", "4.7", "4.8", "4.9", "5"]
+                            .map(r => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                    </select>
+                    {errors.rating && <span className="error-text">{errors.rating}</span>}
+                </div>
+
+                {/* Stock + Brand */}
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="stock">Stock Quantity</label>
@@ -236,7 +233,6 @@ export default function AddProduct() {
                         />
                         {errors.stock && <span className="error-text">{errors.stock}</span>}
                     </div>
-
                     <div className="form-group">
                         <label htmlFor="brand">Brand</label>
                         <input
@@ -249,6 +245,7 @@ export default function AddProduct() {
                     </div>
                 </div>
 
+                {/* Category */}
                 <div className="form-group">
                     <div className="category-header">
                         <label htmlFor="category_id">Category *</label>
@@ -275,6 +272,7 @@ export default function AddProduct() {
                     {errors.category_id && <span className="error-text">{errors.category_id}</span>}
                 </div>
 
+                {/* Description */}
                 <div className="form-group">
                     <label htmlFor="description">Description</label>
                     <textarea
@@ -287,6 +285,7 @@ export default function AddProduct() {
                     />
                 </div>
 
+                {/* Status */}
                 <div className="form-group">
                     <label htmlFor="status">Status</label>
                     <select
@@ -300,6 +299,7 @@ export default function AddProduct() {
                     </select>
                 </div>
 
+                {/* Images */}
                 <div className="form-group">
                     <label htmlFor="images">Product Images *</label>
                     <div className="file-input-container">
@@ -316,6 +316,7 @@ export default function AddProduct() {
                     {errors.images && <span className="error-text">{errors.images}</span>}
                 </div>
 
+                {/* Previews */}
                 {previews.length > 0 && (
                     <div className="image-previews">
                         <p>Selected Images:</p>

@@ -44,7 +44,7 @@ export default function ManageProducts() {
         setNewImages([]);
     };
 
-    // ✅ Save edit (with multiple image upload)
+    // ✅ Save edit (with multiple image upload + rating)
     const saveEdit = async (id) => {
         try {
             const formData = new FormData();
@@ -148,166 +148,197 @@ export default function ManageProducts() {
                         <th>Category</th>
                         <th>Brand</th>
                         <th>Status</th>
+                        <th>Rating ⭐</th> {/* ✅ Rating column */}
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredProducts.map((p) => (
-                        <tr key={p.id}>
-                            <td>{p.id}</td>
-                            <td>
+                    {filteredProducts.length > 0 ? (
+                        filteredProducts.map((p) => (
+                            <tr key={p.id}>
+                                <td>{p.id}</td>
+                                <td>
+                                    {editingId === p.id ? (
+                                        <div className="edit-images">
+                                            {editForm.images?.map((img, i) => (
+                                                <div key={i} className="img-wrapper">
+                                                    <img src={img} alt="" className="product-thumb" />
+                                                    <button
+                                                        type="button"
+                                                        className="remove-btn"
+                                                        onClick={() => removeOldImage(i)}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={(e) => setNewImages([...e.target.files])}
+                                            />
+                                        </div>
+                                    ) : (
+                                        p.images?.map((img, i) => (
+                                            <img
+                                                key={i}
+                                                src={img}
+                                                alt={p.name}
+                                                className="product-thumb"
+                                            />
+                                        ))
+                                    )}
+                                </td>
                                 {editingId === p.id ? (
-                                    <div className="edit-images">
-                                        {editForm.images?.map((img, i) => (
-                                            <div key={i} className="img-wrapper">
-                                                <img src={img} alt="" className="product-thumb" />
-                                                <button
-                                                    type="button"
-                                                    className="remove-btn"
-                                                    onClick={() => removeOldImage(i)}
-                                                >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
-                                        <input
-                                            type="file"
-                                            multiple
-                                            onChange={(e) => setNewImages([...e.target.files])}
-                                        />
-                                    </div>
+                                    <>
+                                        <td>
+                                            <input
+                                                value={editForm.name}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, name: e.target.value })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <textarea
+                                                value={editForm.description}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        description: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                value={editForm.price}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, price: e.target.value })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                value={editForm.discount}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        discount: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                value={editForm.stock}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, stock: e.target.value })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                value={editForm.category_id}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        category_id: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                value={editForm.brand}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, brand: e.target.value })
+                                                }
+                                            />
+                                        </td>
+                                        <td>
+                                            <select
+                                                value={editForm.status}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        status: e.target.value,
+                                                    })
+                                                }
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select>
+                                        </td>
+                                        {/* ✅ Rating Dropdown */}
+                                        <td>
+                                            <select
+                                                value={editForm.rating || "0"}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        rating: e.target.value,
+                                                    })
+                                                }
+                                            >
+                                                {[
+                                                    "0", "1", "1.5", "2", "2.5", "3",
+                                                    "3.5", "4", "4.5", "4.6", "4.7",
+                                                    "4.8", "4.9", "5"
+                                                ].map((r) => (
+                                                    <option key={r} value={r}>
+                                                        {r}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button onClick={() => saveEdit(p.id)}>💾 Save</button>
+                                            <button onClick={() => setEditingId(null)}>❌ Cancel</button>
+                                        </td>
+                                    </>
                                 ) : (
-                                    p.images?.map((img, i) => (
-                                        <img
-                                            key={i}
-                                            src={img}
-                                            alt={p.name}
-                                            className="product-thumb"
-                                        />
-                                    ))
+                                    <>
+                                        <td>{p.name}</td>
+                                        <td>{p.description?.slice(0, 40)}...</td>
+                                        <td>₹{p.price}</td>
+                                        <td>{p.discount}%</td>
+                                        <td>{p.stock}</td>
+                                        <td>{p.category_id}</td>
+                                        <td>{p.brand}</td>
+                                        <td
+                                            className={
+                                                p.status === "active"
+                                                    ? "status-active"
+                                                    : "status-inactive"
+                                            }
+                                        >
+                                            {p.status}
+                                        </td>
+                                        <td>⭐ {p.rating}</td> {/* ✅ Show rating */}
+                                        <td>
+                                            <button onClick={() => startEdit(p)}>✏ Edit</button>
+                                            <button
+                                                className="delete-btn"
+                                                onClick={() => deleteProduct(p.id)}
+                                            >
+                                                🗑 Delete
+                                            </button>
+                                        </td>
+                                    </>
                                 )}
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="12" style={{ textAlign: "center", padding: "20px" }}>
+                                No results found
                             </td>
-
-                            {editingId === p.id ? (
-                                <>
-                                    <td>
-                                        <input
-                                            value={editForm.name}
-                                            onChange={(e) =>
-                                                setEditForm({ ...editForm, name: e.target.value })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <textarea
-                                            value={editForm.description}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    description: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            value={editForm.price}
-                                            onChange={(e) =>
-                                                setEditForm({ ...editForm, price: e.target.value })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            value={editForm.discount}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    discount: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            value={editForm.stock}
-                                            onChange={(e) =>
-                                                setEditForm({ ...editForm, stock: e.target.value })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            value={editForm.category_id}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    category_id: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            value={editForm.brand}
-                                            onChange={(e) =>
-                                                setEditForm({ ...editForm, brand: e.target.value })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <select
-                                            value={editForm.status}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    status: e.target.value,
-                                                })
-                                            }
-                                        >
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button onClick={() => saveEdit(p.id)}>💾 Save</button>
-                                        <button onClick={() => setEditingId(null)}>❌ Cancel</button>
-                                    </td>
-                                </>
-                            ) : (
-                                <>
-                                    <td>{p.name}</td>
-                                    <td>{p.description?.slice(0, 40)}...</td>
-                                    <td>₹{p.price}</td>
-                                    <td>{p.discount}%</td>
-                                    <td>{p.stock}</td>
-                                    <td>{p.category_id}</td>
-                                    <td>{p.brand}</td>
-                                    <td
-                                        className={
-                                            p.status === "active"
-                                                ? "status-active"
-                                                : "status-inactive"
-                                        }
-                                    >
-                                        {p.status}
-                                    </td>
-                                    <td>
-                                        <button onClick={() => startEdit(p)}>✏ Edit</button>
-                                        <button
-                                            className="delete-btn"
-                                            onClick={() => deleteProduct(p.id)}
-                                        >
-                                            🗑 Delete
-                                        </button>
-                                    </td>
-                                </>
-                            )}
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
         </div>
