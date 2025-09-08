@@ -31,6 +31,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/products", productRoutes);
 
+
 // Test route
 app.get("/", (req, res) => res.send("Admin backend running"));
 

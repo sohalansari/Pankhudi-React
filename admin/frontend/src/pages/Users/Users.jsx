@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import * as XLSX from "xlsx";
 import "./Users.css";
@@ -9,11 +9,7 @@ function Users() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filters, setFilters] = useState({
-        verified: "all",
-        premium: "all",
-        active: "all"
-    });
+    const [filters, setFilters] = useState({ verified: "all", premium: "all", active: "all" });
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -22,10 +18,8 @@ function Users() {
     const [editingUser, setEditingUser] = useState(null);
     const [showUserModal, setShowUserModal] = useState(false);
 
-    // Fetch users on component mount
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    // Fetch users on mount
+    useEffect(() => { fetchUsers(); }, []);
 
     const fetchUsers = async () => {
         try {
@@ -37,102 +31,70 @@ function Users() {
         } catch (err) {
             setError("Failed to fetch users. Please try again later.");
             setLoading(false);
-            console.error("Error fetching users:", err);
+            console.error(err);
         }
     };
 
-    // Apply filters and search
+    // Filter & Search
     useEffect(() => {
         let result = users;
 
-        // Apply search
         if (searchTerm) {
-            const lowerSearchTerm = searchTerm.toLowerCase();
-            result = result.filter(user =>
-                user.name.toLowerCase().includes(lowerSearchTerm) ||
-                user.email.toLowerCase().includes(lowerSearchTerm) ||
-                (user.phone && user.phone.toLowerCase().includes(lowerSearchTerm)) ||
-                (user.address && user.address.toLowerCase().includes(lowerSearchTerm))
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(u =>
+                u.name?.toLowerCase().includes(lower) ||
+                u.email?.toLowerCase().includes(lower) ||
+                u.phone?.toLowerCase().includes(lower) ||
+                u.address?.toLowerCase().includes(lower)
             );
         }
 
-        // Apply filters
-        if (filters.verified !== "all") {
-            result = result.filter(user => user.is_verified === (filters.verified === "true"));
-        }
-        if (filters.premium !== "all") {
-            result = result.filter(user => user.is_premium === (filters.premium === "true"));
-        }
-        if (filters.active !== "all") {
-            result = result.filter(user => user.is_active === (filters.active === "true"));
-        }
+        if (filters.verified !== "all") result = result.filter(u => u.is_verified === (filters.verified === "true"));
+        if (filters.premium !== "all") result = result.filter(u => u.is_premium === (filters.premium === "true"));
+        if (filters.active !== "all") result = result.filter(u => u.is_active === (filters.active === "true"));
 
         setFilteredUsers(result);
-        setCurrentPage(1); // Reset to first page when filters change
+        setCurrentPage(1);
     }, [users, searchTerm, filters]);
 
-    // Sort users
+    // Sorting
     const sortedUsers = useMemo(() => {
-        let sortableItems = [...filteredUsers];
+        let sortable = [...filteredUsers];
         if (sortConfig.key) {
-            sortableItems.sort((a, b) => {
-                let aValue = a[sortConfig.key];
-                let bValue = b[sortConfig.key];
-
-                // Handle null/undefined values
-                if (aValue === null || aValue === undefined) aValue = "";
-                if (bValue === null || bValue === undefined) bValue = "";
-
-                // Handle different data types
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    return sortConfig.direction === 'ascending'
-                        ? aValue.localeCompare(bValue)
-                        : bValue.localeCompare(aValue);
-                } else {
-                    return sortConfig.direction === 'ascending'
-                        ? (aValue < bValue ? -1 : 1)
-                        : (aValue > bValue ? -1 : 1);
-                }
+            sortable.sort((a, b) => {
+                let aVal = a[sortConfig.key] ?? "";
+                let bVal = b[sortConfig.key] ?? "";
+                if (typeof aVal === 'string') return sortConfig.direction === 'ascending' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                return sortConfig.direction === 'ascending' ? (aVal < bVal ? -1 : 1) : (aVal > bVal ? -1 : 1);
             });
         }
-        return sortableItems;
+        return sortable;
     }, [filteredUsers, sortConfig]);
 
     // Pagination
     const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
     const currentUsers = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedUsers.slice(startIndex, startIndex + itemsPerPage);
+        const start = (currentPage - 1) * itemsPerPage;
+        return sortedUsers.slice(start, start + itemsPerPage);
     }, [sortedUsers, currentPage, itemsPerPage]);
 
-    // Handle sort request
     const handleSort = (key) => {
         let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') direction = 'descending';
         setSortConfig({ key, direction });
     };
 
-    // Handle select/deselect all
+    // Selection
     const toggleSelectAll = () => {
-        if (selectedUsers.length === currentUsers.length) {
-            setSelectedUsers([]);
-        } else {
-            setSelectedUsers(currentUsers.map(user => user.id));
-        }
+        if (selectedUsers.length === currentUsers.length) setSelectedUsers([]);
+        else setSelectedUsers(currentUsers.map(u => u.id));
     };
 
-    // Handle individual user selection
-    const toggleUserSelection = (userId) => {
-        setSelectedUsers(prev =>
-            prev.includes(userId)
-                ? prev.filter(id => id !== userId)
-                : [...prev, userId]
-        );
+    const toggleUserSelection = (id) => {
+        setSelectedUsers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    // Export to Excel
+    // Export
     const exportToExcel = (data, fileName) => {
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
@@ -140,125 +102,95 @@ function Users() {
         XLSX.writeFile(workbook, `${fileName}.xlsx`);
     };
 
-    // Handle export options
     const handleExport = (scope) => {
-        let dataToExport = [];
-        let fileName = "";
-
+        let data = [], fileName = "";
         switch (scope) {
-            case "all":
-                dataToExport = users;
-                fileName = "all_users";
-                break;
-            case "filtered":
-                dataToExport = filteredUsers;
-                fileName = "filtered_users";
-                break;
-            case "selected":
-                dataToExport = users.filter(user => selectedUsers.includes(user.id));
-                fileName = "selected_users";
-                break;
-            default:
-                return;
+            case "all": data = users; fileName = "all_users"; break;
+            case "filtered": data = filteredUsers; fileName = "filtered_users"; break;
+            case "selected": data = users.filter(u => selectedUsers.includes(u.id)); fileName = "selected_users"; break;
+            default: return;
         }
-
-        // Format data for export
-        const formattedData = dataToExport.map(user => ({
-            ID: user.id,
-            Name: user.name,
-            Email: user.email,
-            Phone: user.phone || "N/A",
-            Address: user.address || "N/A",
-            Verified: user.is_verified ? "Yes" : "No",
-            Premium: user.is_premium ? "Yes" : "No",
-            Active: user.is_active ? "Yes" : "No",
-            "Created At": new Date(user.created_at).toLocaleString(),
-            "Last Login": user.last_login ? new Date(user.last_login).toLocaleString() : "Never"
+        const formatted = data.map(u => ({
+            ID: u.id,
+            Name: u.name,
+            Email: u.email,
+            Phone: u.phone || "N/A",
+            Address: u.address || "N/A",
+            Verified: u.is_verified ? "Yes" : "No",
+            Premium: u.is_premium ? "Yes" : "No",
+            Active: u.is_active ? "Yes" : "No",
+            "Created At": new Date(u.created_at).toLocaleString(),
+            "Last Login": u.last_login ? new Date(u.last_login).toLocaleString() : "Never"
         }));
-
-        exportToExcel(formattedData, fileName);
+        exportToExcel(formatted, fileName);
         setShowExportOptions(false);
     };
 
-    // Handle user actions
-    const handleUserAction = async (action, userId) => {
+    // User Actions (PATCH for safe updates)
+    const handleUserAction = async (action, user) => {
         try {
-            let endpoint = "";
+            let endpoint = `/users/${user.id}`;
             let data = {};
 
             switch (action) {
                 case "verify":
-                    endpoint = `/users/${userId}/verify`;
-                    await api.patch(endpoint);
+                    endpoint += "/verify";
+                    data = { is_verified: !user.is_verified };
+                    await api.patch(endpoint, data);
                     break;
                 case "activate":
-                    endpoint = `/users/${userId}`;
                     data = { is_active: true };
                     await api.patch(endpoint, data);
                     break;
                 case "deactivate":
-                    endpoint = `/users/${userId}`;
                     data = { is_active: false };
                     await api.patch(endpoint, data);
                     break;
                 case "delete":
-                    endpoint = `/users/${userId}`;
                     await api.delete(endpoint);
                     break;
-                default:
-                    return;
+                default: return;
             }
 
-            // Refresh user list
             await fetchUsers();
         } catch (err) {
             setError(`Failed to ${action} user. Please try again.`);
-            console.error(`Error ${action} user:`, err);
+            console.error(err);
         }
     };
 
-    // Handle bulk actions
     const handleBulkAction = async (action) => {
-        if (selectedUsers.length === 0) {
-            setError("Please select at least one user.");
-            return;
+        if (selectedUsers.length === 0) { setError("Please select at least one user."); return; }
+        for (const id of selectedUsers) {
+            const user = users.find(u => u.id === id);
+            if (user) await handleUserAction(action, user);
         }
-
-        try {
-            for (const userId of selectedUsers) {
-                await handleUserAction(action, userId);
-            }
-            setSelectedUsers([]);
-        } catch (err) {
-            setError(`Failed to perform bulk ${action}. Please try again.`);
-            console.error(`Error with bulk ${action}:`, err);
-        }
+        setSelectedUsers([]);
     };
 
-    // Handle edit user
-    const handleEditUser = (user) => {
-        setEditingUser(user);
-        setShowUserModal(true);
-    };
+    // Edit User
+    const handleEditUser = (user) => { setEditingUser(user); setShowUserModal(true); };
 
-    // Handle save user
+    // Save User (PATCH or POST)
     const handleSaveUser = async (userData) => {
         try {
-            if (editingUser.id) {
-                await api.patch(`/users/${editingUser.id}`, userData);
+            if (editingUser?.id) {
+                const response = await api.patch(`/users/${editingUser.id}`, userData);
+                const updatedUser = response.data;
+                setUsers(prev => prev.map(u => (u.id === editingUser.id ? updatedUser : u)));
             } else {
-                await api.post("/users", userData);
+                const response = await api.post("/users", userData);
+                setUsers(prev => [response.data, ...prev]);
             }
             setShowUserModal(false);
             setEditingUser(null);
-            await fetchUsers();
+            setError(null);
         } catch (err) {
+            console.error("Save user error:", err.response?.data || err.message);
             setError("Failed to save user. Please try again.");
-            console.error("Error saving user:", err);
         }
     };
 
-    // Render sort indicator
     const renderSortIndicator = (key) => {
         if (sortConfig.key !== key) return null;
         return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
@@ -269,6 +201,7 @@ function Users() {
 
     return (
         <div className="users-page">
+            {/* Header */}
             <div className="page-header">
                 <h2>User Management</h2>
                 <div className="header-actions">
@@ -278,16 +211,13 @@ function Users() {
                             setEditingUser({});
                             setShowUserModal(true);
                         }}
-                    >
-                        Add New User
-                    </button>
+                    >Add New User</button>
+
                     <div className="export-dropdown">
                         <button
                             className="btn btn-secondary"
                             onClick={() => setShowExportOptions(!showExportOptions)}
-                        >
-                            Export Data
-                        </button>
+                        >Export Data</button>
                         {showExportOptions && (
                             <div className="export-options">
                                 <button onClick={() => handleExport("all")}>Export All</button>
@@ -304,20 +234,21 @@ function Users() {
                 </div>
             </div>
 
+            {/* Controls */}
             <div className="controls-panel">
                 <div className="search-box">
                     <input
                         type="text"
                         placeholder="Search users..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
 
                 <div className="filter-controls">
                     <select
                         value={filters.verified}
-                        onChange={(e) => setFilters({ ...filters, verified: e.target.value })}
+                        onChange={e => setFilters({ ...filters, verified: e.target.value })}
                     >
                         <option value="all">All Verification</option>
                         <option value="true">Verified</option>
@@ -326,7 +257,7 @@ function Users() {
 
                     <select
                         value={filters.premium}
-                        onChange={(e) => setFilters({ ...filters, premium: e.target.value })}
+                        onChange={e => setFilters({ ...filters, premium: e.target.value })}
                     >
                         <option value="all">All Premium</option>
                         <option value="true">Premium</option>
@@ -335,7 +266,7 @@ function Users() {
 
                     <select
                         value={filters.active}
-                        onChange={(e) => setFilters({ ...filters, active: e.target.value })}
+                        onChange={e => setFilters({ ...filters, active: e.target.value })}
                     >
                         <option value="all">All Status</option>
                         <option value="true">Active</option>
@@ -347,7 +278,7 @@ function Users() {
                     <span>Show </span>
                     <select
                         value={itemsPerPage}
-                        onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+                        onChange={e => setItemsPerPage(parseInt(e.target.value))}
                     >
                         <option value="5">5</option>
                         <option value="10">10</option>
@@ -358,250 +289,193 @@ function Users() {
                 </div>
             </div>
 
+            {/* Bulk Actions */}
             <div className="bulk-actions">
                 <span>{selectedUsers.length} user(s) selected</span>
                 <button
                     onClick={() => handleBulkAction("activate")}
                     disabled={selectedUsers.length === 0}
-                >
-                    Activate Selected
-                </button>
+                >Activate Selected</button>
                 <button
                     onClick={() => handleBulkAction("deactivate")}
                     disabled={selectedUsers.length === 0}
-                >
-                    Deactivate Selected
-                </button>
+                >Deactivate Selected</button>
                 <button
                     onClick={() => handleBulkAction("delete")}
                     disabled={selectedUsers.length === 0}
                     className="danger"
-                >
-                    Delete Selected
-                </button>
+                >Delete Selected</button>
             </div>
 
+            {/* Table */}
             <div className="table-container">
                 <table className="users-table">
                     <thead>
                         <tr>
-                            <th>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedUsers.length === currentUsers.length && currentUsers.length > 0}
-                                    onChange={toggleSelectAll}
-                                    disabled={currentUsers.length === 0}
-                                />
-                            </th>
-                            <th onClick={() => handleSort("id")}>
-                                ID {renderSortIndicator("id")}
-                            </th>
-                            <th onClick={() => handleSort("name")}>
-                                Name {renderSortIndicator("name")}
-                            </th>
-                            <th onClick={() => handleSort("email")}>
-                                Email {renderSortIndicator("email")}
-                            </th>
+                            <th><input
+                                type="checkbox"
+                                checked={selectedUsers.length === currentUsers.length && currentUsers.length > 0}
+                                onChange={toggleSelectAll}
+                                disabled={currentUsers.length === 0}
+                            /></th>
+                            <th onClick={() => handleSort("id")}>ID {renderSortIndicator("id")}</th>
+                            <th onClick={() => handleSort("name")}>Name {renderSortIndicator("name")}</th>
+                            <th onClick={() => handleSort("email")}>Email {renderSortIndicator("email")}</th>
                             <th>Phone</th>
                             <th>Address</th>
-                            <th onClick={() => handleSort("is_verified")}>
-                                Verified {renderSortIndicator("is_verified")}
-                            </th>
-                            <th onClick={() => handleSort("is_premium")}>
-                                Premium {renderSortIndicator("is_premium")}
-                            </th>
-                            <th onClick={() => handleSort("is_active")}>
-                                Status {renderSortIndicator("is_active")}
-                            </th>
-                            <th onClick={() => handleSort("created_at")}>
-                                Created At {renderSortIndicator("created_at")}
-                            </th>
+                            <th onClick={() => handleSort("is_verified")}>Verified {renderSortIndicator("is_verified")}</th>
+                            <th onClick={() => handleSort("is_premium")}>Premium {renderSortIndicator("is_premium")}</th>
+                            <th onClick={() => handleSort("is_active")}>Status {renderSortIndicator("is_active")}</th>
+                            <th onClick={() => handleSort("created_at")}>Created At {renderSortIndicator("created_at")}</th>
                             <th>Last Login</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentUsers.length > 0 ? (
-                            currentUsers.map((user) => (
-                                <tr key={user.id} className={!user.is_active ? "inactive" : ""}>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedUsers.includes(user.id)}
-                                            onChange={() => toggleUserSelection(user.id)}
-                                        />
-                                    </td>
-                                    <td>{user.id}</td>
-                                    <td>
-                                        {user.profile_picture && (
-                                            <img
-                                                src={user.profile_picture}
-                                                alt={user.name}
-                                                className="user-avatar"
-                                            />
-                                        )}
-                                        {user.name}
-                                    </td>
-                                    <td>{user.email}</td>
-                                    <td>{user.phone || "N/A"}</td>
-                                    <td>{user.address || "N/A"}</td>
-                                    <td>{user.is_verified ? "✅" : "❌"}</td>
-                                    <td>{user.is_premium ? "⭐" : "—"}</td>
-                                    <td>
-                                        <span className={`status ${user.is_active ? "active" : "inactive"}`}>
-                                            {user.is_active ? "🟢 Active" : "🔴 Inactive"}
-                                        </span>
-                                    </td>
-                                    <td>{new Date(user.created_at).toLocaleString()}</td>
-                                    <td>{user.last_login ? new Date(user.last_login).toLocaleString() : "—"}</td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn-icon edit"
-                                                onClick={() => handleEditUser(user)}
-                                                title="Edit user"
-                                            >
-                                                ✏️
-                                            </button>
-                                            {!user.is_verified && (
-                                                <button
-                                                    className="btn-icon verify"
-                                                    onClick={() => handleUserAction("verify", user.id)}
-                                                    title="Verify user"
-                                                >
-                                                    ✅
-                                                </button>
-                                            )}
-                                            {user.is_active ? (
-                                                <button
-                                                    className="btn-icon deactivate"
-                                                    onClick={() => handleUserAction("deactivate", user.id)}
-                                                    title="Deactivate user"
-                                                >
-                                                    ⏸️
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    className="btn-icon activate"
-                                                    onClick={() => handleUserAction("activate", user.id)}
-                                                    title="Activate user"
-                                                >
-                                                    ▶️
-                                                </button>
-                                            )}
-                                            <button
-                                                className="btn-icon delete"
-                                                onClick={() => handleUserAction("delete", user.id)}
-                                                title="Delete user"
-                                            >
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="12" className="no-data">
-                                    No users found matching your criteria
+                        {currentUsers.length > 0 ? currentUsers.map(user => (
+                            <tr key={user.id} className={!user.is_active ? "inactive" : ""}>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedUsers.includes(user.id)}
+                                        onChange={() => toggleUserSelection(user.id)}
+                                    />
                                 </td>
+                                <td>{user.id}</td>
+                                <td>
+                                    {user.profile_picture && <img src={user.profile_picture} alt={user.name} className="user-avatar" />}
+                                    {user.name}
+                                </td>
+                                <td>{user.email}</td>
+                                <td>{user.phone || "N/A"}</td>
+                                <td>{user.address || "N/A"}</td>
+                                <td>{user.is_verified ? "✅" : "❌"}</td>
+                                <td>{user.is_premium ? "⭐" : "—"}</td>
+                                <td>
+                                    <span className={`status ${user.is_active ? "active" : "inactive"}`}>
+                                        {user.is_active ? "🟢 Active" : "🔴 Inactive"}
+                                    </span>
+                                </td>
+                                <td>{new Date(user.created_at).toLocaleString()}</td>
+                                <td>{user.last_login ? new Date(user.last_login).toLocaleString() : "—"}</td>
+                                <td>
+                                    <div className="action-buttons">
+                                        <button
+                                            className="btn-icon edit"
+                                            onClick={() => handleEditUser(user)}
+                                            title="Edit user"
+                                        >
+                                            ✏️
+                                        </button>
+
+                                        <button
+                                            className="btn-icon verify"
+                                            onClick={() => handleUserAction("verify", user)}
+                                            title={user.is_verified ? "Unverify user" : "Verify user"}
+                                        >
+                                            {user.is_verified ? "❌" : "✅"}
+                                        </button>
+
+                                        {user.is_active ? (
+                                            <button
+                                                className="btn-icon deactivate"
+                                                onClick={() => handleUserAction("deactivate", user)}
+                                                title="Deactivate user"
+                                            >
+                                                ⏸️
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn-icon activate"
+                                                onClick={() => handleUserAction("activate", user)}
+                                                title="Activate user"
+                                            >
+                                                ▶️
+                                            </button>
+                                        )}
+
+                                        <button
+                                            className="btn-icon delete"
+                                            onClick={() => handleUserAction("delete", user)}
+                                            title="Delete user"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan="12" className="no-data">No users found matching your criteria</td>
                             </tr>
                         )}
                     </tbody>
                 </table>
             </div>
 
+            {/* Pagination */}
             <div className="pagination-controls">
                 <div className="pagination-info">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedUsers.length)} of {sortedUsers.length} entries
                 </div>
                 <div className="pagination-buttons">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </button>
-
+                    <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>Previous</button>
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(page =>
-                            page === 1 ||
-                            page === totalPages ||
-                            (page >= currentPage - 1 && page <= currentPage + 1)
-                        )
+                        .filter(page => page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1))
                         .map((page, index, array) => {
-                            const previousPage = array[index - 1];
-                            if (previousPage && page - previousPage > 1) {
-                                return (
-                                    <React.Fragment key={`ellipsis-${page}`}>
-                                        <span>...</span>
-                                        <button
-                                            className={currentPage === page ? "active" : ""}
-                                            onClick={() => setCurrentPage(page)}
-                                        >
-                                            {page}
-                                        </button>
-                                    </React.Fragment>
-                                );
-                            }
-                            return (
-                                <button
-                                    key={page}
-                                    className={currentPage === page ? "active" : ""}
-                                    onClick={() => setCurrentPage(page)}
-                                >
-                                    {page}
-                                </button>
-                            );
+                            const previous = array[index - 1];
+                            if (previous && page - previous > 1) return <React.Fragment key={`ellipsis-${page}`}><span>...</span><button className={currentPage === page ? "active" : ""} onClick={() => setCurrentPage(page)}>{page}</button></React.Fragment>;
+                            return <button key={page} className={currentPage === page ? "active" : ""} onClick={() => setCurrentPage(page)}>{page}</button>;
                         })
                     }
-
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                    </button>
+                    <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>Next</button>
                 </div>
             </div>
 
-            {showUserModal && (
-                <UserModal
-                    user={editingUser}
-                    onSave={handleSaveUser}
-                    onClose={() => {
-                        setShowUserModal(false);
-                        setEditingUser(null);
-                    }}
-                />
-            )}
+            {showUserModal && <UserModal user={editingUser} onSave={handleSaveUser} onClose={() => { setShowUserModal(false); setEditingUser(null); }} />}
         </div>
     );
 }
 
-// User Modal Component for Add/Edit
+// User Modal
 function UserModal({ user, onSave, onClose }) {
     const [formData, setFormData] = useState({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        address: user.address || "",
-        is_verified: user.is_verified || false,
-        is_premium: user.is_premium || false,
-        is_active: user.is_active || true
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        is_verified: false,
+        is_premium: false,
+        is_active: true,
+        password: ""
     });
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                name: user.name || "",
+                email: user.email || "",
+                phone: user.phone || "",
+                address: user.address || "",
+                is_verified: user.is_verified || false,
+                is_premium: user.is_premium || false,
+                is_active: user.is_active ?? true,
+                password: ""
+            });
+        }
+    }, [user]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        const dataToSend = { ...formData };
+        if (user.id && !formData.password) delete dataToSend.password; // edit user, empty password ignored
+        onSave(dataToSend);
     };
 
     return (
@@ -609,78 +483,31 @@ function UserModal({ user, onSave, onClose }) {
             <div className="modal">
                 <div className="modal-header">
                     <h3>{user.id ? "Edit User" : "Add New User"}</h3>
-                    <button className="close-btn" onClick={onClose}>×</button>
+                    <button className="close-btn" onClick={onClose}>✖️</button>
                 </div>
                 <form onSubmit={handleSubmit} className="modal-form">
-                    <div className="form-group">
-                        <label>Name:</label>
+                    <label>Name<input type="text" name="name" value={formData.name} onChange={handleChange} required /></label>
+                    <label>Email<input type="email" name="email" value={formData.email} onChange={handleChange} required /></label>
+                    <label>Phone<input type="text" name="phone" value={formData.phone} onChange={handleChange} /></label>
+                    <label>Address<input type="text" name="address" value={formData.address} onChange={handleChange} /></label>
+                    <label><input type="checkbox" name="is_verified" checked={formData.is_verified} onChange={handleChange} /> Verified</label>
+                    <label><input type="checkbox" name="is_premium" checked={formData.is_premium} onChange={handleChange} /> Premium</label>
+                    <label><input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} /> Active</label>
+
+                    <label>Password
                         <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
+                            type="password"
+                            name="password"
+                            value={formData.password}
                             onChange={handleChange}
-                            required
+                            required={!user.id}
+                            placeholder={user.id ? "Leave blank to keep current password" : ""}
                         />
-                    </div>
-                    <div className="form-group">
-                        <label>Email:</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Phone:</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Address:</label>
-                        <textarea
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className="form-checkboxes">
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="is_verified"
-                                checked={formData.is_verified}
-                                onChange={handleChange}
-                            />
-                            Verified
-                        </label>
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="is_premium"
-                                checked={formData.is_premium}
-                                onChange={handleChange}
-                            />
-                            Premium
-                        </label>
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="is_active"
-                                checked={formData.is_active}
-                                onChange={handleChange}
-                            />
-                            Active
-                        </label>
-                    </div>
+                    </label>
+
                     <div className="modal-actions">
-                        <button type="button" onClick={onClose}>Cancel</button>
-                        <button type="submit">Save</button>
+                        <button type="submit" className="btn btn-primary">{user.id ? "Update" : "Add"}</button>
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
                     </div>
                 </form>
             </div>
