@@ -35,6 +35,15 @@ function Users() {
         }
     };
 
+    // Refresh data function
+    const handleRefresh = () => {
+        fetchUsers();
+        setSearchTerm("");
+        setFilters({ verified: "all", premium: "all", active: "all" });
+        setSelectedUsers([]);
+        setCurrentPage(1);
+    };
+
     // Filter & Search
     useEffect(() => {
         let result = users;
@@ -212,6 +221,15 @@ function Users() {
                             setShowUserModal(true);
                         }}
                     >Add New User</button>
+
+                    {/* Refresh Button */}
+                    <button
+                        className="btn btn-secondary"
+                        onClick={handleRefresh}
+                        title="Refresh data"
+                    >
+                        Refresh Data
+                    </button>
 
                     <div className="export-dropdown">
                         <button

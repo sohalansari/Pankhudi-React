@@ -73,7 +73,7 @@ const Footer = () => {
                                 Pankhudi brings you handcrafted luxury that celebrates India's rich heritage.
                                 We curate the finest traditional and contemporary designs for the modern connoisseur.
                             </p>
-                            <div className="social-links">
+                            <div className="social-linkss">
                                 <a href="https://facebook.com" aria-label="Facebook" className="social-icon">
                                     <FaFacebookF />
                                 </a>
