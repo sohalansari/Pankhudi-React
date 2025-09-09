@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
-import { FaEnvelope, FaLock, FaPhone, FaGoogle, FaUser } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaPhone, FaGoogle } from 'react-icons/fa';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import Footer from '../../components/Footer';
 import { Link } from 'react-router-dom';
-import BackButton from '../../components/Backbutton';
 
 const Login = () => {
     const [form, setForm] = useState({
@@ -29,13 +28,6 @@ const Login = () => {
             setForm(prev => ({ ...prev, emailOrPhone: rememberedEmail }));
             setRememberMe(true);
         }
-
-        // Check if user is already logged in
-        // const userData = localStorage.getItem('user');
-        // if (userData) {
-        //     // Redirect to home if already logged in
-        //     window.location.href = '/';
-        // }
     }, []);
 
     const handleChange = (e) => {
@@ -72,6 +64,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setMessage('');
         const errs = validateForm();
         setError(errs);
 
@@ -81,7 +74,8 @@ const Login = () => {
         }
 
         try {
-            const res = await fetch('http://localhost:5000/login', {
+            // ✅ Corrected endpoint
+            const res = await fetch('http://localhost:5000/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -92,22 +86,15 @@ const Login = () => {
             });
 
             const data = await res.json();
+
             if (res.ok) {
                 setMessage('✅ Login successful! Redirecting...');
                 localStorage.setItem('token', data.token);
 
-                const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-                const loginInput = form.emailOrPhone.trim().toLowerCase();
-
-                const foundUser = allUsers.find(u =>
-                    (u.email && u.email.toLowerCase() === loginInput) ||
-                    (u.phone && u.phone === loginInput) // phone as is (numbers)
-                );
-
-                if (foundUser) {
-                    localStorage.setItem('user', JSON.stringify(foundUser));
+                // ✅ Store user from backend (not just local registeredUsers)
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
                 }
-
 
                 if (rememberMe) {
                     localStorage.setItem('rememberedEmail', form.emailOrPhone);
@@ -116,38 +103,30 @@ const Login = () => {
                 }
 
                 setTimeout(() => {
-                    window.location.href = data.user?.is_premium ? '/dashboard' : '/';
-                }, 2000);
+                    window.location.href = data.user?.is_premium ? '/' : '/';
+                }, 1500);
             } else {
-                setMessage(data.message || 'Login failed');
+                setMessage(data.message || 'Invalid credentials');
             }
         } catch (err) {
-            setMessage('Server error. Please try again.');
+            console.error('Login error:', err);
+            setMessage('⚠️ Server error. Please try again later.');
         }
 
         setIsLoading(false);
     };
-
 
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {
             setIsLoading(true);
             setMessage('Authenticating with Google...');
 
-            // Decode the JWT token to get user info
             const decoded = jwtDecode(credentialResponse.credential);
-            console.log('Google user info:', decoded);
 
-            // Send the credential to your backend
-            const res = await fetch('http://localhost:5000/auth/google', {
+            const res = await fetch('http://localhost:5000/api/auth/google', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    token: credentialResponse.credential,
-                    clientId: credentialResponse.clientId  // Optional: send clientId for verification
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: credentialResponse.credential }),
             });
 
             const data = await res.json();
@@ -155,25 +134,17 @@ const Login = () => {
             if (res.ok) {
                 setMessage('✅ Google login successful! Redirecting...');
                 localStorage.setItem('token', data.token);
-                localStorage.setItem('authMethod', 'google'); // Store auth method
+                localStorage.setItem('authMethod', 'google');
 
-                // // Store user data in localStorage
-                // if (data.user) {
-                //     localStorage.setItem('user', JSON.stringify({
-                //         name: data.user.name,
-                //         email: data.user.email,
-                //         id: data.user.id,
-                //         is_premium: data.user.is_premium || false
-                //     }));
-                // }
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
 
-                // Redirect to dashboard or home page
                 setTimeout(() => {
                     window.location.href = data.user?.is_premium ? '/dashboard' : '/';
                 }, 1500);
             } else {
                 setMessage(data.message || 'Google login failed');
-                // Logout from Google if backend authentication failed
                 googleLogout();
             }
         } catch (err) {
@@ -187,7 +158,6 @@ const Login = () => {
 
     const handleGoogleLoginFailure = () => {
         setMessage('Google login failed. Please try again or use another method.');
-        console.error('Google login failed');
     };
 
     const toggleLoginMethod = () => {
@@ -199,7 +169,6 @@ const Login = () => {
     return (
         <div className="login-page">
             <div className="login-container">
-                {/* <BackButton variant="text" position="absolute" align="left" top /> */}
                 <form className="login-form" onSubmit={handleSubmit}>
                     <div className="brand-header">
                         <h1 className="brand-name">Pankhudi</h1>
@@ -233,11 +202,7 @@ const Login = () => {
                     </div>
 
                     <div className="input-group">
-                        {loginMethod === 'email' ? (
-                            <FaEnvelope className="input-icon" />
-                        ) : (
-                            <FaPhone className="input-icon" />
-                        )}
+                        {loginMethod === 'email' ? <FaEnvelope className="input-icon" /> : <FaPhone className="input-icon" />}
                         <input
                             type={loginMethod === 'email' ? 'email' : 'tel'}
                             name="emailOrPhone"
@@ -259,10 +224,7 @@ const Login = () => {
                             onChange={handleChange}
                             className={error.password ? 'error-input' : ''}
                         />
-                        <span
-                            className="toggle-password"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
+                        <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
                             {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
                         </span>
                     </div>
@@ -277,9 +239,7 @@ const Login = () => {
                             />
                             Remember me
                         </label>
-                        <Link to="/forgot" className="forgot-password">
-                            Forgot Password?
-                        </Link>
+                        <Link to="/forgot" className="forgot-password">Forgot Password?</Link>
                     </div>
 
                     <label className="terms">
@@ -295,56 +255,28 @@ const Login = () => {
                     </label>
                     {error.terms && <p className="error-message">{error.terms}</p>}
 
-                    <button
-                        type="submit"
-                        className="login-btn"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <span className="spinner"></span>
-                        ) : (
-                            'Login'
-                        )}
+                    <button type="submit" className="login-btn" disabled={isLoading}>
+                        {isLoading ? <span className="spinner"></span> : 'Login'}
                     </button>
 
-                    <div className="divider">
-                        <span>or continue with</span>
-                    </div>
+                    <div className="divider"><span>or continue with</span></div>
 
                     <div className="social-login-options">
                         <div className="google-login-wrapper">
                             <GoogleLogin
                                 onSuccess={handleGoogleLoginSuccess}
                                 onError={handleGoogleLoginFailure}
-                                useOneTap
-                                auto_select
                                 theme="filled_blue"
                                 size="large"
                                 shape="rectangular"
                                 width="300"
                                 text="continue_with"
-                                logo_alignment="left"
-                                ux_mode="popup"
-                                context="use"
                             />
                         </div>
-
-                        {/* Fallback button if Google button doesn't load */}
-                        {!window.google && (
-                            <button
-                                className="google-login-fallback"
-                                onClick={() => setMessage('Please enable Google services to login')}
-                            >
-                                <FaGoogle /> Continue with Google
-                            </button>
-                        )}
                     </div>
 
                     <div className="signup-link">
-                        Don't have an account?{' '}
-                        <Link to="/register">
-                            <strong>Sign up</strong>
-                        </Link>
+                        Don't have an account? <Link to="/register"><strong>Sign up</strong></Link>
                     </div>
                 </form>
             </div>

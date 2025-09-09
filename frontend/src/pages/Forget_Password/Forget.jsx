@@ -15,7 +15,6 @@ const ForgotPassword = () => {
         const { name, value } = e.target;
         setForm({ ...form, [name]: value });
 
-        // Password validation when in step 3
         if (name === 'newPassword') {
             if (value.length > 0 && value.length < 8) {
                 setPasswordError('Password must be at least 8 characters');
@@ -30,7 +29,7 @@ const ForgotPassword = () => {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://localhost:5000/forgot-password', {
+            const res = await fetch('http://localhost:5000/api/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: form.email })
@@ -39,7 +38,8 @@ const ForgotPassword = () => {
             setMessage(data.message);
             if (data.success) setStep(2);
         } catch (err) {
-            setMessage('Server error.');
+            console.error(err);
+            setMessage('Server error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -50,7 +50,7 @@ const ForgotPassword = () => {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://localhost:5000/verify-otp', {
+            const res = await fetch('http://localhost:5000/api/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: form.email, otp: form.otp })
@@ -59,7 +59,8 @@ const ForgotPassword = () => {
             setMessage(data.message);
             if (data.success) setStep(3);
         } catch (err) {
-            setMessage('Server error.');
+            console.error(err);
+            setMessage('Server error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -68,7 +69,6 @@ const ForgotPassword = () => {
     const handleResetPassword = async (e) => {
         e.preventDefault();
 
-        // Validate password before submitting
         if (form.newPassword.length < 8) {
             setPasswordError('Password must be at least 8 characters');
             return;
@@ -77,7 +77,7 @@ const ForgotPassword = () => {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://localhost:5000/reset-password', {
+            const res = await fetch('http://localhost:5000/api/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: form.email, newPassword: form.newPassword })
@@ -88,7 +88,8 @@ const ForgotPassword = () => {
                 setTimeout(() => window.location.href = '/login', 2000);
             }
         } catch (err) {
-            setMessage('Server error.');
+            console.error(err);
+            setMessage('Server error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -96,7 +97,11 @@ const ForgotPassword = () => {
 
     return (
         <div className="register-container">
-            <form className="register-form" onSubmit={step === 1 ? handleEmailSubmit : step === 2 ? handleOtpSubmit : handleResetPassword}>
+            <form className="register-form" onSubmit={
+                step === 1 ? handleEmailSubmit :
+                    step === 2 ? handleOtpSubmit :
+                        handleResetPassword
+            }>
                 <h1 className="brand-name">Pankhudi</h1>
                 <h2>Forgot Password</h2>
 

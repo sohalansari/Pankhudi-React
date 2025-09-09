@@ -41,15 +41,6 @@ const Register = () => {
         return errs;
     };
 
-    const saveToLocalStorage = (userData) => {
-        const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        existingUsers.push(userData);
-        localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-
-        // ✅ Always save current user as "user"
-        localStorage.setItem('user', JSON.stringify(userData));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -69,22 +60,23 @@ const Register = () => {
             });
 
             const data = await res.json();
+
             if (!data.success) {
-                setMessage(data.message);
+                setMessage(data.message || 'Registration failed');
                 if (data.errors) setErrors(data.errors);
             } else {
-                saveToLocalStorage(form);
+                // ✅ Save only backend response (without password)
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('token', data.token);
+
                 setMessage('✅ Registered Successfully! Redirecting...');
                 setTimeout(() => {
-                    window.location.href = '/login';
+                    window.location.href = '/'; // Redirect to Home
                 }, 2000);
             }
         } catch (err) {
-            saveToLocalStorage(form);
-            setMessage('⚠️ Saved locally (server unavailable). You can login offline.');
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 2000);
+            console.error('Register error:', err);
+            setMessage('⚠️ Server error. Please try again later.');
         }
 
         setIsLoading(false);
@@ -93,11 +85,6 @@ const Register = () => {
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {
             const decoded = jwtDecode(credentialResponse.credential);
-            setForm(prev => ({
-                ...prev,
-                name: decoded.name || '',
-                email: decoded.email || '',
-            }));
 
             const res = await fetch('http://localhost:5000/api/auth/google', {
                 method: 'POST',
@@ -107,18 +94,11 @@ const Register = () => {
 
             const data = await res.json();
 
-            if (res.ok) {
-                const userData = {
-                    name: decoded.name || '',
-                    email: decoded.email || '',
-                    phone: '',
-                    address: '',
-                    password: ''
-                };
-                saveToLocalStorage(userData);
+            if (res.ok && data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('token', data.token);
 
                 setMessage('✅ Registration successful with Google! Redirecting...');
-                localStorage.setItem('token', data.token);
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 2000);

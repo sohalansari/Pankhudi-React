@@ -51,11 +51,7 @@ export default function ManageProducts() {
             Object.keys(editForm).forEach((key) => {
                 if (key !== "images") formData.append(key, editForm[key]);
             });
-
-            // पुरानी images भेजो
             formData.append("oldImages", JSON.stringify(editForm.images || []));
-
-            // नई images भेजो
             newImages.forEach((img) => {
                 formData.append("images", img);
             });
