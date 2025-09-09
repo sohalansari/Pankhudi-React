@@ -36,7 +36,7 @@ router.get("/profile", authenticate, (req, res) => {
     const userId = req.user.userId;
 
     db.query(
-        "SELECT id, name, email, phone, address, avatar, is_premium FROM users WHERE id = ? AND is_active=1 AND is_deleted=0",
+        "SELECT id, name, email, phone, address, avatar, is_premium, created_at FROM users WHERE id = ? AND is_active=1 AND is_deleted=0",
         [userId],
         (err, rows) => {
             if (err) return res.status(500).json({ success: false, message: "Server error" });
@@ -47,6 +47,9 @@ router.get("/profile", authenticate, (req, res) => {
                 // ✅ full URL banao
                 user.avatar = `http://localhost:5000/${user.avatar}`;
             }
+
+            // ✅ Add createdAt field to match frontend expectation
+            user.createdAt = user.created_at;
 
             return res.json({ success: true, user });
         }
@@ -105,7 +108,7 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
         if (err) return res.status(500).json({ success: false, message: "Server error" });
 
         db.query(
-            "SELECT id, name, email, phone, address, avatar, is_premium FROM users WHERE id = ?",
+            "SELECT id, name, email, phone, address, avatar, is_premium, created_at FROM users WHERE id = ?",
             [userId],
             (err2, rows) => {
                 if (err2) return res.status(500).json({ success: false, message: "Server error" });
@@ -115,6 +118,9 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
                     // ✅ full URL banao
                     user.avatar = `http://localhost:5000/${user.avatar}`;
                 }
+
+                // ✅ Add createdAt field to match frontend expectation
+                user.createdAt = user.created_at;
 
                 return res.json({ success: true, user });
             }
