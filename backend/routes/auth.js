@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const generateJWT = require('../utils/generateJWT');
+const nodemailer = require('nodemailer');
 
 // DB helper
 function getDb(req) { return req.app.locals.db; }
@@ -189,6 +190,21 @@ router.post('/auth/google', async (req, res) => {
 /**
  * Forgot password: send OTP
  */
+
+
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+
+
+
 router.post('/forgot-password', (req, res) => {
     const db = getDb(req);
     const { email } = req.body;

@@ -565,3 +565,7 @@
         grid-template-columns: 1fr;
     }
 }
+
+.options {
+    color: black;
+}

@@ -537,19 +537,19 @@ function Dashboard() {
                     <div className="quick-actions">
                         <button className="action-btn primary" onClick={() => handleQuickAction('add_product')}>
                             <span className="action-icon">➕</span>
-                            <span>Add New Product</span>
+                            <span className="options">Add New Product</span>
                         </button>
                         <button className="action-btn secondary" onClick={() => handleQuickAction('sales_report')}>
                             <span className="action-icon">📊</span>
-                            <span>View Sales Report</span>
+                            <span className="options">View Sales Report</span>
                         </button>
                         <button className="action-btn secondary" onClick={() => handleQuickAction('manage_inventory')}>
                             <span className="action-icon">📦</span>
-                            <span>Manage Inventory</span>
+                            <span className="options">Manage Inventory</span>
                         </button>
                         <button className="action-btn secondary" onClick={() => handleQuickAction('customer_management')}>
                             <span className="action-icon">👥</span>
-                            <span>Customer Management</span>
+                            <span className="options">Customer Management</span>
                         </button>
                     </div>
                 </div>

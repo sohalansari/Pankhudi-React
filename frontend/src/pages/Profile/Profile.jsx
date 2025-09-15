@@ -48,6 +48,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [theme, setTheme] = useState("light");
   const [language, setLanguage] = useState("english");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -163,7 +164,10 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return navigate("/login");
+        if (!token) {
+          setSessionExpired(true); // ✅ token missing
+          return;
+        }
 
         const res = await axios.get(API_BASE, {
           headers: { Authorization: `Bearer ${token}` },
@@ -181,10 +185,12 @@ const Profile = () => {
             setAvatarPreview(avatarUrl);
           }
         } else {
-          console.error("Profile fetch failed:", res.data.message);
+          // ✅ API responded but not success (session expired)
+          setSessionExpired(true);
         }
       } catch (err) {
         console.error("Profile fetch error:", err);
+        setSessionExpired(true); // ✅ handle errors like 401
       } finally {
         setLoading(false);
       }
@@ -272,6 +278,12 @@ const Profile = () => {
     setEditMode(false);
   };
 
+  useEffect(() => {
+    if (sessionExpired) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+  }, [sessionExpired]);
   // ✅ Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -365,6 +377,16 @@ const Profile = () => {
     }
   };
 
+  // ✅ Show session expired message
+  if (sessionExpired) {
+    return (
+      <div className="session-expired">
+        <h2>Session Expired</h2>
+        <p>Your session has expired. Please login again.</p>
+        <button onClick={() => navigate("/login")}>Go to Login</button>
+      </div>
+    );
+  }
   if (!user) return <div className="loading">Loading profile...</div>;
 
   return (
