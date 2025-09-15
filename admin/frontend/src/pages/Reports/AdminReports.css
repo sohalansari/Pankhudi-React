@@ -1,0 +1,222 @@
+/* ========================
+   Admin Reports Dashboard
+   ======================== */
+.reports-page {
+    padding: 1.5rem;
+    background: #f9fafb;
+    min-height: 100vh;
+}
+
+.reports-page h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1f2937;
+}
+
+/* Cards */
+.card {
+    background: #fff;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.big-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+/* Filters */
+.filter-box {
+    background: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.filter-box h3 {
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.filter-box label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.filter-box input[type="date"] {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+}
+
+.apply-btn {
+    background: #2563eb;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+.apply-btn:hover {
+    background: #1d4ed8;
+}
+
+/* Report Type */
+.report-type-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: #e5e7eb;
+    color: #374151;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.report-type-btn:hover {
+    background: #d1d5db;
+}
+
+.report-type-btn.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 1rem 0 1.5rem;
+}
+
+.tabs button {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+}
+
+.tabs button.active {
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+/* Summary grid */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Charts */
+/* .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.25rem;
+} */
+
+.charts-grid .card {
+    min-height: 400px;
+    /* force container height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.chart-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Tooltip */
+.custom-tooltip {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.custom-tooltip .label {
+    font-weight: 600;
+}
+
+.custom-tooltip .value {
+    color: #2563eb;
+}
+
+/* Loading */
+.loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    gap: 1rem;
+}
+
+.spinner {
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid #2563eb;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error */
+.error-box {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Export */
+.export-box {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    background: #16a34a;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    transition: 0.2s;
+}
+
+.export-btn:hover {
+    background: #15803d;
+}
+
+.export-btn svg {
+    margin-right: 0.5rem;
+}

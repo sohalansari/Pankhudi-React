@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar/Navbar";
 import Layout from "./components/Layout/MainLayout";
 import AddProduct from "./pages/Product/AddProduct";
 import ManageProducts from "./pages/ManageProducts/ManageProducts";
+import AdminReports from "./pages/Reports/Reports";
 
 import "./App.css";
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/products" element={<ManageProducts />} />
+          <Route path="/reports" element={<AdminReports />} /> {/* ✅ added */}
         </Routes>
       </div>
     </Layout>

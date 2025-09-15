@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
 exports.getStats = (req, res) => {
-    const query = `
+  const query = `
     SELECT 
       COUNT(*) AS total_users,
       SUM(is_verified) AS verified_users,
@@ -11,10 +11,10 @@ exports.getStats = (req, res) => {
     WHERE is_deleted = 0
   `;
 
-    db.query(query, (err, results) => {
-        if (err) {
-            return res.status(500).json({ error: "Database error" });
-        }
-        res.json(results[0]);
-    });
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(results[0]);
+  });
 };

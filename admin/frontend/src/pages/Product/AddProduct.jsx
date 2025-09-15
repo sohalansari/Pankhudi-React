@@ -168,7 +168,7 @@ export default function AddProduct() {
                 {/* Price + Discount */}
                 <div className="form-row">
                     <div className="form-group">
-                        <label htmlFor="price">Price ($) *</label>
+                        <label htmlFor="price">Price (₹) *</label>
                         <input
                             id="price"
                             name="price"
