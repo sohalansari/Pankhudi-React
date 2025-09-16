@@ -18,7 +18,7 @@
     --transition-slow: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
     --border-radius: 12px;
     --border-radius-lg: 16px;
-    --border-radius-xl: 24px;
+    --border-radius-xl: 15px;
 }
 
 * {
@@ -104,6 +104,7 @@ body {
 
 /* Main Content */
 .home-main {
+    top: 50px;
     opacity: 0;
     animation: fadeIn 1s ease-out forwards;
     animation-delay: 0.5s;
@@ -111,11 +112,12 @@ body {
 
 /* Hero Slider */
 .hero-section {
+    top: 90px;
     position: relative;
-    height: 80vh;
-    min-height: 600px;
+    height: 60vh;
+    min-height: 400px;
     overflow: hidden;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
 }
 
 .slider-container {
@@ -1144,7 +1146,7 @@ body {
 @media (max-width: 992px) {
     .hero-section {
         height: 70vh;
-        min-height: 500px;
+        min-height: 400px;
     }
 
     .slide-content h2 {
@@ -1172,8 +1174,8 @@ body {
 
 @media (max-width: 768px) {
     .hero-section {
-        height: 60vh;
-        min-height: 400px;
+        height: 40vh;
+        min-height: 300px;
     }
 
     .slider-btn {
@@ -1216,7 +1218,7 @@ body {
     }
 
     .category-card {
-        flex: 0 0 100%;
+        flex: 0 0 80%;
     }
 
     .filters-header {
@@ -1256,12 +1258,25 @@ body {
     .newsletter-text h3 {
         font-size: 1.7rem;
     }
+
+    .product-info h3 {
+        font-size: 1rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+
 }
 
 @media (max-width: 576px) {
     .hero-section {
-        height: 50vh;
-        min-height: 350px;
+        height: 30vh;
+        min-height: 300px;
     }
 
     .slider-btn {
@@ -1292,13 +1307,20 @@ body {
         padding: 0 1rem;
     }
 
+    .category-card {
+        width: 50%;
+    }
+
     .product-filters-section,
     .featured-section {
         padding: 2rem 1rem;
     }
 
+
     .products-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
     }
 
     .offer-content h2 {
@@ -1312,7 +1334,19 @@ body {
     .offer-content p {
         font-size: 1rem;
     }
+
+    .product-info h3 {
+        font-size: 1rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
 }
+
 
 /* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
