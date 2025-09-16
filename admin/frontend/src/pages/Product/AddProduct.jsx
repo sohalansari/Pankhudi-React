@@ -10,7 +10,7 @@ export default function AddProduct() {
         description: "",
         price: "",
         discount: "",
-        rating: "0",   // ⭐ NEW default rating
+        rating: "0",
         stock: "",
         category_id: "",
         brand: "",
@@ -32,7 +32,7 @@ export default function AddProduct() {
     const [categoryErrors, setCategoryErrors] = useState({});
     const [categoryLoading, setCategoryLoading] = useState(false);
 
-    // ✅ Validate Form
+
     const validateForm = () => {
         const newErrors = {};
         if (!form.name.trim()) newErrors.name = "Product name is required";
@@ -151,7 +151,6 @@ export default function AddProduct() {
         <div className="add-product-container">
             <h2>Add New Product</h2>
             <form className="add-product-form" onSubmit={submit}>
-                {/* Name */}
                 <div className="form-group">
                     <label htmlFor="name">Product Name *</label>
                     <input

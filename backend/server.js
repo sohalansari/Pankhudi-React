@@ -36,14 +36,28 @@ const db = mysql.createPool({
 app.locals.db = db;
 
 // ✅ serve uploads folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-console.log("📂 Serving static files from:", path.join(__dirname, "uploads"));
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// console.log("📂 Serving static files from:", path.join(__dirname, "uploads"));
 
 // ✅ routes
 app.use("/api", authRoutes);
 app.use("/api", profileRoutes);
-app.use("/api/products", productsRoutes);
+// app.use("/api/products", productsRoutes);
 app.use("/api/chat", chatRoutes); // ✅ register chat route
+
+
+
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Products routes
+const productsRouter = require('./routes/products');
+app.use('/api/products', productsRouter);
+
+
+
+
+
 
 // health
 app.get("/health", (req, res) => res.json({ status: "ok" }));

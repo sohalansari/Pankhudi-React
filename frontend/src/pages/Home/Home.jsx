@@ -6,7 +6,7 @@ import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
 import './Home.css';
 
-// Helper functions for images
+// Enhanced category images with more options
 const getCategoryImage = (category) => {
     const categoryImages = {
         dresses: 'https://img.kwcdn.com/product/enhanced_images/4bd92b3ed9fadfea0c9752692a9e19a1_enhanced.jpg?imageView2/2/w/800/q/70',
@@ -16,9 +16,19 @@ const getCategoryImage = (category) => {
         winterwear: 'https://hulaglobal.com/wp-content/uploads/2024/11/Classic-wool-coat-683x1024.webp',
         accessories: 'https://miro.medium.com/v2/resize:fit:1200/1*w2ZtNewCRB7uakMLKuME6A.jpeg',
         lehengas: 'https://i.etsystatic.com/25647034/r/il/39b3f5/5232058934/il_1080xN.5232058934_29m2.jpg',
-        suits: 'https://d17a17kld06uk8.cloudfront.net/products/N6MMXXW/CI8C43E7-original.jpg'
+        suits: 'https://d17a17kld06uk8.cloudfront.net/products/N6MMXXW/CI8C43E7-original.jpg',
+        jeans: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop',
+        footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop',
+        bags: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&auto=format&fit=crop',
+        jewelry: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ad5e5?w=500&auto=format&fit=crop',
+        lingerie: 'https://images.unsplash.com/photo-1581338834647-b0fb40704e21?w=500&auto=format&fit=crop',
+        activewear: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=500&auto=format&fit=crop',
+        swimwear: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop',
+        maternity: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop',
+        plus_size: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop',
+        general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&auto=format&fit=crop'
     };
-    return categoryImages[category] || 'https://via.placeholder.com/300x200?text=Category+Image';
+    return categoryImages[category?.toLowerCase()] || categoryImages.general;
 };
 
 const getFallbackProductImage = (category) => {
@@ -30,510 +40,22 @@ const getFallbackProductImage = (category) => {
         winterwear: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop',
         accessories: 'https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop',
         lehengas: 'https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg',
-        suits: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg'
+        suits: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg',
+        jeans: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop',
+        footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop',
+        bags: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&auto=format&fit=crop',
+        jewelry: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ad5e5?w=500&auto=format&fit=crop',
+        lingerie: 'https://images.unsplash.com/photo-1581338834647-b0fb40704e21?w=500&auto=format&fit=crop',
+        activewear: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=500&auto=format&fit=crop',
+        swimwear: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop',
+        maternity: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop',
+        plus_size: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop',
+        general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&auto=format&fit=crop'
     };
-    return fallbackImages[category] || 'https://via.placeholder.com/300x200?text=Product+Image';
+    return fallbackImages[category?.toLowerCase()] || fallbackImages.general;
 };
 
-const convertToINR = (usdPrice) => {
-    const conversionRate = 83.5;
-    return Math.round(usdPrice * conversionRate);
-};
-
-const manualProducts = [
-    {
-        id: 1,
-        name: 'Floral Summer Dress',
-        price: convertToINR(14.99),
-        images: ['https://assets.myntassets.com/dpr_1.5,q_60,w_400,c_limit,fl_progressive/assets/images/2024/JULY/25/6fLiiEYH_6c261927f7fd4270a9060e769ebbab0b.jpg'],
-        rating: 4.5,
-        discount: 20,
-        category: 'dresses',
-        pattern: 'floral',
-        brand: 'Pankhudi',
-        stock: 15,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 2,
-        name: 'Party Gown with Sequins',
-        price: convertToINR(24.99),
-        images: ['https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=500&auto=format&fit=crop'],
-        rating: 4.7,
-        discount: 0,
-        category: 'dresses',
-        pattern: 'sequins',
-        brand: 'GlamourWear',
-        stock: 8,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 3,
-        name: 'Cotton Casual Dress',
-        price: convertToINR(9.99),
-        images: ['https://i5.walmartimages.com/asr/4d8598c6-2488-42b6-8f8f-dfbf9b6d2769.5c5d1aca409d9588f46e909c2e2c4bbe.jpeg'],
-        rating: 4.2,
-        discount: 10,
-        category: 'dresses',
-        pattern: 'solid',
-        brand: 'CasualCloth',
-        stock: 20,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 4,
-        name: 'Striped Summer Dress',
-        price: convertToINR(12.99),
-        images: ['https://i.pinimg.com/originals/56/45/58/56455805102cb325429c575bf9c3d8fd.jpg'],
-        rating: 4.3,
-        discount: 0,
-        category: 'dresses',
-        pattern: 'striped',
-        brand: 'SummerStyle',
-        stock: 12,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 5,
-        name: 'Denim Pinafore Dress',
-        price: convertToINR(19.99),
-        images: ['https://i.pinimg.com/originals/4f/1c/7e/4f1c7edd51fb92222f282d03f0871936.jpg'],
-        rating: 4.4,
-        discount: 0,
-        category: 'dresses',
-        pattern: 'denim',
-        brand: 'DenimWear',
-        stock: 10,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 6,
-        name: 'Printed Cotton T-Shirt',
-        price: convertToINR(7.99),
-        images: ['https://assets.myntassets.com/h_200,w_200,c_fill,g_auto/h_1440,q_100,w_1080/v1/assets/images/29490844/2024/5/11/55863cee-6c8c-4c6c-8e81-60c2f0d573c91715423030221MonteCarloPrintTop1.jpg'],
-        rating: 4.3,
-        discount: 15,
-        category: 'tops',
-        pattern: 'printed',
-        brand: 'MonteCarlo',
-        stock: 25,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 7,
-        name: 'Ruffled Blouse',
-        price: convertToINR(12.99),
-        images: ['https://cdnb.lystit.com/photos/2012/07/07/brooks-brothers-white-noniron-cotton-ruffle-blouse-with-xla-product-1-4115777-803265422.jpeg'],
-        rating: 4.5,
-        discount: 0,
-        category: 'tops',
-        pattern: 'ruffled',
-        brand: 'Brooks Brothers',
-        stock: 18,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 8,
-        name: 'Sleeveless Crop Top',
-        price: convertToINR(8.99),
-        images: ['https://academy.scene7.com/is/image/academy/20891745?$pdp-gallery-ng$'],
-        rating: 4.1,
-        discount: 10,
-        category: 'tops',
-        pattern: 'solid',
-        brand: 'TrendyFit',
-        stock: 22,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 9,
-        name: 'Striped Off-Shoulder Top',
-        price: convertToINR(11.99),
-        images: ['http://img.shein.com/images/shein.com/201609/43/14748542626230334483.jpg'],
-        rating: 4.4,
-        discount: 0,
-        category: 'tops',
-        pattern: 'striped',
-        brand: 'SheIn',
-        stock: 14,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 10,
-        name: 'Plaid Button-Down Shirt',
-        price: convertToINR(14.99),
-        images: ['https://i.pinimg.com/originals/0f/be/1c/0fbe1ca641a8e65e647b84dbc0cb04e4.png'],
-        rating: 4.6,
-        discount: 10,
-        category: 'tops',
-        pattern: 'plaid',
-        brand: 'ClassicWear',
-        stock: 16,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 11,
-        name: 'Geometric Pattern Blouse',
-        price: convertToINR(16.99),
-        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
-        rating: 4.3,
-        discount: 0,
-        category: 'tops',
-        pattern: 'geometric',
-        brand: 'GeoStyle',
-        stock: 20,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 12,
-        name: 'Pleated School Skirt',
-        price: convertToINR(14.99),
-        images: ['https://m.media-amazon.com/images/I/61fSRtbAFNL._AC_UY1100_.jpg'],
-        rating: 4.6,
-        discount: 0,
-        category: 'skirts',
-        pattern: 'pleated',
-        brand: 'SchoolWear',
-        stock: 30,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 13,
-        name: 'Denim Mini Skirt',
-        price: convertToINR(11.99),
-        images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&auto=format&fit=crop'],
-        rating: 4.2,
-        discount: 12,
-        category: 'skirts',
-        pattern: 'denim',
-        brand: 'DenimStyle',
-        stock: 18,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 14,
-        name: 'Tiered Floral Skirt',
-        price: convertToINR(17.99),
-        images: ['https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg'],
-        rating: 4.5,
-        discount: 0,
-        category: 'skirts',
-        pattern: 'floral',
-        brand: 'FloralWear',
-        stock: 14,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 15,
-        name: 'Tartan Pattern Skirt',
-        price: convertToINR(15.99),
-        images: ['https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg'],
-        rating: 4.3,
-        discount: 5,
-        category: 'skirts',
-        pattern: 'tartan',
-        brand: 'ClassicWear',
-        stock: 12,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 16,
-        name: 'Anarkali Suit Set',
-        price: convertToINR(29.99),
-        images: ['https://images.unsplash.com/photo-1595341595379-cf0f2a7ab4a4?w=500&auto=format&fit=crop'],
-        rating: 4.8,
-        discount: 0,
-        category: 'ethnicwear',
-        pattern: 'embroidered',
-        brand: 'EthnicElegance',
-        stock: 8,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 17,
-        name: 'Lehenga Choli Set',
-        price: convertToINR(49.99),
-        images: ['https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=500&auto=format&fit=crop'],
-        rating: 4.9,
-        discount: 15,
-        category: 'lehengas',
-        pattern: 'zari',
-        brand: 'RoyalLehenga',
-        stock: 5,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 18,
-        name: 'Kurta with Palazzo',
-        price: convertToINR(19.99),
-        images: ['https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=500&auto=format&fit=crop'],
-        rating: 4.5,
-        discount: 0,
-        category: 'suits',
-        pattern: 'printed',
-        brand: 'ComfortWear',
-        stock: 12,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 19,
-        name: 'Banarasi Silk Saree',
-        price: convertToINR(59.99),
-        images: ['https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg'],
-        rating: 4.9,
-        discount: 0,
-        category: 'ethnicwear',
-        pattern: 'banarasi',
-        brand: 'Banarasi',
-        stock: 7,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 20,
-        name: 'Kalamkari Printed Suit',
-        price: convertToINR(24.99),
-        images: ['https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg'],
-        rating: 4.7,
-        discount: 10,
-        category: 'suits',
-        pattern: 'kalamkari',
-        brand: 'HandCrafted',
-        stock: 10,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 21,
-        name: 'Bandhani Lehenga',
-        price: convertToINR(39.99),
-        images: ['https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg'],
-        rating: 4.8,
-        discount: 0,
-        category: 'lehengas',
-        pattern: 'bandhani',
-        brand: 'RoyalLehenga',
-        stock: 5,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 22,
-        name: 'Phulkari Dupatta Set',
-        price: convertToINR(17.99),
-        images: ['https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg'],
-        rating: 4.6,
-        discount: 0,
-        category: 'ethnicwear',
-        pattern: 'phulkari',
-        brand: 'EthnicElegance',
-        stock: 10,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 23,
-        name: 'Woolen Sweater',
-        price: convertToINR(22.99),
-        images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4iZ7RHloK-eEUU-EVu1rd7KzNgTM_CStu88RMOuVRVvrz2sy_x5F3KkItuIr-SGZhq5I&usqp=CAU'],
-        rating: 4.3,
-        discount: 10,
-        category: 'winterwear',
-        pattern: 'cable-knit',
-        brand: 'WinterCozy',
-        stock: 12,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 24,
-        name: 'Padded Jacket',
-        price: convertToINR(34.99),
-        images: ['https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop'],
-        rating: 4.6,
-        discount: 0,
-        category: 'winterwear',
-        pattern: 'quilted',
-        brand: 'WinterCozy',
-        stock: 8,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 25,
-        name: 'Fair Isle Pattern Sweater',
-        price: convertToINR(27.99),
-        images: ['https://m.media-amazon.com/images/I/71KjHf0YJKL._AC_UY1100_.jpg'],
-        rating: 4.5,
-        discount: 0,
-        category: 'winterwear',
-        pattern: 'fair-isle',
-        brand: 'WinterCozy',
-        stock: 10,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 26,
-        name: 'Houndstooth Coat',
-        price: convertToINR(39.99),
-        images: ['https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg'],
-        rating: 4.7,
-        discount: 15,
-        category: 'winterwear',
-        pattern: 'houndstooth',
-        brand: 'WinterCozy',
-        stock: 7,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 27,
-        name: 'Hair Clips Set',
-        price: convertToINR(4.99),
-        images: ['https://images.unsplash.com/photo-1607602132700-0681204692c5?w=500&auto=format&fit=crop'],
-        rating: 4.2,
-        discount: 0,
-        category: 'accessories',
-        pattern: 'floral',
-        brand: 'TrendyHair',
-        stock: 50,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 28,
-        name: 'Printed Scrunchies',
-        price: convertToINR(3.99),
-        images: ['https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop'],
-        rating: 4.0,
-        discount: 5,
-        category: 'accessories',
-        pattern: 'printed',
-        brand: 'TrendyHair',
-        stock: 45,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 29,
-        name: 'Polka Dot Party Dress',
-        price: convertToINR(22.99),
-        images: ['https://m.media-amazon.com/images/I/61DvVQH5VCL._AC_UY1100_.jpg'],
-        rating: 4.6,
-        discount: 15,
-        category: 'dresses',
-        pattern: 'polka-dot',
-        brand: 'PartyWear',
-        stock: 8,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 30,
-        name: 'Tie-Dye Maxi Dress',
-        price: convertToINR(18.99),
-        images: ['https://m.media-amazon.com/images/I/71Hn7QOZfEL._AC_UY1100_.jpg'],
-        rating: 4.3,
-        discount: 0,
-        category: 'dresses',
-        pattern: 'tie-dye',
-        brand: 'SummerStyle',
-        stock: 10,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 31,
-        name: 'Chevron Pattern Dress',
-        price: convertToINR(16.99),
-        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
-        rating: 4.5,
-        discount: 10,
-        category: 'dresses',
-        pattern: 'chevron',
-        brand: 'FashionHub',
-        stock: 12,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 32,
-        name: 'Animal Print Dress',
-        price: convertToINR(21.99),
-        images: ['https://m.media-amazon.com/images/I/61vHX6TlTPL._AC_UY1100_.jpg'],
-        rating: 4.4,
-        discount: 0,
-        category: 'dresses',
-        pattern: 'animal-print',
-        brand: 'WildStyle',
-        stock: 9,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 33,
-        name: 'Designer Handbag',
-        price: convertToINR(39.99),
-        images: ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&auto=format&fit=crop'],
-        rating: 4.4,
-        discount: 0,
-        category: 'accessories',
-        pattern: 'embossed',
-        brand: 'LuxuryBag',
-        stock: 15,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 34,
-        name: 'Paisley Print Scarf',
-        price: convertToINR(8.99),
-        images: ['https://m.media-amazon.com/images/I/61Jk8gZ+nIL._AC_UY1100_.jpg'],
-        rating: 4.3,
-        discount: 0,
-        category: 'accessories',
-        pattern: 'paisley',
-        brand: 'FashionScarf',
-        stock: 20,
-        status: 'Active',
-        isApiProduct: false
-    },
-    {
-        id: 35,
-        name: 'Zigzag Pattern Socks',
-        price: convertToINR(5.99),
-        images: ['https://m.media-amazon.com/images/I/61f+4SdZbIL._AC_UY1100_.jpg'],
-        rating: 4.1,
-        discount: 10,
-        category: 'accessories',
-        pattern: 'zigzag',
-        brand: 'HappyFeet',
-        stock: 30,
-        status: 'Active',
-        isApiProduct: false
-    }
-
-];
-
+// Enhanced slider items with more options
 const sliderItems = [
     {
         id: 1,
@@ -564,159 +86,169 @@ const sliderItems = [
     },
     {
         id: 4,
-        image: 'https://www.andindia.com/on/demandware.static/-/Sites-AND-Library/default/dwf51e2df3/images/May%202025/PLP%20New%20Arrivals.jpg',
+        image: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=1200&auto=format&fit=crop',
         title: 'New Arrivals',
-        subtitle: 'Fresh styles for the season',
+        subtitle: 'Discover the latest fashion trends',
         link: '/new-arrivals',
-        buttonText: 'Discover Now',
+        buttonText: 'Discover',
         theme: 'new'
     },
     {
         id: 5,
-        image: 'https://cdn.shopify.com/s/files/1/0341/4805/7228/files/Bakra_Eid.jpg?v=1746708452',
-        title: 'Festive Special',
-        subtitle: 'Exclusive festive collection with 30% off',
-        link: '/festive-collection',
-        buttonText: 'Shop Festive',
-        theme: 'festive'
-    },
-    {
-        id: 6,
-        image: 'https://www.fashiongonerogue.com/wp-content/uploads/2021/12/Mannequins-Womens-Clothing-Store-Red-Palette.jpg',
-        title: 'Pattern Paradise',
-        subtitle: 'Explore our vibrant patterned collection',
-        link: '/patterned-collection',
-        buttonText: 'Explore Patterns',
-        theme: 'patterns'
+        image: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=1200&auto=format&fit=crop',
+        title: 'Maternity Collection',
+        subtitle: 'Comfortable and stylish outfits for expecting mothers',
+        link: '/maternity',
+        buttonText: 'Explore',
+        theme: 'maternity'
     }
+];
+
+// New filter options
+const patternOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'floral', label: 'Floral' },
+    { value: 'striped', label: 'Striped' },
+    { value: 'polka-dot', label: 'Polka Dot' },
+    { value: 'geometric', label: 'Geometric' },
+    { value: 'embroidered', label: 'Ethnic' },
+    { value: 'printed', label: 'Printed' },
+    { value: 'plain', label: 'Plain' },
+    { value: 'checkered', label: 'Checkered' },
+    { value: 'animal-print', label: 'Animal Print' }
+];
+
+const priceRanges = [
+    { value: 'all', label: 'All Prices' },
+    { value: '0-500', label: 'Under ₹500' },
+    { value: '500-1000', label: '₹500 - ₹1000' },
+    { value: '1000-2000', label: '₹1000 - ₹2000' },
+    { value: '2000-5000', label: '₹2000 - ₹5000' },
+    { value: '5000+', label: 'Over ₹5000' }
+];
+
+// Predefined categories to ensure they're always visible
+const predefinedCategories = [
+    'dresses', 'tops', 'skirts', 'ethnicwear', 'winterwear',
+    'accessories', 'lehengas', 'suits', 'jeans', 'footwear',
+    'bags', 'jewelry', 'lingerie', 'activewear', 'swimwear',
+    'maternity', 'plus_size'
 ];
 
 const Home = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [autoPlay, setAutoPlay] = useState(true);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState(predefinedCategories);
     const [isLoading, setIsLoading] = useState(true);
     const [progress, setProgress] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeFilter, setActiveFilter] = useState("all");
+    const [activePriceFilter, setActivePriceFilter] = useState("all");
+    const [sortOption, setSortOption] = useState("featured");
     const [hoveredProduct, setHoveredProduct] = useState(null);
-    const [apiProducts, setApiProducts] = useState([]);
-    const [mergedProducts, setMergedProducts] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [showFilters, setShowFilters] = useState(false);
+    const [visibleCategories, setVisibleCategories] = useState(8); // Show 8 categories initially
     const navigate = useNavigate();
     const testimonialsScrollRef = useRef(null);
-    const API = "http://localhost:5000"; // backend URL
+    const API = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
-    // ✅ Product image formatter
-    const getProductImage = (product) => {
-        if (product.images && product.images.length > 0) {
-            return product.images[0].startsWith("http")
-                ? product.images[0]
-                : `${API}${product.images[0]}`;
+    // ✅ Improved Product image formatter
+    const getProductImage = useCallback((product) => {
+        // Check if product has images array with content
+        if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+            const firstImage = product.images[0];
+            // Handle both string paths and object with url property
+            const imageUrl = typeof firstImage === 'string'
+                ? firstImage
+                : (firstImage.url || firstImage.imageUrl || '');
+
+            if (imageUrl.startsWith("http")) {
+                return imageUrl;
+            } else if (imageUrl.startsWith("/")) {
+                return `${API}${imageUrl}`;
+            }
         }
+
+        // Check if product has image property directly
         if (product.image) {
-            return product.image.startsWith("http")
+            const imageUrl = typeof product.image === 'string'
                 ? product.image
-                : `${API}${product.image}`;
-        }
-        return "https://via.placeholder.com/300x300?text=No+Image";
-    };
+                : (product.image.url || product.image.imageUrl || '');
 
+            if (imageUrl.startsWith("http")) {
+                return imageUrl;
+            } else if (imageUrl.startsWith("/")) {
+                return `${API}${imageUrl}`;
+            }
+        }
+
+        // Fallback to category-based image
+        return getFallbackProductImage(product.category);
+    }, [API]);
+
+    // Fetch API products
     useEffect(() => {
-        axios
-            .get(`${API}/api/products`)
-            .then((res) => {
-                if (Array.isArray(res.data)) {
-                    const sanitized = res.data.map((p, index) => {
-                        const productImage =
-                            Array.isArray(p.images) && p.images.length > 0
-                                ? p.images[0] // ✅ backend se first image
-                                : getFallbackProductImage(p.category);
+        const fetchProducts = async () => {
+            try {
+                console.log("Fetching products from:", `${API}/api/products`);
+                const response = await axios.get(`${API}/api/products`);
+                console.log("API Response:", response.data);
+
+                if (Array.isArray(response.data)) {
+                    const sanitized = response.data.map((p, index) => {
+                        console.log("Processing product:", p);
+
+                        const productImage = getProductImage(p);
+                        console.log("Product image URL:", productImage);
 
                         return {
-                            id: p.id || `api-${index}`,
+                            id: p._id || p.id || `api-${index}`,
                             name: p.name || "No Name",
                             description: p.description || "",
                             price: Number(p.price) || 0,
-                            category: p.category || "General",
-                            pattern: p.pattern || "N/A",
+                            category: (p.category || "general").toLowerCase(),
+                            pattern: (p.pattern || "n/a").toLowerCase(),
                             rating: p.rating || 0,
                             discount: p.discount || 0,
                             stock: p.stock || 0,
                             brand: p.brand || "Unknown",
                             status: p.status || "active",
-                            image: productImage, // ✅ sirf ek image
-                            images: p.images || [], // ✅ detail page ke liye pura array
+                            image: productImage,
+                            images: p.images || [],
                             isApiProduct: true,
+                            createdAt: p.createdAt || new Date().toISOString(),
+                            tags: p.tags || []
                         };
                     });
-                    setApiProducts(sanitized);
+                    setProducts(sanitized);
+
+                    // Extract unique categories from products and combine with predefined
+                    const productCategories = [...new Set(sanitized.map((p) => p.category))];
+                    const allCategories = [...new Set([...predefinedCategories, ...productCategories])];
+                    setCategories(allCategories);
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
                 console.error("❌ Fetch error:", err);
-                setApiProducts([]);
-            });
-    }, []);
+                setProducts([]);
+                // Use predefined categories even if API fails
+                setCategories(predefinedCategories);
+            }
+        };
 
-    // ✅ Merge API + Manual Products
+        fetchProducts();
+    }, [API, getProductImage]);
+
+    // Check login status
     useEffect(() => {
-        if (apiProducts.length > 0) {
-            const filteredManual = manualProducts.filter(
-                (manualP) =>
-                    !apiProducts.some(
-                        (apiP) =>
-                            apiP.name.toLowerCase() === manualP.name.toLowerCase() &&
-                            apiP.category.toLowerCase() === manualP.category.toLowerCase()
-                    )
-            );
-
-            const combined = [
-                ...apiProducts.map((p) => ({
-                    ...p,
-                    image: p.image || getFallbackProductImage(p.category), // ✅ direct image
-                })),
-                ...filteredManual.map((p) => ({
-                    ...p,
-                    image: p.image || getFallbackProductImage(p.category),
-                    isApiProduct: false,
-                })),
-            ];
-
-            setMergedProducts(combined);
-
-            const uniqueCategories = [...new Set(combined.map((p) => p.category))];
-            setCategories(uniqueCategories);
-        } else {
-            const fallbackManual = manualProducts.map((p) => ({
-                ...p,
-                image: p.image || getFallbackProductImage(p.category),
-                isApiProduct: false,
-            }));
-
-            setMergedProducts(fallbackManual);
-
-            const uniqueCategories = [...new Set(fallbackManual.map((p) => p.category))];
-            setCategories(uniqueCategories);
-        }
-    }, [apiProducts]);
-
-    // Scroll functions
-    const scrollLeft = () => {
-        if (testimonialsScrollRef.current) {
-            testimonialsScrollRef.current.scrollBy({ left: -400, behavior: 'smooth' });
-        }
-    };
-
-    const scrollRight = () => {
-        if (testimonialsScrollRef.current) {
-            testimonialsScrollRef.current.scrollBy({ left: 400, behavior: 'smooth' });
-        }
-    };
+        const token = localStorage.getItem('token');
+        setIsLoggedIn(!!token);
+    }, []);
 
     // Image loading and progress
     useEffect(() => {
-        const totalImages = mergedProducts.length + sliderItems.length + categories.length;
+        const totalImages = products.length + sliderItems.length + categories.length;
         if (totalImages === 0) return;
 
         let loaded = 0;
@@ -729,6 +261,7 @@ const Home = () => {
             }
         };
 
+        // Load category images
         categories.forEach(category => {
             const img = new Image();
             img.src = getCategoryImage(category);
@@ -736,7 +269,8 @@ const Home = () => {
             img.onerror = onLoad;
         });
 
-        mergedProducts.forEach(product => {
+        // Load product images
+        products.forEach(product => {
             const img = new Image();
             img.src = product.image;
             img.onload = onLoad;
@@ -746,14 +280,16 @@ const Home = () => {
             };
         });
 
+        // Load slider images
         sliderItems.forEach(item => {
             const img = new Image();
             img.src = item.image;
             img.onload = onLoad;
             img.onerror = onLoad;
         });
-    }, [mergedProducts, categories]);
+    }, [products, categories]);
 
+    // Handle loading completion
     useEffect(() => {
         if (!imagesLoaded) return;
 
@@ -761,11 +297,7 @@ const Home = () => {
         return () => clearTimeout(timer);
     }, [imagesLoaded]);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
-    }, []);
-
+    // Auto slide functionality
     useEffect(() => {
         if (!autoPlay || isLoading) return;
 
@@ -776,6 +308,7 @@ const Home = () => {
         return () => clearInterval(interval);
     }, [autoPlay, isLoading]);
 
+    // Slider navigation functions
     const nextSlide = useCallback(() => {
         setCurrentSlide(prev => (prev + 1) % sliderItems.length);
     }, []);
@@ -796,6 +329,7 @@ const Home = () => {
         navigate(path);
     }, [navigate]);
 
+    // Cart functionality
     const handleAddToCart = (product) => {
         if (!isLoggedIn) {
             alert('Please login to add items to the cart.');
@@ -816,13 +350,78 @@ const Home = () => {
         alert(`${product.name} added to cart!`);
     };
 
+    // Filter products by pattern
     const filterProducts = (pattern) => {
         setActiveFilter(pattern);
     };
 
+    // Filter products by price range
+    const filterByPrice = (priceRange) => {
+        setActivePriceFilter(priceRange);
+    };
+
+    // Sort products
+    const sortProducts = (option) => {
+        setSortOption(option);
+    };
+
+    // Get filtered and sorted products
     const getFilteredProducts = () => {
-        if (activeFilter === 'all') return mergedProducts;
-        return mergedProducts.filter(product => product.pattern === activeFilter);
+        let filtered = [...products];
+
+        // Apply pattern filter
+        if (activeFilter !== 'all') {
+            filtered = filtered.filter(product => product.pattern === activeFilter);
+        }
+
+        // Apply price filter
+        if (activePriceFilter !== 'all') {
+            if (activePriceFilter === '0-500') {
+                filtered = filtered.filter(product => product.price < 500);
+            } else if (activePriceFilter === '500-1000') {
+                filtered = filtered.filter(product => product.price >= 500 && product.price < 1000);
+            } else if (activePriceFilter === '1000-2000') {
+                filtered = filtered.filter(product => product.price >= 1000 && product.price < 2000);
+            } else if (activePriceFilter === '2000-5000') {
+                filtered = filtered.filter(product => product.price >= 2000 && product.price < 5000);
+            } else if (activePriceFilter === '5000+') {
+                filtered = filtered.filter(product => product.price >= 5000);
+            }
+        }
+
+        // Apply sorting
+        switch (sortOption) {
+            case 'price-low-high':
+                filtered.sort((a, b) => a.price - b.price);
+                break;
+            case 'price-high-low':
+                filtered.sort((a, b) => b.price - a.price);
+                break;
+            case 'rating':
+                filtered.sort((a, b) => b.rating - a.rating);
+                break;
+            case 'newest':
+                filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                break;
+            case 'discount':
+                filtered.sort((a, b) => b.discount - a.discount);
+                break;
+            default:
+                // Featured (default) - no sorting
+                break;
+        }
+
+        return filtered;
+    };
+
+    // Toggle filters visibility on mobile
+    const toggleFilters = () => {
+        setShowFilters(!showFilters);
+    };
+
+    // Show more categories
+    const showMoreCategories = () => {
+        setVisibleCategories(categories.length);
     };
 
     if (isLoading) {
@@ -925,7 +524,7 @@ const Home = () => {
                     </div>
                     <div className="categories-container">
                         <div className="categories-grid">
-                            {categories.map((category, index) => (
+                            {categories.slice(0, visibleCategories).map((category, index) => (
                                 <div
                                     key={index}
                                     className="category-card"
@@ -938,7 +537,7 @@ const Home = () => {
                                             loading="lazy"
                                             className="category-image"
                                             onError={(e) => {
-                                                e.target.src = 'https://via.placeholder.com/300x200?text=Category+Image';
+                                                e.target.src = getFallbackProductImage(category);
                                             }}
                                         />
                                         <div className="category-overlay">
@@ -948,74 +547,113 @@ const Home = () => {
                                             </button>
                                         </div>
                                     </div>
-                                    <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+                                    <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}</h3>
                                 </div>
                             ))}
                         </div>
+                        {visibleCategories < categories.length && (
+                            <div className="show-more-container">
+                                <button className="show-more-btn" onClick={showMoreCategories}>
+                                    Show All Categories
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
 
-                <section className="pattern-filter-section">
-                    <h3>Shop by Pattern</h3>
-                    <div className="pattern-filters">
-                        <button
-                            className={`pattern-filter ${activeFilter === 'all' ? 'active' : ''}`}
-                            onClick={() => filterProducts('all')}
-                        >
-                            All
+                <section className="product-filters-section">
+                    <div className="filters-header">
+                        <h3>Filter Products</h3>
+                        <button className="toggle-filters" onClick={toggleFilters}>
+                            {showFilters ? 'Hide Filters' : 'Show Filters'}
                         </button>
-                        <button
-                            className={`pattern-filter ${activeFilter === 'floral' ? 'active' : ''}`}
-                            onClick={() => filterProducts('floral')}
-                        >
-                            Floral
-                        </button>
-                        <button
-                            className={`pattern-filter ${activeFilter === 'striped' ? 'active' : ''}`}
-                            onClick={() => filterProducts('striped')}
-                        >
-                            Striped
-                        </button>
-                        <button
-                            className={`pattern-filter ${activeFilter === 'polka-dot' ? 'active' : ''}`}
-                            onClick={() => filterProducts('polka-dot')}
-                        >
-                            Polka Dot
-                        </button>
-                        <button
-                            className={`pattern-filter ${activeFilter === 'geometric' ? 'active' : ''}`}
-                            onClick={() => filterProducts('geometric')}
-                        >
-                            Geometric
-                        </button>
-                        <button
-                            className={`pattern-filter ${activeFilter === 'embroidered' ? 'active' : ''}`}
-                            onClick={() => filterProducts('embroidered')}
-                        >
-                            Ethnic
-                        </button>
+                    </div>
+
+                    <div className={`filters-container ${showFilters ? 'show' : ''}`}>
+                        <div className="filter-group">
+                            <h4>Pattern</h4>
+                            <div className="pattern-filters">
+                                {patternOptions.map(pattern => (
+                                    <button
+                                        key={pattern.value}
+                                        className={`pattern-filter ${activeFilter === pattern.value ? 'active' : ''}`}
+                                        onClick={() => filterProducts(pattern.value)}
+                                    >
+                                        {pattern.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="filter-group">
+                            <h4>Price Range</h4>
+                            <div className="price-filters">
+                                {priceRanges.map(range => (
+                                    <button
+                                        key={range.value}
+                                        className={`price-filter ${activePriceFilter === range.value ? 'active' : ''}`}
+                                        onClick={() => filterByPrice(range.value)}
+                                    >
+                                        {range.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="filter-group">
+                            <h4>Sort By</h4>
+                            <select
+                                className="sort-select"
+                                value={sortOption}
+                                onChange={(e) => sortProducts(e.target.value)}
+                            >
+                                <option value="featured">Featured</option>
+                                <option value="price-low-high">Price: Low to High</option>
+                                <option value="price-high-low">Price: High to Low</option>
+                                <option value="rating">Highest Rated</option>
+                                <option value="newest">Newest</option>
+                                <option value="discount">Best Discount</option>
+                            </select>
+                        </div>
+
+                        <div className="filter-actions">
+                            <button
+                                className="clear-filters"
+                                onClick={() => {
+                                    setActiveFilter('all');
+                                    setActivePriceFilter('all');
+                                    setSortOption('featured');
+                                }}
+                            >
+                                Clear All Filters
+                            </button>
+                        </div>
                     </div>
                 </section>
 
                 <section className="featured-section">
                     <div className="section-header">
                         <h2>All Products</h2>
-                        <button className="view-all" onClick={() => navigateTo("/products")}>
-                            View All
-                        </button>
+                        <div className="results-info">
+                            <span>Showing {getFilteredProducts().length} of {products.length} products</span>
+                            <button className="view-all" onClick={() => navigateTo("/products")}>
+                                View All
+                                <span className="arrow-icon">→</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="products-grid">
                         {getFilteredProducts().map((product, index) => (
                             <div
-                                key={index}
+                                key={`${product.id}-${index}`}
                                 className={`product-card ${product.isApiProduct ? "api-product" : ""}`}
                                 onMouseEnter={() => setHoveredProduct(product.id)}
                                 onMouseLeave={() => setHoveredProduct(null)}
                             >
                                 {/* 🔥 Badges */}
                                 {product.isApiProduct && <span className="api-badge">New</span>}
-                                {product.discount && (
+                                {product.discount > 0 && (
                                     <span className="discount-badge">-{product.discount}%</span>
                                 )}
 
@@ -1038,7 +676,7 @@ const Home = () => {
                                     >
                                         Quick View
                                     </button>
-                                    {product.pattern && (
+                                    {product.pattern && product.pattern !== 'n/a' && (
                                         <span className="product-pattern">{product.pattern}</span>
                                     )}
                                 </div>
@@ -1050,7 +688,7 @@ const Home = () => {
 
                                     {/* Price Section */}
                                     <div className="price-container">
-                                        {product.discount ? (
+                                        {product.discount > 0 ? (
                                             <>
                                                 <span className="original-price">₹{product.price}</span>
                                                 <span className="discounted-prices">
@@ -1067,18 +705,20 @@ const Home = () => {
 
                                     {/* Ratings */}
                                     <div className="product-rating">
-                                        {[...Array(5)].map((_, i) => (
-                                            <span
-                                                key={i}
-                                                className={
-                                                    i < Math.floor(product.rating) ? "star filled" : "star"
-                                                }
-                                            >
-                                                {i < Math.floor(product.rating) ? "★" : "☆"}
-                                            </span>
-                                        ))}
-                                        <span>({product.rating?.toFixed(1) || "0.0"})</span>
+                                        {[...Array(5)].map((_, i) => {
+                                            const rating = Number(product.rating) || 0; // ensure it's a number
+                                            return (
+                                                <span
+                                                    key={i}
+                                                    className={i < Math.floor(rating) ? "star filled" : "star"}
+                                                >
+                                                    {i < Math.floor(rating) ? "★" : "☆"}
+                                                </span>
+                                            );
+                                        })}
+                                        <span>({(Number(product.rating) || 0).toFixed(1)})</span>
                                     </div>
+
 
                                     {/* Stock and Status */}
                                     <div className="product-meta">
@@ -1110,10 +750,23 @@ const Home = () => {
                             </div>
                         ))}
                     </div>
+
+                    {getFilteredProducts().length === 0 && (
+                        <div className="no-products">
+                            <h3>No products found</h3>
+                            <p>Try adjusting your filters to see more results</p>
+                            <button
+                                className="reset-filters"
+                                onClick={() => {
+                                    setActiveFilter('all');
+                                    setActivePriceFilter('all');
+                                }}
+                            >
+                                Reset Filters
+                            </button>
+                        </div>
+                    )}
                 </section>
-
-
-
 
                 <section className="offer-banner">
                     <div className="offer-content">
@@ -1140,14 +793,14 @@ const Home = () => {
                         </button>
                     </div>
                     <div className="trending-grid">
-                        {mergedProducts
+                        {products
                             .filter(p => p.rating >= 3.5)
                             .slice(0, 5)
                             .map((product, index) => (
                                 <div key={index} className="trending-card">
                                     <div className="trending-image">
                                         <img
-                                            src={product.image}
+                                            src={getProductImage(product)}
                                             alt={product.name}
                                             loading="lazy"
                                             onError={(e) => {
@@ -1155,12 +808,14 @@ const Home = () => {
                                             }}
                                             onClick={() => navigateTo(`/ProductDetail/${product.id}`)}
                                         />
-                                        <span className="trending-pattern">{product.pattern}</span>
+                                        {product.pattern && product.pattern !== 'n/a' && (
+                                            <span className="trending-pattern">{product.pattern}</span>
+                                        )}
                                     </div>
                                     <div className="trending-info">
                                         <h3>{product.name}</h3>
                                         <div className="trending-price">
-                                            {product.discount ? (
+                                            {product.discount > 0 ? (
                                                 <>
                                                     <span className="original">₹{product.price}</span>
                                                     <span>₹{Math.round(product.price * (1 - product.discount / 100))}</span>
@@ -1182,205 +837,6 @@ const Home = () => {
                                     </div>
                                 </div>
                             ))}
-                    </div>
-                </section>
-
-                <section className="pattern-showcase">
-                    <div className="pattern-header">
-                        <h2>Our Pattern Collection</h2>
-                        <p>Discover beautiful Indian patterns</p>
-                    </div>
-
-                    <div className="pattern-slider">
-                        <div className="pattern-slide" onClick={() => filterProducts('floral')}>
-                            <div className="slide-content">
-                                <h3>Floral</h3>
-                                <p>Elegant flower designs</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('geometric')}>
-                            <div className="slide-content">
-                                <h3>Geometric</h3>
-                                <p>Modern shapes & patterns</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('ethnic')}>
-                            <div className="slide-content">
-                                <h3>Ethnic</h3>
-                                <p>Traditional Indian motifs</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('striped')}>
-                            <div className="slide-content">
-                                <h3>Striped</h3>
-                                <p>Classic stripe patterns</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('polka-dot')}>
-                            <div className="slide-content">
-                                <h3>Polka Dot</h3>
-                                <p>Playful dot patterns</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('paisley')}>
-                            <div className="slide-content">
-                                <h3>Paisley</h3>
-                                <p>Traditional teardrop motifs</p>
-                            </div>
-                        </div>
-
-                        <div className="pattern-slide" onClick={() => filterProducts('ikat')}>
-                            <div className="slide-content">
-                                <h3>Ikat</h3>
-                                <p>Resist dyeing technique</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section className="testimonials-section">
-                    <div className="testimonials-header">
-                        <h2>What Our Customers Say</h2>
-                        <p>Hear from our satisfied customers across India</p>
-                    </div>
-
-                    <div className="testimonials-container">
-                        <button className="scroll-btn scroll-left" onClick={scrollLeft}>
-                            ‹
-                        </button>
-
-                        <div className="testimonials-scroll-container">
-                            <div className="testimonials-scroll" ref={testimonialsScrollRef}>
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★★
-                                        <span className="rating-text">5.0</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"The floral dress I bought is absolutely beautiful! The quality exceeded my expectations and the fit was perfect for Indian weddings."</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aW5kaWFuJTIwd29tYW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=400&q=60"
-                                            alt="Priya Sharma"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Priya Sharma</span>
-                                            <span className="author-location">Mumbai, Maharashtra</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★★
-                                        <span className="rating-text">5.0</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"Great collection of ethnic wear. The delivery was fast and the packaging was excellent. Perfect for festival season!"</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1516726817505-5ed934c485c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGluZGlhbiU20wd29tYW58ZW58MHx8MHx8fHww&auto=format&fit=crop&w=400&q=60"
-                                            alt="Ananya Patel"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Ananya Patel</span>
-                                            <span className="author-location">Ahmedabad, Gujarat</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★☆
-                                        <span className="rating-text">4.5</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"Love the variety of patterns available. The customer service is top-notch! Will definitely shop again."</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cGVyc29ufGVufDB8fDB8fHww&auto=format&fit=crop&w=400&q=60"
-                                            alt="Meera Gupta"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Meera Gupta</span>
-                                            <span className="author-location">Delhi, NCR</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★★
-                                        <span className="rating-text">5.0</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"The silk sarees are absolutely authentic and the embroidery work is exquisite. Perfect for traditional occasions!"</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGluZGlhbiUyMHdvbWFufGVufDB8fDB8fHww&auto=format&fit=crop&w=400&q=60"
-                                            alt="Sneha Reddy"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Sneha Reddy</span>
-                                            <span className="author-location">Hyderabad, Telangana</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★☆
-                                        <span className="rating-text">4.0</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"Amazing quality and authentic Indian designs. The colors are vibrant and the fabric is comfortable."</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aW5kaWFuJTIwd29tYW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=400&q=60"
-                                            alt="Divya Singh"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Divya Singh</span>
-                                            <span className="author-location">Lucknow, Uttar Pradesh</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="testimonial-card">
-                                    <div className="testimonial-rating">
-                                        ★★★★★
-                                        <span className="rating-text">5.0</span>
-                                    </div>
-                                    <div className="testimonial-content">
-                                        <p>"Fast shipping and excellent customer support. The products are exactly as shown in the pictures."</p>
-                                    </div>
-                                    <div className="testimonial-author">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fGluZGlhbiUyMHdvbWFufGVufDB8fDB8fHww&auto=format&fit=crop&w=400&q=60"
-                                            alt="Riya Malhotra"
-                                        />
-                                        <div className="author-info">
-                                            <span className="author-name">Riya Malhotra</span>
-                                            <span className="author-location">Chandigarh, Punjab</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button className="scroll-btn scroll-right" onClick={scrollRight}>
-                            ›
-                        </button>
                     </div>
                 </section>
 
@@ -1411,7 +867,6 @@ const Home = () => {
                         </form>
                     </div>
                 </section>
-
             </main>
             <Footer />
             <ChatBot isPremium={true} />

@@ -14,14 +14,12 @@ function Login() {
         setIsLoading(true);
         setError("");
 
-        // Basic validation
         if (!email || !password) {
             setError("Please fill in all fields");
             setIsLoading(false);
             return;
         }
 
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError("Please enter a valid email address");
@@ -29,7 +27,6 @@ function Login() {
             return;
         }
 
-        // Password strength validation
         if (password.length < 6) {
             setError("Password must be at least 6 characters long");
             setIsLoading(false);
@@ -37,16 +34,17 @@ function Login() {
         }
 
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise((resolve) => setTimeout(resolve, 1500));
 
-            // Demo: direct login check (In real app, use proper authentication)
             if (email === "admin@pankhudi.com" && password === "Pankhudi@123") {
                 localStorage.setItem("auth", "true");
+                localStorage.setItem("loginTime", Date.now().toString());
+
                 if (rememberMe) {
                     localStorage.setItem("rememberMe", "true");
                 }
-                window.location.reload();
+
+                window.location.href = "/"; // login ke baad home ya dashboard
             } else {
                 setError("Invalid credentials. Please try again.");
             }
@@ -63,7 +61,6 @@ function Login() {
 
     return (
         <div className="login-container">
-            {/* Website Header */}
             <div className="website-header">
                 <div className="logo-container">
                     <i className="fas fa-dove logo-icon"></i>
@@ -113,7 +110,9 @@ function Login() {
                             className="password-toggle"
                             onClick={() => setShowPassword(!showPassword)}
                         >
-                            <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                            <i
+                                className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+                            ></i>
                         </button>
                     </div>
 
@@ -138,11 +137,7 @@ function Login() {
                         </button>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="login-button"
-                        disabled={isLoading}
-                    >
+                    <button type="submit" className="login-button" disabled={isLoading}>
                         {isLoading ? (
                             <>
                                 <i className="fas fa-spinner fa-spin"></i>
@@ -166,22 +161,8 @@ function Login() {
                 </div>
             </div>
 
-            <div className="login-background">
-                <div className="background-shapes">
-                    <div className="shape shape-1"></div>
-                    <div className="shape shape-2"></div>
-                    <div className="shape shape-3"></div>
-                </div>
-            </div>
-
-            {/* Website Footer */}
             <div className="website-footer">
                 <p>&copy; 2024 Pankhudi Foundation. All rights reserved.</p>
-                <div className="footer-links">
-                    <a href="#privacy">Privacy Policy</a>
-                    <a href="#terms">Terms of Service</a>
-                    <a href="#contact">Contact Us</a>
-                </div>
             </div>
         </div>
     );
