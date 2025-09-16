@@ -16,7 +16,8 @@ function Navbar() {
         const loginTime = localStorage.getItem("loginTime");
 
         if (auth && loginTime) {
-            const sessionLimit = 12 * 60 * 60 * 1000; // 12 hours
+            const sessionLimit = 5 * 60 * 1000;
+            // const sessionLimit = 12 * 60 * 60 * 1000; // 12 hours
 
             const updateRemaining = () => {
                 const now = Date.now();
