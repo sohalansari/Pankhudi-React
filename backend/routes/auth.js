@@ -7,8 +7,8 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const generateJWT = require('../utils/generateJWT');
 const nodemailer = require('nodemailer');
 
-// DB helper
-function getDb(req) { return req.app.locals.db; }
+
+function getDb(req) { return req.db; }
 
 /**
  * Register route
@@ -28,16 +28,22 @@ router.post('/register', async (req, res) => {
         if (!password || password.length < 8) errors.password = 'Password must be at least 8 chars';
         if (address && address.length < 10) errors.address = 'Address too short';
 
-        if (Object.keys(errors).length) return res.status(400).json({ success: false, message: 'Validation failed', errors });
+        if (Object.keys(errors).length) {
+            return res.status(400).json({ success: false, message: 'Validation failed', errors });
+        }
 
         // Check duplicates
         const checkEmail = await new Promise((resolve, reject) =>
-            db.query('SELECT id FROM users WHERE email = ? AND is_active=1 AND is_deleted=0', [email], (err, rows) => err ? reject(err) : resolve(rows))
+            db.query('SELECT id FROM users WHERE email = ? AND is_active=1 AND is_deleted=0', [email], (err, rows) =>
+                err ? reject(err) : resolve(rows)
+            )
         );
         if (checkEmail.length) return res.status(409).json({ success: false, message: 'Email already registered' });
 
         const checkPhone = await new Promise((resolve, reject) =>
-            db.query('SELECT id FROM users WHERE phone = ? AND is_active=1 AND is_deleted=0', [phone], (err, rows) => err ? reject(err) : resolve(rows))
+            db.query('SELECT id FROM users WHERE phone = ? AND is_active=1 AND is_deleted=0', [phone], (err, rows) =>
+                err ? reject(err) : resolve(rows)
+            )
         );
         if (checkPhone.length) return res.status(409).json({ success: false, message: 'Phone already registered' });
 
@@ -49,7 +55,7 @@ router.post('/register', async (req, res) => {
             db.query(
                 'INSERT INTO users (name,email,password,phone,address,auth_method,is_verified,is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [name, email, hashedPassword, phone, address || '', 'local', 0, 1],
-                (err, result) => err ? reject(err) : resolve(result)
+                (err, result) => (err ? reject(err) : resolve(result))
             )
         );
 
@@ -65,7 +71,6 @@ router.post('/register', async (req, res) => {
 
     } catch (err) {
         console.error('Register error:', err);
-        // Make sure we send only one response
         if (!res.headersSent) {
             return res.status(500).json({ success: false, message: 'Server error' });
         }
@@ -79,7 +84,9 @@ router.post('/login', async (req, res) => {
     const db = getDb(req);
     try {
         let { emailOrPhone, password } = req.body;
-        if (!emailOrPhone || !password) return res.status(400).json({ success: false, message: 'Email/Phone and password required' });
+        if (!emailOrPhone || !password) {
+            return res.status(400).json({ success: false, message: 'Email/Phone and password required' });
+        }
 
         emailOrPhone = emailOrPhone.trim();
         password = password.trim();
@@ -90,18 +97,22 @@ router.post('/login', async (req, res) => {
             : 'SELECT * FROM users WHERE phone = ? AND is_active=1 AND is_deleted=0';
 
         const rows = await new Promise((resolve, reject) =>
-            db.query(query, [emailOrPhone], (err, results) => err ? reject(err) : resolve(results))
+            db.query(query, [emailOrPhone], (err, results) => (err ? reject(err) : resolve(results)))
         );
 
-        if (!rows.length) return res.status(400).json({ success: false, message: 'User not found or inactive' });
+        if (!rows.length) {
+            return res.status(400).json({ success: false, message: 'User not found or inactive' });
+        }
 
         const user = rows[0];
-        if (!user.password) return res.status(400).json({ success: false, message: 'Invalid credentials' });
+        if (!user.password) {
+            return res.status(400).json({ success: false, message: 'Invalid credentials' });
+        }
 
         const isValid = await bcrypt.compare(password, user.password);
-        console.log("bcrypt compare result:", isValid); // Debug
-
-        if (!isValid) return res.status(400).json({ success: false, message: 'Wrong password' });
+        if (!isValid) {
+            return res.status(400).json({ success: false, message: 'Wrong password' });
+        }
 
         const token = generateJWT({ userId: user.id, email: user.email, phone: user.phone });
 

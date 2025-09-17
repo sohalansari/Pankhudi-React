@@ -456,7 +456,7 @@ export default function Reports() {
                             <FiAlertTriangle />
                         </div>
                         <div className="summary-content">
-                            <h3>Low Stock Items</h3>
+                            <h3>Out of Stock</h3>
                             <p className="big-value">{reports.lowStockProducts}</p>
                             <span className="trend negative">+3.1% from last month</span>
                         </div>

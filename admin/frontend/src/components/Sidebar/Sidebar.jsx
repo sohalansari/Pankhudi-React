@@ -12,7 +12,7 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
         { path: "/products", name: "Manage Products", icon: "🛒" },
         { path: "/reports", name: "Reports", icon: "📄" },
         { path: "/settings", name: "Settings", icon: "⚙️" },
-        { path: "/analytics", name: "Analytics", icon: "📈" },
+        { path: "/cart", name: "User  Cart", icon: "📈" },
         { path: "/content", name: "Content", icon: "📝" },
         { path: "/help", name: "Help & Support", icon: "❓" },
 

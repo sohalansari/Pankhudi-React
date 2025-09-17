@@ -6,10 +6,6 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-function getDb(req) {
-    return req.app.locals.db;
-}
-
 // ===============================
 // Multer setup for avatar upload
 // ===============================
@@ -32,7 +28,7 @@ const upload = multer({ storage });
 // @access  Private
 // ===============================
 router.get("/profile", authenticate, (req, res) => {
-    const db = getDb(req);
+    const db = req.db; // ✅ सही तरीका
     const userId = req.user.userId;
 
     db.query(
@@ -44,11 +40,8 @@ router.get("/profile", authenticate, (req, res) => {
 
             let user = rows[0];
             if (user.avatar) {
-                // ✅ full URL banao
                 user.avatar = `http://localhost:5000/${user.avatar}`;
             }
-
-            // ✅ Add createdAt field to match frontend expectation
             user.createdAt = user.created_at;
 
             return res.json({ success: true, user });
@@ -62,11 +55,10 @@ router.get("/profile", authenticate, (req, res) => {
 // @access  Private
 // ===============================
 router.put("/profile", authenticate, upload.single("avatar"), async (req, res) => {
-    const db = getDb(req);
+    const db = req.db; // ✅ सही तरीका
     const userId = req.user.userId;
     const { name, email, phone, address, is_premium, password } = req.body;
 
-    // Validation
     if (name && name.length < 3) {
         return res.status(400).json({ success: false, message: "Name must be at least 3 characters" });
     }
@@ -82,7 +74,6 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
         hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // ✅ sirf relative path store karo DB me
     const avatarPath = req.file ? `uploads/avatars/${req.file.filename}` : undefined;
 
     const updateFields = [];
@@ -115,11 +106,8 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
 
                 let user = rows[0];
                 if (user.avatar) {
-                    // ✅ full URL banao
                     user.avatar = `http://localhost:5000/${user.avatar}`;
                 }
-
-                // ✅ Add createdAt field to match frontend expectation
                 user.createdAt = user.created_at;
 
                 return res.json({ success: true, user });

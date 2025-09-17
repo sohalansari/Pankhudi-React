@@ -4,6 +4,8 @@ import axios from "axios";
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
+import { addToCart } from "../../utils/api";
+
 import './Home.css';
 
 // Enhanced category images with more options
@@ -152,6 +154,8 @@ const Home = () => {
     const [visibleCategories, setVisibleCategories] = useState(8); // Show 8 categories initially
     const navigate = useNavigate();
     const testimonialsScrollRef = useRef(null);
+    const [cart, setCart] = useState([]);
+
     const API = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
     // ✅ Improved Product image formatter
@@ -329,25 +333,54 @@ const Home = () => {
         navigate(path);
     }, [navigate]);
 
-    // Cart functionality
-    const handleAddToCart = (product) => {
-        if (!isLoggedIn) {
-            alert('Please login to add items to the cart.');
-            navigate('/login');
-            return;
+    const handleAddToCart = async (product) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login first");
+                return;
+            }
+
+            const storedUser = localStorage.getItem("user");
+            if (!storedUser) {
+                alert("User info not found, please login again");
+                return;
+            }
+            const user = JSON.parse(storedUser);
+
+            // ✅ Calculate discounted price before sending
+            const finalPrice = product.discount > 0
+                ? Math.round(product.price * (1 - product.discount / 100))
+                : product.price;
+
+            const payload = {
+                product_id: product.id,
+                quantity: 1,
+                user_id: user.id,
+                price: finalPrice   // ✅ Always send discounted price to backend
+            };
+
+            const response = await axios.post(
+                "http://localhost:5000/api/cart/add",
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            alert(response.data.message);
+
+        } catch (error) {
+            console.error("Add to cart error:", error);
+            if (error.response) {
+                alert(error.response.data.message || "Something went wrong");
+            } else {
+                alert("Network or server error");
+            }
         }
-
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const index = cart.findIndex(item => item.id === product.id);
-
-        if (index !== -1) {
-            cart[index].quantity += 1;
-        } else {
-            cart.push({ ...product, quantity: 1 });
-        }
-
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert(`${product.name} added to cart!`);
     };
 
     // Filter products by pattern
@@ -643,6 +676,8 @@ const Home = () => {
                         </div>
                     </div>
 
+                    {/* …inside your <section className="featured-section"> */}
+
                     <div className="products-grid">
                         {getFilteredProducts().map((product, index) => (
                             <div
@@ -670,8 +705,7 @@ const Home = () => {
                                     />
 
                                     <button
-                                        className={`quick-view ${hoveredProduct === product.id ? "visible" : ""
-                                            }`}
+                                        className={`quick-view ${hoveredProduct === product.id ? "visible" : ""}`}
                                         onClick={() => navigate(`/ProductDetail/${product.id}`)}
                                     >
                                         Quick View
@@ -706,7 +740,7 @@ const Home = () => {
                                     {/* Ratings */}
                                     <div className="product-rating">
                                         {[...Array(5)].map((_, i) => {
-                                            const rating = Number(product.rating) || 0; // ensure it's a number
+                                            const rating = Number(product.rating) || 0;
                                             return (
                                                 <span
                                                     key={i}
@@ -718,7 +752,6 @@ const Home = () => {
                                         })}
                                         <span>({(Number(product.rating) || 0).toFixed(1)})</span>
                                     </div>
-
 
                                     {/* Stock and Status */}
                                     <div className="product-meta">
@@ -746,6 +779,8 @@ const Home = () => {
                                     >
                                         {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
                                     </button>
+
+
                                 </div>
                             </div>
                         ))}
@@ -766,6 +801,7 @@ const Home = () => {
                             </button>
                         </div>
                     )}
+
                 </section>
 
                 <section className="offer-banner">

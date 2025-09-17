@@ -1,305 +1,256 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './Cart.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./Cart.css";
 
-const Cart = () => {
+const CartPage = () => {
     const [cartItems, setCartItems] = useState([]);
-    const [couponCode, setCouponCode] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [promoCode, setPromoCode] = useState("");
     const [discount, setDiscount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [shippingOption, setShippingOption] = useState('standard');
+    const [applyingPromo, setApplyingPromo] = useState(false);
+
     const navigate = useNavigate();
+    const token = localStorage.getItem("token");
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = storedUser?.id;
 
-    useEffect(() => {
-        setTimeout(() => {
-            const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-            setCartItems(storedCart);
-            setIsLoading(false);
-        }, 500);
-    }, []);
-
-    const handleQuantityChange = (id, newQuantity) => {
-        const updatedCart = cartItems.map(item =>
-            item.id === id ? { ...item, quantity: Math.max(1, newQuantity) } : item
-        );
-        updateCart(updatedCart);
-    };
-
-    const handleRemove = (id) => {
-        const updatedCart = cartItems.filter(item => item.id !== id);
-        updateCart(updatedCart);
-    };
-
-    const updateCart = (updatedCart) => {
-        setCartItems(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-    };
-
-    const applyCoupon = () => {
-        const validCoupons = {
-            'SAVE10': 0.1,
-            'WELCOME20': 0.2,
-            'FREESHIP': 0
-        };
-
-        if (validCoupons[couponCode] !== undefined) {
-            setDiscount(validCoupons[couponCode]);
-            alert(`Coupon applied successfully! ${couponCode === 'FREESHIP' ? 'Free shipping activated!' : `${validCoupons[couponCode] * 100}% discount applied`}`);
-        } else {
-            setDiscount(0);
-            alert('Invalid coupon code');
-        }
-    };
-
-    const getSubtotal = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-    };
-
-    const getShippingCost = () => {
-        if (couponCode === 'FREESHIP') return 0;
-        const subtotal = getSubtotal();
-        if (subtotal > 5000) return 0;
-        return shippingOption === 'express' ? 200 : 100;
-    };
-
-    const getTotal = () => {
-        const subtotal = getSubtotal();
-        const shipping = getShippingCost();
-        return subtotal - (subtotal * discount) + shipping;
-    };
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            minimumFractionDigits: 0
-        }).format(price);
-    };
-
-    const navigateToProduct = (productId) => {
-        navigate(`/ProductDetail/${productId}`);
-    };
-
-    const proceedToCheckout = () => {
-        if (cartItems.length === 0) {
-            alert('Your cart is empty!');
+    // Fetch cart items
+    const fetchCart = async () => {
+        if (!userId || !token) {
+            setCartItems([]);
+            setLoading(false);
             return;
         }
-        navigate('/checkout');
+        try {
+            setLoading(true);
+            const response = await axios.get(`http://localhost:5000/api/cart/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setCartItems(response.data.items || []);
+        } catch (error) {
+            console.error("Error fetching cart:", error);
+            alert(error.response?.data?.message || "Failed to fetch cart");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const buyNow = (product) => {
-        const singleItemCart = [product];
-        localStorage.setItem('cart', JSON.stringify(singleItemCart));
-        navigate('/checkout');
+    // Update quantity
+    const updateQuantity = async (cartId, newQty) => {
+        if (newQty <= 0) return;
+        try {
+            await axios.put(
+                `http://localhost:5000/api/cart/update/${cartId}`,
+                { quantity: newQty },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchCart();
+        } catch (error) {
+            console.error("Update error:", error);
+            alert(error.response?.data?.message || "Failed to update quantity");
+        }
     };
 
-    const continueShopping = () => {
-        navigate('/products');
+    // Remove item
+    const removeItem = async (cartId) => {
+        if (!window.confirm("Are you sure you want to remove this item?")) return;
+
+        try {
+            await axios.delete(`http://localhost:5000/api/cart/delete/${cartId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            fetchCart();
+        } catch (error) {
+            console.error("Remove error:", error);
+            alert(error.response?.data?.message || "Failed to remove item");
+        }
     };
 
-    const goBack = () => {
-        navigate(-1);
+    // Apply promo code
+    const applyPromoCode = async () => {
+        if (!promoCode.trim()) return;
+
+        setApplyingPromo(true);
+        try {
+            // Simulate API call for promo code validation
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // In a real app,validate the promo code with backend
+            if (promoCode.toUpperCase() === "SAVE10") {
+                setDiscount(0.1); // 10% discount
+                alert("Promo code applied successfully!");
+            } else {
+                alert("Invalid promo code");
+            }
+        } catch (error) {
+            alert("Failed to apply promo code");
+        } finally {
+            setApplyingPromo(false);
+        }
     };
 
-    const goHome = () => {
-        navigate('/');
-    };
+    // Calculate prices
+    const subtotal = cartItems.reduce(
+        (acc, item) => acc + (item.final_price || item.price) * item.quantity,
+        0
+    );
 
-    if (isLoading) {
-        return (
-            <div className="cart-loading">
-                <div className="loading-spinner"></div>
-                <p>Loading your cart...</p>
-            </div>
-        );
-    }
+    const discountAmount = subtotal * discount;
+    const total = subtotal - discountAmount;
+
+    useEffect(() => {
+        fetchCart();
+    }, [userId, token]);
 
     return (
-        <div className="cart-page-container">
-            {/* Header with navigation */}
-            <header className="cart-header-nav">
-                <div className="nav-container">
-                    <button className="nav-btn back-btn" onClick={goBack}>
-                        <span className="nav-icon">←</span> Back
-                    </button>
-                    <h1 className="website-title" onClick={goHome}>Pankhudi</h1>
-                    <button className="nav-btn home-btn" onClick={goHome}>
-                        <span className="nav-icon">⌂</span> Home
+        <div className="cart-container">
+            <div className="cart-header">
+                <button className="back-btn" onClick={() => navigate(-1)}>
+                    <span className="back-arrow">←</span> Continue Shopping
+                </button>
+                <h1 className="site-name">Your Shopping Cart</h1>
+                <div className="cart-stats">
+                    {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
+                </div>
+            </div>
+
+            {loading && (
+                <div className="loading-container">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="cart-item-skeleton">
+                            <div className="skeleton-image"></div>
+                            <div className="skeleton-details">
+                                <div className="skeleton-line"></div>
+                                <div className="skeleton-line short"></div>
+                                <div className="skeleton-line shorter"></div>
+                            </div>
+                            <div className="skeleton-actions"></div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty cart */}
+            {!loading && !cartItems.length && (
+                <div className="empty-cart">
+                    <div className="empty-cart-icon">🛒</div>
+                    <h2>Your cart is empty</h2>
+                    <p>Looks like you haven't added anything to your cart yet.</p>
+                    <button className="continue-shopping-btn" onClick={() => navigate('/products')}>
+                        Continue Shopping
                     </button>
                 </div>
-            </header>
+            )}
 
-            <div className="cart-container">
-                <div className="cart-header">
-                    <h2>Your Shopping Cart</h2>
-                    <span className="cart-count">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}</span>
-                </div>
+            {/* Cart items */}
+            {!loading && cartItems.length > 0 && (
+                <div className="cart-content">
+                    <div className="cart-items">
+                        {cartItems.map((item) => {
+                            const discountedPrice = item.final_price || item.price;
+                            const discountAmount = item.discount > 0 ? Math.round(item.price - discountedPrice) : 0;
 
-                {cartItems.length === 0 ? (
-                    <div className="empty-cart">
-                        <div className="empty-cart-icon">🛒</div>
-                        <h3>Your cart is empty</h3>
-                        <p>Looks like you haven't added anything to your cart yet</p>
-                        <button className="continue-shopping-btn" onClick={continueShopping}>
-                            Continue Shopping
-                        </button>
-                    </div>
-                ) : (
-                    <div className="cart-content">
-                        <div className="cart-items-section">
-                            {cartItems.map(item => (
-                                <div className="cart-item-card" key={item.id} onClick={() => navigateToProduct(item.id)}>
-                                    <div className="cart-item-image-container">
-                                        <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            className="cart-img"
-                                            onError={(e) => {
-                                                e.target.src = 'https://via.placeholder.com/150?text=Product+Image';
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="cart-details">
-                                        <h3 className="cart-item-name">{item.name}</h3>
-                                        <p className="cart-item-size">Size: {item.size}</p>
-                                        <p className="cart-item-price">Price: {formatPrice(item.price)}</p>
-
-                                        <div className="quantity-selector">
-                                            <button
-                                                className="quantity-btn minus"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleQuantityChange(item.id, item.quantity - 1);
-                                                }}
-                                                aria-label="Decrease quantity"
-                                            >
-                                                −
-                                            </button>
-                                            <span className="quantity-value">{item.quantity}</span>
-                                            <button
-                                                className="quantity-btn plus"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleQuantityChange(item.id, item.quantity + 1);
-                                                }}
-                                                aria-label="Increase quantity"
-                                            >
-                                                +
-                                            </button>
+                            return (
+                                <div key={item.cart_id} className="cart-item">
+                                    <div className="product-inf">
+                                        <div className="product-images">
+                                            <img src={`http://localhost:5000/${item.image}`} alt={item.product_name} />
+                                        </div>
+                                        <div className="product-details">
+                                            <h2 className="product-name">{item.product_name}</h2>
+                                            <div className="price-info">
+                                                {item.discount > 0 ? (
+                                                    <>
+                                                        <span className="original-price">₹{item.price}</span>
+                                                        <span className="discounted-price">₹{discountedPrice}</span>
+                                                        <span className="discount-badge">{item.discount}% OFF</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="price">₹{item.price}</span>
+                                                )}
+                                            </div>
+                                            {discountAmount > 0 && (
+                                                <div className="savings">You save ₹{discountAmount * item.quantity}</div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="cart-actions">
-                                        <p className="item-total">{formatPrice(item.price * item.quantity)}</p>
+                                    <div className="item-controls">
+                                        <div className="quantity-controls">
+                                            <button
+                                                className="qty-btn minus"
+                                                onClick={() => updateQuantity(item.cart_id, item.quantity - 1)}
+                                            >−</button>
+                                            <span className="quantity">{item.quantity}</span>
+                                            <button
+                                                className="qty-btn plus"
+                                                onClick={() => updateQuantity(item.cart_id, item.quantity + 1)}
+                                            >+</button>
+                                        </div>
                                         <button
                                             className="remove-btn"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemove(item.id);
-                                            }}
-                                            aria-label={`Remove ${item.name} from cart`}
+                                            onClick={() => removeItem(item.cart_id)}
                                         >
-                                            <span className="remove-icon">×</span> Remove
-                                        </button>
-                                        <button
-                                            className="buy-now-btn"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                buyNow(item);
-                                            }}
-                                        >
-                                            Buy Now
+                                            <span className="trash-icon">🗑️</span> Remove
                                         </button>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })}
+                    </div>
 
-                        <div className="cart-summary-section">
-                            <div className="summary-card">
-                                <h3 className="summary-title">Order Summary</h3>
+                    <div className="cart-summary">
+                        <div className="summary-card">
+                            <h2>Order Summary</h2>
+                            <div className="summary-line">
+                                <span>Subtotal ({cartItems.length} items)</span>
+                                <span>₹{subtotal.toFixed(2)}</span>
+                            </div>
 
-                                <div className="summary-row">
-                                    <span>Subtotal</span>
-                                    <span>{formatPrice(getSubtotal())}</span>
+                            {discount > 0 && (
+                                <div className="summary-line discount">
+                                    <span>Discount</span>
+                                    <span>-₹{discountAmount.toFixed(2)}</span>
                                 </div>
+                            )}
 
-                                {discount > 0 && (
-                                    <div className="summary-row discount-row">
-                                        <span>Discount ({couponCode})</span>
-                                        <span>-{formatPrice(getSubtotal() * discount)}</span>
-                                    </div>
-                                )}
-
-                                <div className="summary-row">
-                                    <div className="shipping-options">
-                                        <label>Shipping</label>
-                                        <select
-                                            value={shippingOption}
-                                            onChange={(e) => setShippingOption(e.target.value)}
-                                            className="shipping-select"
-                                        >
-                                            <option value="standard">Standard (3-5 days) - {formatPrice(100)}</option>
-                                            <option value="express">Express (1-2 days) - {formatPrice(200)}</option>
-                                        </select>
-                                    </div>
-                                    <span>{formatPrice(getShippingCost())}</span>
-                                </div>
-
-                                <div className="coupon-section">
-                                    <input
-                                        type="text"
-                                        placeholder="Enter coupon code"
-                                        value={couponCode}
-                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                        className="coupon-input"
-                                    />
-                                    <button onClick={applyCoupon} className="apply-coupon-btn">
-                                        Apply
-                                    </button>
-                                </div>
-
-                                <div className="summary-total-row">
-                                    <span>Total</span>
-                                    <span className="total-price">{formatPrice(getTotal())}</span>
-                                </div>
-
+                            <div className="promo-section">
+                                <input
+                                    type="text"
+                                    placeholder="Enter promo code"
+                                    value={promoCode}
+                                    onChange={(e) => setPromoCode(e.target.value)}
+                                    className="promo-input"
+                                />
                                 <button
-                                    className="checkout-btn"
-                                    onClick={proceedToCheckout}
+                                    onClick={applyPromoCode}
+                                    disabled={applyingPromo}
+                                    className="apply-promo-btn"
                                 >
-                                    Proceed to Checkout
-                                </button>
-
-                                <button
-                                    className="continue-shopping-btn secondary"
-                                    onClick={continueShopping}
-                                >
-                                    Continue Shopping
+                                    {applyingPromo ? 'Applying...' : 'Apply'}
                                 </button>
                             </div>
 
-                            <div className="security-info">
-                                <div className="security-item">
-                                    <span className="security-icon">🔒</span>
-                                    <span>Secure Checkout</span>
-                                </div>
-                                <div className="security-item">
-                                    <span className="security-icon">🔄</span>
-                                    <span>Easy Returns</span>
-                                </div>
-                                <div className="security-item">
-                                    <span className="security-icon">📦</span>
-                                    <span>Free Shipping on orders over {formatPrice(5000)}</span>
-                                </div>
+                            <div className="summary-total">
+                                <span>Total</span>
+                                <span>₹{total.toFixed(2)}</span>
+                            </div>
+
+                            <button className="checkout-btn">
+                                Proceed to Checkout
+                            </button>
+
+                            <div className="secure-checkout">
+                                <span className="lock-icon">🔒</span>
+                                Secure checkout
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default Cart;
+export default CartPage;

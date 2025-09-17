@@ -8,7 +8,8 @@ const path = require("path");
 const authRoutes = require("./routes/auth");
 const profileRoutes = require("./routes/profile");
 const productsRoutes = require("./routes/products");
-const chatRoutes = require("./routes/chat"); // ✅ added chat route
+const chatRoutes = require("./routes/chat");
+const cartRoutes = require("./routes/cart");
 
 const app = express();
 
@@ -22,7 +23,7 @@ app.use(
     })
 );
 
-// ✅ DB connection (pool)
+// DB pool
 const db = mysql.createPool({
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER || "root",
@@ -32,32 +33,21 @@ const db = mysql.createPool({
     connectionLimit: 10,
 });
 
-// attach db to app for routes
-app.locals.db = db;
+// Make db accessible in routes via req.db
+app.use((req, res, next) => {
+    req.db = db;
+    next();
+});
 
-// ✅ serve uploads folder
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// console.log("📂 Serving static files from:", path.join(__dirname, "uploads"));
+// static uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ routes
+// routes
 app.use("/api", authRoutes);
 app.use("/api", profileRoutes);
-// app.use("/api/products", productsRoutes);
-app.use("/api/chat", chatRoutes); // ✅ register chat route
-
-
-
-
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Products routes
-const productsRouter = require('./routes/products');
-app.use('/api/products', productsRouter);
-
-
-
-
-
+app.use("/api/chat", chatRoutes);
+app.use("/api/products", productsRoutes);
+app.use("/api/cart", cartRoutes);
 
 // health
 app.get("/health", (req, res) => res.json({ status: "ok" }));
