@@ -1,0 +1,201 @@
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --text-color: #333;
+    --table-header-bg: #f8f9fa;
+    --table-row-bg: #fff;
+    --table-row-hover-bg: #f2f2f2;
+    --border-color: #e0e0e0;
+    --box-shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f9;
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+.cart-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow-light);
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+h2 {
+    font-size: 1.8em;
+    color: var(--primary-color);
+    margin: 0;
+    font-weight: 600;
+}
+
+.cart-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.search-input {
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    width: 250px;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+}
+
+.action-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.export-btn {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.export-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.cart-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cart-table thead {
+    background-color: var(--table-header-bg);
+    color: var(--text-color);
+}
+
+.cart-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.cart-table th svg {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.cart-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--table-row-bg);
+    transition: background-color 0.3s ease;
+}
+
+.cart-table tbody tr:hover {
+    background-color: var(--table-row-hover-bg);
+}
+
+.cart-table td {
+    padding: 15px;
+    border-right: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+}
+
+.cart-table td:first-child {
+    border-left: none;
+}
+
+.cart-table td:last-child {
+    border-right: none;
+}
+
+.loading-state,
+.empty-state,
+.error-state {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: #777;
+}
+
+.error-state {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    border-radius: 8px;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.items-per-page {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555;
+}
+
+.items-per-page select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.page-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    color: var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.pagination-btn:disabled {
+    background-color: #f0f0f0;
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.pagination-btn:not(:disabled):hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
