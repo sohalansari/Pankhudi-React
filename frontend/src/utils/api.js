@@ -10,28 +10,57 @@ export const fetchProducts = async () => {
 // -------------------- Cart --------------------
 
 // Add to cart
-export const addToCart = async (user_id, product_id, quantity = 1) => {
+export const addToCart = async (product_id, quantity = 1) => {
+    const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE_URL}/cart/add`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, product_id, quantity }),
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ product_id, quantity }),
     });
     if (!res.ok) throw new Error("Failed to add to cart");
     return res.json();
 };
 
 // Fetch all cart items for a user
-export const fetchCart = async (user_id) => {
-    const res = await fetch(`${API_BASE_URL}/cart/${user_id}`);
-    if (!res.ok) throw new Error("Failed to fetch cart");
-    return res.json();
+export const fetchCartItems = async () => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user.id) return [];
+
+    const res = await fetch(`${API_BASE_URL}/cart/${user.id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) throw new Error("Failed to fetch cart items");
+    const data = await res.json();
+    return data.items || [];
+};
+
+// Fetch cart count
+export const fetchCartCount = async (userId) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_BASE_URL}/cart/count/${userId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) throw new Error("Failed to fetch cart count");
+    return res.json(); // returns { count: number }
 };
 
 // Update cart item quantity
 export const updateCartItem = async (cart_id, quantity) => {
+    const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE_URL}/cart/update/${cart_id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ quantity }),
     });
     if (!res.ok) throw new Error("Failed to update cart item");
@@ -40,17 +69,28 @@ export const updateCartItem = async (cart_id, quantity) => {
 
 // Remove a single cart item
 export const removeCartItem = async (cart_id) => {
-    const res = await fetch(`${API_BASE_URL}/cart/remove/${cart_id}`, {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_BASE_URL}/cart/delete/${cart_id}`, {
         method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
     });
-    if (!res.ok) throw new Error("Failed to remove item");
+    if (!res.ok) throw new Error("Failed to remove cart item");
     return res.json();
 };
 
 // Clear entire cart for a user
-export const clearCart = async (user_id) => {
-    const res = await fetch(`${API_BASE_URL}/cart/clear/${user_id}`, {
+export const clearCart = async () => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user.id) return { message: "User not logged in" };
+
+    const res = await fetch(`${API_BASE_URL}/cart/clear/${user.id}`, {
         method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
     });
     if (!res.ok) throw new Error("Failed to clear cart");
     return res.json();

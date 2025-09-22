@@ -11,7 +11,6 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decodedUser) => {
         if (err) return res.status(403).json({ message: "Invalid token" });
-
         req.user = decodedUser;
         req.user.id = decodedUser.id || decodedUser.userId;
         next();
@@ -135,6 +134,21 @@ router.delete("/delete/:cartId", authenticateToken, (req, res) => {
     db.query(sql, [cartId], (err) => {
         if (err) return res.status(500).json({ message: "Database error" });
         res.json({ message: "Item removed from cart" });
+    });
+});
+
+// ------------------- Get Cart Count -------------------
+router.get("/count/:userId", authenticateToken, (req, res) => {
+    const db = req.db;
+    const { userId } = req.params;
+
+    const sql = "SELECT SUM(quantity) as count FROM cart WHERE user_id = ?";
+    db.query(sql, [userId], (err, results) => {
+        if (err) {
+            console.error("❌ Cart count error:", err);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+        res.json({ count: results[0].count || 0 });
     });
 });
 

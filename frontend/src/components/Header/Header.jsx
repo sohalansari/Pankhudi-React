@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { fetchCartCount } from '../../utils/api'
 import {
     FiSearch,
     FiUser,
@@ -25,7 +26,6 @@ const Header = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [cartItemsCount, setCartItemsCount] = useState(0);
     const [wishlistItemsCount, setWishlistItemsCount] = useState(0);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -37,6 +37,7 @@ const Header = () => {
     const navigate = useNavigate();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
+    const [cartItemsCount, setCartItemsCount] = useState(0);
 
     const fetchUserData = () => {
         const token = localStorage.getItem('token');
@@ -51,6 +52,26 @@ const Header = () => {
             console.error('Error parsing user data:', error);
         }
     };
+
+
+    // ------------------- Fetch Cart Count from DB -------------------
+    useEffect(() => {
+        const fetchCount = async () => {
+            try {
+                if (!userData?.id) return; // user not loaded yet
+                const data = await fetchCartCount(userData.id);
+                setCartItemsCount(data.count || 0);
+            } catch (err) {
+                console.error("❌ Error fetching cart count:", err);
+            }
+        };
+
+        fetchCount(); // initial fetch
+
+        // auto refresh every 10 seconds
+        const interval = setInterval(fetchCount, 10000);
+        return () => clearInterval(interval);
+    }, [userData]);
 
 
     useEffect(() => {
