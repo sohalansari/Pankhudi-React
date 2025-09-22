@@ -363,7 +363,7 @@ export default function Reports() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        📊 Admin Dashboard
+                        📊 User Reports
                     </motion.h1>
                     <div className="header-actions">
                         <button
