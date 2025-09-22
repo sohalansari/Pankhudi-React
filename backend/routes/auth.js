@@ -7,12 +7,18 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const generateJWT = require('../utils/generateJWT');
 const nodemailer = require('nodemailer');
 
-
 function getDb(req) { return req.db; }
 
-/**
- * Register route
- */
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
 router.post('/register', async (req, res) => {
     const db = getDb(req);
     try {
@@ -22,58 +28,198 @@ router.post('/register', async (req, res) => {
         password = password?.trim();
 
         const errors = {};
+
         if (!name || name.length < 3) errors.name = 'Name must be at least 3 characters';
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Invalid email';
         if (!phone || !/^\d{10}$/.test(phone)) errors.phone = 'Phone must be 10 digits';
-        if (!password || password.length < 8) errors.password = 'Password must be at least 8 chars';
-        if (address && address.length < 10) errors.address = 'Address too short';
+        if (!password || password.length < 8) errors.password = 'Password must be at least 8 characters';
+        if (address && address.length < 10) errors.address = 'Address must be at least 10 characters';
 
+        // 🔹 Return structured error response
         if (Object.keys(errors).length) {
-            return res.status(400).json({ success: false, message: 'Validation failed', errors });
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                fields: Object.keys(errors).map((field) => ({
+                    field,
+                    error: errors[field],
+                }))
+            });
         }
 
-        // Check duplicates
-        const checkEmail = await new Promise((resolve, reject) =>
-            db.query('SELECT id FROM users WHERE email = ? AND is_active=1 AND is_deleted=0', [email], (err, rows) =>
-                err ? reject(err) : resolve(rows)
-            )
-        );
-        if (checkEmail.length) return res.status(409).json({ success: false, message: 'Email already registered' });
+        // ---------------- Existing Code Below ----------------
 
-        const checkPhone = await new Promise((resolve, reject) =>
-            db.query('SELECT id FROM users WHERE phone = ? AND is_active=1 AND is_deleted=0', [phone], (err, rows) =>
-                err ? reject(err) : resolve(rows)
+        // Check if already fully registered (verified user)
+        const existing = await new Promise((resolve, reject) =>
+            db.query('SELECT id,is_verified FROM users WHERE email = ? AND is_active=1 AND is_deleted=0', [email],
+                (err, rows) => err ? reject(err) : resolve(rows)
             )
         );
-        if (checkPhone.length) return res.status(409).json({ success: false, message: 'Phone already registered' });
+
+        if (existing.length && existing[0].is_verified === 1) {
+            return res.status(409).json({ success: false, message: 'Email already registered' });
+        }
+
+        // Check registration_otps for a used verification record
+        const otpRows = await new Promise((resolve, reject) =>
+            db.query('SELECT id FROM registration_otps WHERE email=? AND used=1 AND expires_at >= NOW() ORDER BY id DESC LIMIT 1', [email],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            )
+        );
+
+        if (!otpRows.length) {
+            return res.status(400).json({ success: false, message: 'Please verify your email before registering' });
+        }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Insert user
-        const insertResult = await new Promise((resolve, reject) =>
-            db.query(
-                'INSERT INTO users (name,email,password,phone,address,auth_method,is_verified,is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [name, email, hashedPassword, phone, address || '', 'local', 0, 1],
-                (err, result) => (err ? reject(err) : resolve(result))
-            )
+        let userId;
+        if (existing.length && existing[0].is_verified === 0) {
+            // update placeholder (if any)
+            userId = existing[0].id;
+            await new Promise((resolve, reject) =>
+                db.query('UPDATE users SET name=?, password=?, phone=?, address=?, auth_method=?, is_verified=1 WHERE id=?',
+                    [name, hashedPassword, phone, address || '', 'local', userId],
+                    (err) => err ? reject(err) : resolve(true)
+                )
+            );
+        } else {
+            // insert new user
+            const insertResult = await new Promise((resolve, reject) =>
+                db.query(
+                    'INSERT INTO users (name,email,password,phone,address,auth_method,is_verified,is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [name, email, hashedPassword, phone, address || '', 'local', 1, 1],
+                    (err, result) => (err ? reject(err) : resolve(result))
+                )
+            );
+            userId = insertResult.insertId;
+        }
+
+        // optional: cleanup used OTPs for this email
+        await new Promise((resolve, reject) =>
+            db.query('DELETE FROM registration_otps WHERE email=?', [email], (err) => err ? reject(err) : resolve(true))
         );
 
-        const userId = insertResult.insertId;
         const token = generateJWT({ userId, email, phone });
-
         return res.status(201).json({
             success: true,
             message: 'Registration successful',
             token,
-            user: { id: userId, name, email, phone, address: address || '' }
+            user: { id: userId, name, email, phone, address: address || '', is_verified: 1 }
         });
 
     } catch (err) {
         console.error('Register error:', err);
-        if (!res.headersSent) {
-            return res.status(500).json({ success: false, message: 'Server error' });
+        if (!res.headersSent) return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+router.post('/send-registration-otp', async (req, res) => {
+    const db = getDb(req);
+    try {
+        let { email } = req.body;
+        if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+        email = email.trim().toLowerCase();
+
+        // Rate-limit: agar last OTP 60s se kam pehle bheja gaya ho toh rok do
+        const lastOtpRows = await new Promise((resolve, reject) =>
+            db.query('SELECT created_at FROM registration_otps WHERE email=? ORDER BY id DESC LIMIT 1', [email],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            )
+        );
+        if (lastOtpRows.length) {
+            const lastTime = new Date(lastOtpRows[0].created_at).getTime();
+            if (Date.now() - lastTime < 60 * 1000) {
+                return res.status(429).json({ success: false, message: 'Please wait a moment before requesting another OTP' });
+            }
         }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        await new Promise((resolve, reject) =>
+            db.query('INSERT INTO registration_otps (email, otp, expires_at) VALUES (?, ?, ?)', [email, otp, expiresAt],
+                (err, result) => err ? reject(err) : resolve(result)
+            )
+        );
+
+        transporter.sendMail({
+            from: `"Pankhudi Support" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Verify your Email - Pankhudi',
+            html: `
+    <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+        
+        <div style="background: linear-gradient(135deg, #4f46e5, #3b82f6); padding: 20px; text-align: center;">
+          <h1 style="margin:0; font-size: 24px; color:#ffffff;">Pankhudi</h1>
+        </div>
+        
+        <div style="padding: 25px; color: #374151;">
+          <h2 style="margin-top:0;">Verify Your Email</h2>
+          <p>Hello,</p>
+          <p>Thank you for registering with <b>Pankhudi</b>. Please use the OTP below to verify your email address. This OTP is valid for <b>10 minutes</b>.</p>
+          
+          <div style="text-align:center; margin: 25px 0;">
+            <span style="display:inline-block; background: #4f46e5; color: #ffffff; font-size: 22px; font-weight: bold; letter-spacing: 3px; padding: 12px 24px; border-radius: 8px;">
+              ${otp}
+            </span>
+          </div>
+          
+          <p>If you didn’t request this email, you can safely ignore it.</p>
+          <p style="margin-bottom:0;">Warm regards,<br><b>The Pankhudi Team</b></p>
+        </div>
+        
+        <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
+          © ${new Date().getFullYear()} Pankhudi. All rights reserved.
+        </div>
+        
+      </div>
+    </div>
+    `
+        }, (err) => {
+            if (err) {
+                console.error('Mail send error:', err);
+                return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+            }
+            return res.json({ success: true, message: 'OTP sent to email' });
+        });
+
+    } catch (err) {
+        console.error('send-registration-otp error:', err);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+router.post('/verify-registration-otp', async (req, res) => {
+    const db = getDb(req);
+    try {
+        let { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP required' });
+        email = email.trim().toLowerCase();
+        otp = String(otp).trim();
+
+        const rows = await new Promise((resolve, reject) =>
+            db.query('SELECT id, used, expires_at FROM registration_otps WHERE email=? AND otp=? ORDER BY id DESC LIMIT 1', [email, otp],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            )
+        );
+
+        if (!rows.length) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+
+        const rec = rows[0];
+        if (rec.used) return res.status(400).json({ success: false, message: 'OTP already used' });
+        if (new Date(rec.expires_at) < new Date()) return res.status(400).json({ success: false, message: 'OTP expired' });
+
+        // mark OTP used
+        await new Promise((resolve, reject) =>
+            db.query('UPDATE registration_otps SET used=1 WHERE id=?', [rec.id], (err) => err ? reject(err) : resolve(true))
+        );
+
+        return res.json({ success: true, message: 'Email verified ✅' });
+    } catch (err) {
+        console.error('verify-registration-otp error:', err);
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -138,15 +284,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
 /**
  * Google authentication
  */
@@ -203,15 +340,15 @@ router.post('/auth/google', async (req, res) => {
  */
 
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+// const transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASS
+//     }
+// });
 
 
 
@@ -233,14 +370,47 @@ router.post('/forgot-password', (req, res) => {
             if (updateErr) return res.status(500).json({ success: false, message: 'Server error' });
 
             transporter.sendMail({
-                from: process.env.EMAIL_USER,
+                from: `"Pankhudi Support" <${process.env.EMAIL_USER}>`,
                 to: email,
-                subject: 'Password Reset OTP',
-                html: `<p>Your OTP: <b>${otp}</b> (valid for 15 minutes)</p>`
+                subject: 'Reset Your Password - Pankhudi',
+                html: `
+    <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+        
+        <div style="background: linear-gradient(135deg, #4f46e5, #3b82f6); padding: 20px; text-align: center;">
+          <h1 style="margin:0; font-size: 24px; color:#ffffff;">Pankhudi</h1>
+        </div>
+        
+        <div style="padding: 25px; color: #374151;">
+          <h2 style="margin-top:0;">Password Reset Request</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset your password on <b>Pankhudi</b>. Please use the OTP below to proceed. This OTP is valid for <b>15 minutes</b>.</p>
+          
+          <div style="text-align:center; margin: 25px 0;">
+            <span style="display:inline-block; background: #4f46e5; color: #ffffff; font-size: 22px; font-weight: bold; letter-spacing: 3px; padding: 12px 24px; border-radius: 8px;">
+              ${otp}
+            </span>
+          </div>
+          
+          <p>If you didn’t request a password reset, you can safely ignore this email. Your account will remain secure.</p>
+          <p style="margin-bottom:0;">Warm regards,<br><b>The Pankhudi Team</b></p>
+        </div>
+        
+        <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
+          © ${new Date().getFullYear()} Pankhudi. All rights reserved.
+        </div>
+        
+      </div>
+    </div>
+    `
             }, (mailErr) => {
-                if (mailErr) return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+                if (mailErr) {
+                    console.error('Mail send error:', mailErr);
+                    return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+                }
                 return res.json({ success: true, message: 'OTP sent successfully' });
             });
+
         });
     });
 });

@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
-import { FaEnvelope, FaLock, FaPhone, FaGoogle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaPhone, FaUser, FaCheck } from 'react-icons/fa';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
-import { GoogleLogin, googleLogout } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
-import Footer from '../../components/Footer';
 import { Link } from 'react-router-dom';
 
 const Login = () => {
     const [form, setForm] = useState({
         emailOrPhone: '',
         password: '',
-        terms: false,
+        terms: false, // Added terms field
     });
 
     const [error, setError] = useState({});
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState({ text: '', type: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [loginMethod, setLoginMethod] = useState('email');
@@ -32,7 +31,18 @@ const Login = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
+        setForm(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+
+        // Clear errors when user types
+        if (error[name]) {
+            setError(prev => ({ ...prev, [name]: '' }));
+        }
+        if (message.text) {
+            setMessage({ text: '', type: '' });
+        }
     };
 
     const validateForm = () => {
@@ -42,29 +52,35 @@ const Login = () => {
             if (!form.emailOrPhone) {
                 errs.emailOrPhone = 'Email is required';
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailOrPhone)) {
-                errs.emailOrPhone = 'Invalid email address';
+                errs.emailOrPhone = 'Please enter a valid email address';
             }
         } else {
             if (!form.emailOrPhone) {
                 errs.emailOrPhone = 'Phone number is required';
             } else if (!/^\d{10}$/.test(form.emailOrPhone)) {
-                errs.emailOrPhone = 'Invalid phone number (10 digits required)';
+                errs.emailOrPhone = 'Please enter a valid 10-digit phone number';
             }
         }
 
-        if (!form.password || form.password.length < 8) {
-            errs.password = 'Password must be at least 8 characters';
+        if (!form.password) {
+            errs.password = 'Password is required';
+        } else if (form.password.length < 6) {
+            errs.password = 'Password must be at least 6 characters';
         }
+
+        // Terms validation
         if (!form.terms) {
-            errs.terms = 'You must accept the terms & conditions';
+            errs.terms = 'You must accept the Terms & Conditions and Privacy Policy';
         }
+
         return errs;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setMessage('');
+        setMessage({ text: '', type: '' });
+
         const errs = validateForm();
         setError(errs);
 
@@ -74,7 +90,6 @@ const Login = () => {
         }
 
         try {
-            // ✅ Corrected endpoint
             const res = await fetch('http://localhost:5000/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -88,10 +103,9 @@ const Login = () => {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage('✅ Login successful! Redirecting...');
+                setMessage({ text: 'Login successful! Redirecting...', type: 'success' });
                 localStorage.setItem('token', data.token);
 
-                // ✅ Store user from backend (not just local registeredUsers)
                 if (data.user) {
                     localStorage.setItem('user', JSON.stringify(data.user));
                 }
@@ -106,11 +120,11 @@ const Login = () => {
                     window.location.href = data.user?.is_premium ? '/' : '/';
                 }, 1500);
             } else {
-                setMessage(data.message || 'Invalid credentials');
+                setMessage({ text: data.message || 'Invalid credentials. Please try again.', type: 'error' });
             }
         } catch (err) {
             console.error('Login error:', err);
-            setMessage('⚠️ Server error. Please try again later.');
+            setMessage({ text: 'Server error. Please try again later.', type: 'error' });
         }
 
         setIsLoading(false);
@@ -119,7 +133,7 @@ const Login = () => {
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {
             setIsLoading(true);
-            setMessage('Authenticating with Google...');
+            setMessage({ text: 'Authenticating with Google...', type: 'info' });
 
             const decoded = jwtDecode(credentialResponse.credential);
 
@@ -132,7 +146,7 @@ const Login = () => {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage('✅ Google login successful! Redirecting...');
+                setMessage({ text: 'Google login successful! Redirecting...', type: 'success' });
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('authMethod', 'google');
 
@@ -144,143 +158,219 @@ const Login = () => {
                     window.location.href = data.user?.is_premium ? '/dashboard' : '/';
                 }, 1500);
             } else {
-                setMessage(data.message || 'Google login failed');
-                googleLogout();
+                setMessage({ text: data.message || 'Google login failed', type: 'error' });
             }
         } catch (err) {
             console.error('Google login error:', err);
-            setMessage('Failed to complete Google login. Please try again.');
-            googleLogout();
+            setMessage({ text: 'Failed to complete Google login. Please try again.', type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleGoogleLoginFailure = () => {
-        setMessage('Google login failed. Please try again or use another method.');
+        setMessage({ text: 'Google login failed. Please try again or use another method.', type: 'error' });
     };
 
     const toggleLoginMethod = () => {
-        setLoginMethod(prev => prev === 'email' ? 'phone' : 'email');
+        const newMethod = loginMethod === 'email' ? 'phone' : 'email';
+        setLoginMethod(newMethod);
         setForm(prev => ({ ...prev, emailOrPhone: '' }));
         setError(prev => ({ ...prev, emailOrPhone: '' }));
+        setMessage({ text: '', type: '' });
     };
 
     return (
-        <div className="login-page">
-            <div className="login-container">
-                <form className="login-form" onSubmit={handleSubmit}>
-                    <div className="brand-header">
-                        <h1 className="brand-name">Pankhudi</h1>
-                        <p className="brand-tagline">Connect with your community</p>
+        <div className="login-page-container">
+            <div className="login-glass-card">
+                {/* Brand Header */}
+                <div className="brand-section">
+                    <div className="brand-logo">
+                        <FaUser className="logo-icon" />
                     </div>
+                    <h1 className="brand-name">PANKHUDI</h1>
+                    <p className="brand-tagline">Your Gateway to Community</p>
+                </div>
 
-                    <h2>Welcome Back</h2>
-                    <p className="login-subtitle">Please enter your details to login</p>
+                {/* Welcome Section */}
+                <div className="welcome-section">
+                    <h2 className="welcome-title">Welcome Back</h2>
+                    <p className="welcome-subtitle">Sign in to continue your journey</p>
+                </div>
 
-                    {message && (
-                        <div className={`form-message ${message.includes('✅') ? 'success' : 'error'}`}>
-                            {message}
+                {/* Login Method Toggle */}
+                <div className="method-toggle-section">
+                    <div className="toggle-container">
+                        <button
+                            type="button"
+                            className={`toggle-option ${loginMethod === 'email' ? 'active' : ''}`}
+                            onClick={toggleLoginMethod}
+                        >
+                            <FaEnvelope className="option-icon" />
+                            <span>Email Login</span>
+                            {loginMethod === 'email' && <div className="active-indicator"></div>}
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`toggle-option ${loginMethod === 'phone' ? 'active' : ''}`}
+                            onClick={toggleLoginMethod}
+                        >
+                            <FaPhone className="option-icon" />
+                            <span>Phone Login</span>
+                            {loginMethod === 'phone' && <div className="active-indicator"></div>}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Message Display */}
+                {message.text && (
+                    <div className={`status-message ${message.type}`}>
+                        <div className="message-icon">
+                            {message.type === 'success' ? '✓' : message.type === 'error' ? '⚠' : 'ℹ'}
                         </div>
-                    )}
+                        <span>{message.text}</span>
+                    </div>
+                )}
 
-                    <div className="login-method-toggle">
-                        <button
-                            type="button"
-                            className={`toggle-btn ${loginMethod === 'email' ? 'active' : ''}`}
-                            onClick={toggleLoginMethod}
-                        >
-                            <FaEnvelope /> Email
-                        </button>
-                        <button
-                            type="button"
-                            className={`toggle-btn ${loginMethod === 'phone' ? 'active' : ''}`}
-                            onClick={toggleLoginMethod}
-                        >
-                            <FaPhone /> Phone
-                        </button>
+                {/* Login Form */}
+                <form className="login-form" onSubmit={handleSubmit}>
+                    {/* Email/Phone Field */}
+                    <div className="form-field">
+                        <label className="field-label">
+                            {loginMethod === 'email' ? 'Email Address' : 'Phone Number'}
+                        </label>
+                        <div className="input-wrapper">
+                            {loginMethod === 'email' ?
+                                <FaEnvelope className="field-icon" /> :
+                                <FaPhone className="field-icon" />
+                            }
+                            <input
+                                type={loginMethod === 'email' ? 'email' : 'tel'}
+                                name="emailOrPhone"
+                                placeholder={loginMethod === 'email' ? 'Enter your email address' : 'Enter your phone number'}
+                                value={form.emailOrPhone}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                className={`form-input ${error.emailOrPhone ? 'error' : ''}`}
+                            />
+                        </div>
+                        {error.emailOrPhone && <span className="field-error">{error.emailOrPhone}</span>}
                     </div>
 
-                    <div className="input-group">
-                        {loginMethod === 'email' ? <FaEnvelope className="input-icon" /> : <FaPhone className="input-icon" />}
-                        <input
-                            type={loginMethod === 'email' ? 'email' : 'tel'}
-                            name="emailOrPhone"
-                            placeholder={loginMethod === 'email' ? 'Enter your email' : 'Enter your phone number'}
-                            value={form.emailOrPhone}
-                            onChange={handleChange}
-                            className={error.emailOrPhone ? 'error-input' : ''}
-                        />
+                    {/* Password Field */}
+                    <div className="form-field">
+                        <label className="field-label">Password</label>
+                        <div className="input-wrapper">
+                            <FaLock className="field-icon" />
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                placeholder="Enter your password"
+                                value={form.password}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                className={`form-input ${error.password ? 'error' : ''}`}
+                            />
+                            <button
+                                type="button"
+                                className="password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                disabled={isLoading}
+                            >
+                                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                            </button>
+                        </div>
+                        {error.password && <span className="field-error">{error.password}</span>}
                     </div>
-                    {error.emailOrPhone && <p className="error-message">{error.emailOrPhone}</p>}
 
-                    <div className="input-group">
-                        <FaLock className="input-icon" />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            name="password"
-                            placeholder="Enter your password"
-                            value={form.password}
-                            onChange={handleChange}
-                            className={error.password ? 'error-input' : ''}
-                        />
-                        <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-                        </span>
-                    </div>
-                    {error.password && <p className="error-message">{error.password}</p>}
-
-                    <div className="options-row">
-                        <label className="remember-me">
+                    {/* Options Row */}
+                    <div className="form-options">
+                        <label className="checkbox-container">
                             <input
                                 type="checkbox"
                                 checked={rememberMe}
                                 onChange={(e) => setRememberMe(e.target.checked)}
+                                disabled={isLoading}
                             />
-                            Remember me
+                            <span className="checkmarks">
+                                <FaCheck className="check-icon" />
+                            </span>
+                            <span className="checkbox-label">Remember me</span>
                         </label>
-                        <Link to="/forgot" className="forgot-password">Forgot Password?</Link>
+
+                        <Link to="/forgot" className="forgot-password-link">
+                            Forgot Password?
+                        </Link>
                     </div>
 
-                    <label className="terms">
-                        <input
-                            type="checkbox"
-                            name="terms"
-                            checked={form.terms}
-                            onChange={handleChange}
-                            className={error.terms ? 'error-checkbox' : ''}
-                        />
-                        I agree to the <Link to="/terms">Terms & Conditions</Link> and{' '}
-                        <Link to="/privacy">Privacy Policy</Link>
-                    </label>
-                    {error.terms && <p className="error-message">{error.terms}</p>}
-
-                    <button type="submit" className="login-btn" disabled={isLoading}>
-                        {isLoading ? <span className="spinner"></span> : 'Login'}
-                    </button>
-
-                    <div className="divider"><span>or continue with</span></div>
-
-                    <div className="social-login-options">
-                        <div className="google-login-wrapper">
-                            <GoogleLogin
-                                onSuccess={handleGoogleLoginSuccess}
-                                onError={handleGoogleLoginFailure}
-                                theme="filled_blue"
-                                size="large"
-                                shape="rectangular"
-                                width="300"
-                                text="continue_with"
+                    {/* Terms & Conditions Agreement */}
+                    <div className="form-options terms-section">
+                        <label className="checkbox-container terms-checkbox">
+                            <input
+                                type="checkbox"
+                                name="terms"
+                                checked={form.terms}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                className={error.terms ? 'error-checkbox' : ''}
                             />
-                        </div>
+                            <span className="checkmarks">
+                                <FaCheck className="check-icon" />
+                            </span>
+                            <span className="checkbox-label">
+                                I agree to the <Link to="/terms" className="terms-link">Terms & Conditions</Link> and{' '}
+                                <Link to="/privacy" className="terms-link">Privacy Policy</Link>
+                            </span>
+                        </label>
+                        {error.terms && <span className="field-error terms-error">{error.terms}</span>}
                     </div>
 
-                    <div className="signup-link">
-                        Don't have an account? <Link to="/register"><strong>Sign up</strong></Link>
-                    </div>
+                    {/* Submit Button */}
+                    <button
+                        type="submit"
+                        className={`submit-button ${isLoading ? 'loading' : ''}`}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <div className="button-spinner"></div>
+                                Signing In...
+                            </>
+                        ) : (
+                            'Sign In to Your Account'
+                        )}
+                    </button>
                 </form>
+
+                {/* Divider */}
+                <div className="section-divider">
+                    <span className="divider-text">or continue with</span>
+                </div>
+
+                {/* Social Login */}
+                <div className="social-login-section">
+                    <GoogleLogin
+                        onSuccess={handleGoogleLoginSuccess}
+                        onError={handleGoogleLoginFailure}
+                        theme="filled_blue"
+                        size="large"
+                        shape="rectangular"
+                        width="100%"
+                        text="continue_with"
+                    />
+                </div>
+
+                {/* Sign Up Link */}
+                <div className="auth-redirect">
+                    <p className="redirect-text">
+                        Don't have an account?{' '}
+                        <Link to="/register" className="redirect-link">
+                            Create an account
+                        </Link>
+                    </p>
+                </div>
             </div>
-            <Footer />
         </div>
     );
 };
