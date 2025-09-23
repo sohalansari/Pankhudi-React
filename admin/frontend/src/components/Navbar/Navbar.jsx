@@ -76,7 +76,7 @@ function Navbar() {
         <nav className="navbar">
             <div className="navbar-container">
                 <div className="navbar-brand">
-                    <h3 className="navbar-title">Admin Dashboard</h3>
+                    <h3 className="navbar-title">Pankhudi Admin Dashboard</h3>
                 </div>
 
                 <div className={`navbar-content ${isMenuOpen ? 'active' : ''}`}>

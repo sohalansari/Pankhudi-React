@@ -114,81 +114,89 @@ router.post('/register', async (req, res) => {
         if (!res.headersSent) return res.status(500).json({ success: false, message: 'Server error' });
     }
 });
-
 router.post('/send-registration-otp', async (req, res) => {
     const db = getDb(req);
+
     try {
         let { email } = req.body;
-        if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email required' });
+        }
+
         email = email.trim().toLowerCase();
 
-        // Rate-limit: agar last OTP 60s se kam pehle bheja gaya ho toh rok do
+        // ---- Rate Limit Check ----
         const lastOtpRows = await new Promise((resolve, reject) =>
-            db.query('SELECT created_at FROM registration_otps WHERE email=? ORDER BY id DESC LIMIT 1', [email],
-                (err, rows) => err ? reject(err) : resolve(rows)
+            db.query(
+                'SELECT created_at FROM registration_otps WHERE email=? ORDER BY id DESC LIMIT 1',
+                [email],
+                (err, rows) => (err ? reject(err) : resolve(rows))
             )
         );
+
         if (lastOtpRows.length) {
             const lastTime = new Date(lastOtpRows[0].created_at).getTime();
             if (Date.now() - lastTime < 60 * 1000) {
-                return res.status(429).json({ success: false, message: 'Please wait a moment before requesting another OTP' });
+                return res
+                    .status(429)
+                    .json({ success: false, message: 'Please wait a moment before requesting another OTP' });
             }
         }
 
+        // ---- Generate OTP ----
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         await new Promise((resolve, reject) =>
-            db.query('INSERT INTO registration_otps (email, otp, expires_at) VALUES (?, ?, ?)', [email, otp, expiresAt],
-                (err, result) => err ? reject(err) : resolve(result)
+            db.query(
+                'INSERT INTO registration_otps (email, otp, expires_at) VALUES (?, ?, ?)',
+                [email, otp, expiresAt],
+                (err, result) => (err ? reject(err) : resolve(result))
             )
         );
 
-        transporter.sendMail({
+        // ---- Send Mail ----
+        await transporter.sendMail({
             from: `"Pankhudi Support" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Verify your Email - Pankhudi',
             html: `
-    <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px;">
-      <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
-        
-        <div style="background: linear-gradient(135deg, #4f46e5, #3b82f6); padding: 20px; text-align: center;">
-          <h1 style="margin:0; font-size: 24px; color:#ffffff;">Pankhudi</h1>
-        </div>
-        
-        <div style="padding: 25px; color: #374151;">
-          <h2 style="margin-top:0;">Verify Your Email</h2>
-          <p>Hello,</p>
-          <p>Thank you for registering with <b>Pankhudi</b>. Please use the OTP below to verify your email address. This OTP is valid for <b>10 minutes</b>.</p>
-          
-          <div style="text-align:center; margin: 25px 0;">
-            <span style="display:inline-block; background: #4f46e5; color: #ffffff; font-size: 22px; font-weight: bold; letter-spacing: 3px; padding: 12px 24px; border-radius: 8px;">
-              ${otp}
-            </span>
-          </div>
-          
-          <p>If you didn’t request this email, you can safely ignore it.</p>
-          <p style="margin-bottom:0;">Warm regards,<br><b>The Pankhudi Team</b></p>
-        </div>
-        
-        <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
-          © ${new Date().getFullYear()} Pankhudi. All rights reserved.
-        </div>
-        
-      </div>
-    </div>
-    `
-        }, (err) => {
-            if (err) {
-                console.error('Mail send error:', err);
-                return res.status(500).json({ success: false, message: 'Failed to send OTP' });
-            }
-            return res.json({ success: true, message: 'OTP sent to email' });
+            <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px;">
+              <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+                
+                <div style="background: linear-gradient(135deg, #4f46e5, #3b82f6); padding: 20px; text-align: center;">
+                  <h1 style="margin:0; font-size: 24px; color:#ffffff;">Pankhudi</h1>
+                </div>
+                
+                <div style="padding: 25px; color: #374151;">
+                  <h2 style="margin-top:0;">Verify Your Email</h2>
+                  <p>Hello,</p>
+                  <p>Thank you for registering with <b>Pankhudi</b>. Please use the OTP below to verify your email address. This OTP is valid for <b>10 minutes</b>.</p>
+                  
+                  <div style="text-align:center; margin: 25px 0;">
+                    <span style="display:inline-block; background: #4f46e5; color: #ffffff; font-size: 22px; font-weight: bold; letter-spacing: 3px; padding: 12px 24px; border-radius: 8px;">
+                      ${otp}
+                    </span>
+                  </div>
+                  
+                  <p>If you didn’t request this email, you can safely ignore it.</p>
+                  <p style="margin-bottom:0;">Warm regards,<br><b>The Pankhudi Team</b></p>
+                </div>
+                
+                <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
+                  © ${new Date().getFullYear()} Pankhudi. All rights reserved.
+                </div>
+              </div>
+            </div>
+            `,
         });
+
+        // ---- Response ----
+        return res.json({ success: true, message: 'OTP sent to email' });
 
     } catch (err) {
         console.error('send-registration-otp error:', err);
-        return res.status(500).json({ success: false, message: 'Server error' });
+        return res.status(500).json({ success: false, message: 'Server error while sending OTP' });
     }
 });
 router.post('/verify-registration-otp', async (req, res) => {
