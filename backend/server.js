@@ -41,6 +41,9 @@ app.use((req, res, next) => {
 
 // static uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// ✅ Serve uploads from admin folder also
+app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
+
 
 // routes
 app.use("/api", authRoutes);

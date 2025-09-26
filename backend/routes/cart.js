@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const path = require("path");
 require("dotenv").config();
 
 // ------------------- Middleware: Verify Token -------------------
@@ -103,7 +104,17 @@ router.get("/:userId", authenticateToken, (req, res) => {
             } catch {
                 if (item.images) firstImage = item.images;
             }
-            return { ...item, image: `/uploads/${firstImage}` };
+
+            // Agar full URL (5001) hai → sirf filename nikalo
+            if (firstImage.startsWith("http")) {
+                firstImage = path.basename(firstImage);
+            }
+
+            // ✅ Hamesha 5000 port ka URL bhejo
+            return {
+                ...item,
+                image: `http://localhost:5000/uploads/${firstImage}`,
+            };
         });
 
         res.json({ message: "Cart fetched successfully", items });
