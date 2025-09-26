@@ -228,7 +228,7 @@
     padding: 12px 15px;
     border-radius: 8px;
     margin-bottom: 20px;
-    display: flex;
+    /* display: flex; */
     align-items: center;
     font-size: 0.9rem;
     border-left: 4px solid #d32f2f;
@@ -251,6 +251,10 @@
     font-size: 0.85rem;
     font-weight: 500;
     width: 100%;
+}
+
+.countdown span {
+    color: red;
 }
 
 @keyframes shake {

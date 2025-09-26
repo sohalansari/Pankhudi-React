@@ -184,7 +184,7 @@ function Login() {
                         <div className={`error-message ${isLocked ? 'locked' : ''}`}>
                             <i className="fas fa-exclamation-circle"></i>
                             {error}
-                            {isLocked && <div className="countdown">Resets in: {formatTime(lockTime)}</div>}
+                            {isLocked && <div className="countdown">Resets in: <span>{formatTime(lockTime)}</span></div>}
                         </div>
                     )}
 

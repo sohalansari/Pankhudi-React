@@ -173,7 +173,7 @@ body {
 }
 
 .step-description {
-  color: var(--text-light);
+  color: var(--text-dark);
   font-size: 0.95rem;
   line-height: 1.4;
 }
