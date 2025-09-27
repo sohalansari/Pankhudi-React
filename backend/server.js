@@ -52,6 +52,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/cart", cartRoutes);
 
+
 // health
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 

@@ -32,6 +32,8 @@ const Header = () => {
     const [userData, setUserData] = useState(null);
     const [isListening, setIsListening] = useState(false);
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [trendingProducts, setTrendingProducts] = useState([]);
     const searchInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -44,7 +46,7 @@ const Header = () => {
         setIsLoggedIn(!!token);
 
         try {
-            const userFromStorage = localStorage.getItem('user'); // ✅ always read "user"
+            const userFromStorage = localStorage.getItem('user');
             if (userFromStorage) {
                 setUserData(JSON.parse(userFromStorage));
             }
@@ -53,12 +55,11 @@ const Header = () => {
         }
     };
 
-
     // ------------------- Fetch Cart Count from DB -------------------
     useEffect(() => {
         const fetchCount = async () => {
             try {
-                if (!userData?.id) return; // user not loaded yet
+                if (!userData?.id) return;
                 const data = await fetchCartCount(userData.id);
                 setCartItemsCount(data.count || 0);
             } catch (err) {
@@ -66,22 +67,16 @@ const Header = () => {
             }
         };
 
-        fetchCount(); // initial fetch
-
-        // auto refresh every 10 seconds
+        fetchCount();
         const interval = setInterval(fetchCount, 10000);
         return () => clearInterval(interval);
     }, [userData]);
 
-
     useEffect(() => {
         fetchUserData();
-
-        // Set up listener for storage changes
         const handleStorageChange = () => {
             fetchUserData();
         };
-
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
@@ -101,7 +96,6 @@ const Header = () => {
             setCartItemsCount(cart.reduce((total, item) => total + (item.quantity || 1), 0));
             setWishlistItemsCount(wishlist.length);
         };
-
         updateCounts();
         window.addEventListener('storage', updateCounts);
         return () => window.removeEventListener('storage', updateCounts);
@@ -119,11 +113,44 @@ const Header = () => {
         };
     }, []);
 
+    // ------------------- Live Search -------------------
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/products?search=${searchQuery}`);
+                const data = await res.json();
+                setSearchResults(data);
+            } catch (err) {
+                console.error(err);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // ------------------- Trending Products -------------------
+    useEffect(() => {
+        const fetchTrending = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/products/trending');
+                const data = await res.json();
+                setTrendingProducts(data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchTrending();
+    }, []);
+
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
             navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
             setSearchQuery('');
+            setSearchResults([]);
             closeMobileMenu();
             setIsSearchExpanded(false);
         }
@@ -393,6 +420,49 @@ const Header = () => {
                                 <FiSearch size={18} />
                             </motion.button>
                         </form>
+
+
+                        {/* Search Suggestions Dropdown */}
+                        {/* Search Suggestions Dropdown */}
+                        {((Array.isArray(searchResults) && searchResults.length > 0) ||
+                            (!searchQuery && Array.isArray(trendingProducts) && trendingProducts.length > 0)) && (
+                                <div className="search-suggestions-dropdown">
+                                    {(Array.isArray(searchQuery ? searchResults : trendingProducts)
+                                        ? (searchQuery ? searchResults : trendingProducts)
+                                        : []).map(item => (
+                                            <div
+                                                key={item.id}
+                                                className="search-suggestion-item"
+                                                onClick={() => {
+                                                    navigate(`/product/${item.id}`);
+                                                    setSearchQuery('');
+                                                    setSearchResults([]);
+                                                    closeMobileMenu();
+                                                }}
+                                            >
+                                                {/* Image */}
+                                                <img
+                                                    src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                                    alt={item.name}
+                                                    className="suggestion-image"
+                                                />
+                                                <div className="suggestion-details">
+                                                    <p className="suggestion-name">{item.name}</p>
+                                                    {/* Price & Discount */}
+                                                    {item.discountPrice ? (
+                                                        <span className="suggestion-price">
+                                                            <span className="discounted-price">₹{item.discountPrice}</span>{' '}
+                                                            <span className="original-price">₹{item.price}</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="suggestion-price">₹{item.price}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            )}
+
                     </div>
 
                     {/* User Actions */}
@@ -526,30 +596,6 @@ const Header = () => {
                                 </motion.div>
                             </div>
                         )}
-
-                        {/* <motion.div
-                            className="nav-icon-wrapper"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <NavLink
-                                to="/wishlist"
-                                className="nav-icon-btn"
-                                activeClassName="active-icon"
-                            >
-                                <FiHeart size={22} />
-                                {wishlistItemsCount > 0 && (
-                                    <motion.span
-                                        className="nav-badge-circle"
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                                    >
-                                        {wishlistItemsCount}
-                                    </motion.span>
-                                )}
-                            </NavLink>
-                        </motion.div> */}
 
                         <motion.div
                             className="nav-icon-wrapper"
@@ -841,6 +887,7 @@ const Header = () => {
                     </>
                 )}
             </AnimatePresence>
+
             {/* Logout Confirmation Dialog */}
             {showLogoutConfirm && (
                 <div className="custom-alert-overlay">

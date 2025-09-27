@@ -1,3 +1,4 @@
+import axios from 'axios';
 const API_BASE_URL = "http://localhost:5000/api";
 
 // -------------------- Products --------------------
@@ -93,5 +94,17 @@ export const clearCart = async () => {
         },
     });
     if (!res.ok) throw new Error("Failed to clear cart");
+    return res.json();
+};
+
+// utils/api.js
+
+export const searchProducts = async (query) => {
+    const res = await fetch(`http://localhost:5000/api/products?search=${encodeURIComponent(query)}`);
+    return res.json();
+};
+
+export const fetchTrendingProducts = async () => {
+    const res = await fetch('http://localhost:5000/api/products/trending');
     return res.json();
 };
