@@ -12,13 +12,15 @@ const CartPage = () => {
     const [discount, setDiscount] = useState(0);
     const [applyingPromo, setApplyingPromo] = useState(false);
     const [error, setError] = useState("");
+    const [relatedProducts, setRelatedProducts] = useState([]);
+    const [loadingRelated, setLoadingRelated] = useState(false);
 
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const storedUser = JSON.parse(localStorage.getItem("user"));
     const userId = storedUser?.id;
 
-    // Fetch cart items with enhanced error handling
+    // ✅ Fetch cart items (sorted newest first)
     const fetchCart = async () => {
         if (!userId || !token) {
             setCartItems([]);
@@ -30,34 +32,47 @@ const CartPage = () => {
         try {
             setLoading(true);
             setError("");
-            const response = await axios.get(`http://localhost:5000/api/cart/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-                timeout: 10000 // 10 second timeout
-            });
-            setCartItems(response.data.items || []);
+            const response = await axios.get(
+                `http://localhost:5000/api/cart/${userId}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 10000,
+                }
+            );
+
+            // 🔥 Sort by added_date/created_at (newest first)
+            const sortedItems = (response.data.items || []).sort(
+                (a, b) =>
+                    new Date(b.added_date || b.created_at) -
+                    new Date(a.added_date || a.created_at)
+            );
+
+            setCartItems(sortedItems);
         } catch (error) {
             console.error("Error fetching cart:", error);
-            const errorMessage = error.response?.data?.message ||
-                error.code === 'ECONNABORTED' ? "Request timeout" :
-                "Failed to fetch cart items";
+            const errorMessage =
+                error.response?.data?.message ||
+                (error.code === "ECONNABORTED"
+                    ? "Request timeout"
+                    : "Failed to fetch cart items");
             setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
-    // Update quantity with loading state
+    // ✅ Update quantity
     const updateQuantity = async (cartId, newQty, productName) => {
         if (newQty <= 0) return;
 
-        setUpdatingItems(prev => new Set(prev).add(cartId));
+        setUpdatingItems((prev) => new Set(prev).add(cartId));
         try {
             await axios.put(
                 `http://localhost:5000/api/cart/update/${cartId}`,
                 { quantity: newQty },
                 {
                     headers: { Authorization: `Bearer ${token}` },
-                    timeout: 5000
+                    timeout: 5000,
                 }
             );
             await fetchCart();
@@ -65,7 +80,7 @@ const CartPage = () => {
             console.error("Update error:", error);
             alert(`Failed to update quantity for ${productName}`);
         } finally {
-            setUpdatingItems(prev => {
+            setUpdatingItems((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(cartId);
                 return newSet;
@@ -73,22 +88,27 @@ const CartPage = () => {
         }
     };
 
-    // Remove item with confirmation and loading state
+    // ✅ Remove item
     const removeItem = async (cartId, productName) => {
-        if (!window.confirm(`Are you sure you want to remove "${productName}" from your cart?`)) return;
+        if (
+            !window.confirm(
+                `Are you sure you want to remove "${productName}" from your cart?`
+            )
+        )
+            return;
 
-        setRemovingItems(prev => new Set(prev).add(cartId));
+        setRemovingItems((prev) => new Set(prev).add(cartId));
         try {
             await axios.delete(`http://localhost:5000/api/cart/delete/${cartId}`, {
                 headers: { Authorization: `Bearer ${token}` },
-                timeout: 5000
+                timeout: 5000,
             });
             await fetchCart();
         } catch (error) {
             console.error("Remove error:", error);
             alert(`Failed to remove ${productName}`);
         } finally {
-            setRemovingItems(prev => {
+            setRemovingItems((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(cartId);
                 return newSet;
@@ -96,7 +116,47 @@ const CartPage = () => {
         }
     };
 
-    // Apply promo code with validation
+    // ✅ Add to cart (related products)
+    const addToCart = async (product) => {
+        if (!userId || !token) {
+            alert("Please login to add items to cart");
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const newItem = {
+                user_id: userId,
+                product_id: product.id,
+                quantity: 1,
+                price: product.final_price || product.price,
+                added_date: new Date().toISOString(), // 🔥 added_date
+            };
+
+            await axios.post("http://localhost:5000/api/cart/add", newItem, {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 5000,
+            });
+
+            // 🔥 Prepend instantly
+            setCartItems((prev) => [
+                {
+                    ...newItem,
+                    cart_id: Date.now(),
+                    product_name: product.name,
+                    image: product.image,
+                },
+                ...prev,
+            ]);
+
+            alert(`${product.name} added to cart successfully!`);
+        } catch (error) {
+            console.error("Add to cart error:", error);
+            alert(`Failed to add ${product.name} to cart`);
+        }
+    };
+
+    // ✅ Promo code
     const applyPromoCode = async () => {
         if (!promoCode.trim()) {
             setError("Please enter a promo code");
@@ -106,14 +166,12 @@ const CartPage = () => {
         setApplyingPromo(true);
         setError("");
         try {
-            // Simulate API call for promo code validation
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise((resolve) => setTimeout(resolve, 1500));
 
-            // Promo code validation logic
             const promoCodes = {
-                "SAVE10": 0.1,
-                "WELCOME15": 0.15,
-                "FREESHIP": 0.05 // Free shipping equivalent
+                SAVE10: 0.1,
+                WELCOME15: 0.15,
+                FREESHIP: 0.05,
             };
 
             const code = promoCode.toUpperCase().trim();
@@ -131,31 +189,25 @@ const CartPage = () => {
         }
     };
 
-    // Clear promo code
     const clearPromoCode = () => {
         setPromoCode("");
         setDiscount(0);
         setError("");
     };
 
-    // Handle product click to redirect to product details
     const handleProductClick = (productId) => {
         navigate(`/ProductDetail/${productId}`);
     };
 
-    // Handle buy now button click
     const handleBuyNow = (product) => {
-        //implement direct purchase logic here
-        // For now, redirect to checkout with single product
-        navigate('/checkout', {
+        navigate("/checkout", {
             state: {
                 products: [product],
-                total: (product.final_price || product.price) * product.quantity
-            }
+                total: (product.final_price || product.price) * product.quantity,
+            },
         });
     };
 
-    // Calculate prices
     const subtotal = cartItems.reduce(
         (acc, item) => acc + (item.final_price || item.price) * item.quantity,
         0
@@ -164,7 +216,11 @@ const CartPage = () => {
     const discountAmount = subtotal * discount;
     const total = Math.max(0, subtotal - discountAmount);
     const savings = cartItems.reduce(
-        (acc, item) => acc + (item.discount > 0 ? (item.price - (item.final_price || item.price)) * item.quantity : 0),
+        (acc, item) =>
+            acc +
+            (item.discount > 0
+                ? (item.price - (item.final_price || item.price)) * item.quantity
+                : 0),
         0
     );
 
@@ -172,7 +228,6 @@ const CartPage = () => {
         fetchCart();
     }, [userId, token]);
 
-    // Auto-remove error message after 5 seconds
     useEffect(() => {
         if (error) {
             const timer = setTimeout(() => setError(""), 5000);
@@ -182,30 +237,35 @@ const CartPage = () => {
 
     return (
         <div className="pankhudi-cart-wrapper">
-            {/* Header Section */}
+            {/* header */}
             <div className="pankhudi-cart-header">
                 <button className="pankhudi-back-btn" onClick={() => navigate(-1)}>
                     ← Back
                 </button>
                 <h1 className="brand-name">Pankhudi</h1>
                 <div className="pankhudi-cart-stats">
-                    {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
+                    {cartItems.length} {cartItems.length === 1 ? "Item" : "Items"}
                 </div>
             </div>
 
-            {/* Error Message */}
+            {/* error */}
             {error && (
                 <div className="pankhudi-error-banner">
                     <span>{error}</span>
-                    <button onClick={() => setError("")} className="pankhudi-error-close">×</button>
+                    <button
+                        onClick={() => setError("")}
+                        className="pankhudi-error-close"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
 
-            {/* Loading Skeleton */}
+            {/* loading */}
             {loading && (
                 <div className="pankhudi-loading-container">
                     <div className="pankhudi-skeleton-header"></div>
-                    {[1, 2, 3].map(i => (
+                    {[1, 2, 3].map((i) => (
                         <div key={i} className="pankhudi-cart-item-skeleton">
                             <div className="pankhudi-skeleton-image"></div>
                             <div className="pankhudi-skeleton-details">
@@ -223,19 +283,22 @@ const CartPage = () => {
                 </div>
             )}
 
-            {/* Empty Cart */}
+            {/* empty cart */}
             {!loading && !cartItems.length && !error && (
                 <div className="pankhudi-empty-cart">
                     <div className="pankhudi-empty-cart-icon">🛒</div>
                     <h2>Your cart is empty</h2>
                     <p>Discover amazing products and add them to your cart!</p>
-                    <button className="pankhudi-continue-shopping-btn" onClick={() => navigate('/products')}>
+                    <button
+                        className="pankhudi-continue-shopping-btn"
+                        onClick={() => navigate("/products")}
+                    >
                         Start Shopping
                     </button>
                 </div>
             )}
 
-            {/* Cart Items */}
+            {/* cart items */}
             {!loading && cartItems.length > 0 && (
                 <div className="pankhudi-cart-content">
                     <div className="pankhudi-cart-items-section">
@@ -243,7 +306,10 @@ const CartPage = () => {
                             <h2>Cart Items</h2>
                             {savings > 0 && (
                                 <div className="pankhudi-total-savings">
-                                    Total Savings: <span className="pankhudi-savings-amount">₹{savings.toFixed(2)}</span>
+                                    Total Savings:{" "}
+                                    <span className="pankhudi-savings-amount">
+                                        ₹{savings.toFixed(2)}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -251,23 +317,30 @@ const CartPage = () => {
                         <div className="pankhudi-cart-items">
                             {cartItems.map((item) => {
                                 const discountedPrice = item.final_price || item.price;
-                                const itemSavings = item.discount > 0 ? (item.price - discountedPrice) * item.quantity : 0;
+                                const itemSavings =
+                                    item.discount > 0
+                                        ? (item.price - discountedPrice) * item.quantity
+                                        : 0;
                                 const isUpdating = updatingItems.has(item.cart_id);
                                 const isRemoving = removingItems.has(item.cart_id);
 
                                 return (
-                                    <div key={item.cart_id} className={`pankhudi-cart-item ${isRemoving ? 'pankhudi-removing' : ''}`}>
+                                    <div
+                                        key={item.cart_id}
+                                        className={`pankhudi-cart-item ${isRemoving ? "pankhudi-removing" : ""
+                                            }`}
+                                    >
                                         <div className="pankhudi-product-infos">
                                             <div
                                                 className="pankhudi-product-images"
                                                 onClick={() => handleProductClick(item.product_id)}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: "pointer" }}
                                             >
                                                 <img
                                                     src={item.image}
                                                     alt={item.product_name}
                                                     onError={(e) => {
-                                                        e.target.src = '/images/placeholder-product.jpg';
+                                                        e.target.src = "/images/placeholder-product.jpg";
                                                     }}
                                                 />
                                             </div>
@@ -275,23 +348,39 @@ const CartPage = () => {
                                                 <h3
                                                     className="pankhudi-product-names"
                                                     onClick={() => handleProductClick(item.product_id)}
-                                                    style={{ cursor: 'pointer' }}
+                                                    style={{ cursor: "pointer" }}
                                                 >
                                                     {item.product_name}
                                                 </h3>
                                                 <div className="pankhudi-price-info">
                                                     {item.discount > 0 ? (
                                                         <>
-                                                            <span className="pankhudi-original-prices">₹{item.price}</span>
-                                                            <span className="pankhudi-discounted-price">₹{discountedPrice}</span>
-                                                            <span className="pankhudi-discount-badge">{item.discount}% OFF</span>
+                                                            <span className="pankhudi-original-prices">
+                                                                ₹{item.price}
+                                                            </span>
+                                                            <span className="pankhudi-discounted-price">
+                                                                ₹{discountedPrice}
+                                                            </span>
+                                                            <span className="pankhudi-discount-badge">
+                                                                {item.discount}% OFF
+                                                            </span>
                                                         </>
                                                     ) : (
-                                                        <span className="pankhudi-price">₹{item.price}</span>
+                                                        <span className="pankhudi-price">
+                                                            ₹{item.price}
+                                                        </span>
                                                     )}
                                                 </div>
                                                 {itemSavings > 0 && (
-                                                    <div className="pankhudi-savings">You save ₹{itemSavings.toFixed(2)}</div>
+                                                    <div className="pankhudi-savings">
+                                                        You save ₹{itemSavings.toFixed(2)}
+                                                    </div>
+                                                )}
+                                                {item.added_date && (
+                                                    <div className="pankhudi-added-date">
+                                                        Added on:{" "}
+                                                        {new Date(item.added_date).toLocaleDateString()}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -301,19 +390,45 @@ const CartPage = () => {
                                                 <label>Quantity:</label>
                                                 <div className="pankhudi-quantity-controls">
                                                     <button
-                                                        className={`pankhudi-qty-btn pankhudi-minus ${isUpdating ? 'pankhudi-disabled' : ''}`}
-                                                        onClick={() => !isUpdating && updateQuantity(item.cart_id, item.quantity - 1, item.product_name)}
+                                                        className={`pankhudi-qty-btn pankhudi-minus ${isUpdating ? "pankhudi-disabled" : ""
+                                                            }`}
+                                                        onClick={() =>
+                                                            !isUpdating &&
+                                                            updateQuantity(
+                                                                item.cart_id,
+                                                                item.quantity - 1,
+                                                                item.product_name
+                                                            )
+                                                        }
                                                         disabled={isUpdating}
                                                     >
-                                                        {isUpdating ? <div className="pankhudi-spinner"></div> : '−'}
+                                                        {isUpdating ? (
+                                                            <div className="pankhudi-spinner"></div>
+                                                        ) : (
+                                                            "−"
+                                                        )}
                                                     </button>
-                                                    <span className="pankhudi-quantity">{item.quantity}</span>
+                                                    <span className="pankhudi-quantity">
+                                                        {item.quantity}
+                                                    </span>
                                                     <button
-                                                        className={`pankhudi-qty-btn pankhudi-plus ${isUpdating ? 'pankhudi-disabled' : ''}`}
-                                                        onClick={() => !isUpdating && updateQuantity(item.cart_id, item.quantity + 1, item.product_name)}
+                                                        className={`pankhudi-qty-btn pankhudi-plus ${isUpdating ? "pankhudi-disabled" : ""
+                                                            }`}
+                                                        onClick={() =>
+                                                            !isUpdating &&
+                                                            updateQuantity(
+                                                                item.cart_id,
+                                                                item.quantity + 1,
+                                                                item.product_name
+                                                            )
+                                                        }
                                                         disabled={isUpdating}
                                                     >
-                                                        {isUpdating ? <div className="pankhudi-spinner"></div> : '+'}
+                                                        {isUpdating ? (
+                                                            <div className="pankhudi-spinner"></div>
+                                                        ) : (
+                                                            "+"
+                                                        )}
                                                     </button>
                                                 </div>
                                             </div>
@@ -331,15 +446,20 @@ const CartPage = () => {
                                                 </button>
 
                                                 <button
-                                                    className={`pankhudi-remove-btn ${isRemoving ? 'pankhudi-removing' : ''}`}
-                                                    onClick={() => !isRemoving && removeItem(item.cart_id, item.product_name)}
+                                                    className={`pankhudi-remove-btn ${isRemoving ? "pankhudi-removing" : ""
+                                                        }`}
+                                                    onClick={() =>
+                                                        !isRemoving &&
+                                                        removeItem(item.cart_id, item.product_name)
+                                                    }
                                                     disabled={isRemoving}
                                                 >
                                                     {isRemoving ? (
                                                         <div className="pankhudi-spinner pankhudi-small"></div>
                                                     ) : (
                                                         <>
-                                                            <span className="pankhudi-trash-icon">🗑️</span> Remove
+                                                            <span className="pankhudi-trash-icon">🗑️</span>{" "}
+                                                            Remove
                                                         </>
                                                     )}
                                                 </button>
@@ -364,7 +484,12 @@ const CartPage = () => {
                                 <div className="pankhudi-summary-line pankhudi-discount">
                                     <span>
                                         Discount {promoCode && `(${promoCode})`}
-                                        <button onClick={clearPromoCode} className="pankhudi-clear-promo">×</button>
+                                        <button
+                                            onClick={clearPromoCode}
+                                            className="pankhudi-clear-promo"
+                                        >
+                                            ×
+                                        </button>
                                     </span>
                                     <span>-₹{discountAmount.toFixed(2)}</span>
                                 </div>
@@ -385,7 +510,11 @@ const CartPage = () => {
                                         disabled={applyingPromo || !promoCode.trim()}
                                         className="pankhudi-apply-promo-btn"
                                     >
-                                        {applyingPromo ? <div className="pankhudi-spinner"></div> : 'Apply'}
+                                        {applyingPromo ? (
+                                            <div className="pankhudi-spinner"></div>
+                                        ) : (
+                                            "Apply"
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -405,6 +534,73 @@ const CartPage = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* related products */}
+            {!loading && cartItems.length > 0 && (
+                <div className="pankhudi-related-products">
+                    <div className="pankhudi-related-header">
+                        <h2>Customers who bought items in your cart also bought</h2>
+                    </div>
+
+                    {loadingRelated ? (
+                        <div className="pankhudi-related-loading">
+                            <div className="pankhudi-spinner"></div>
+                            <span>Loading recommendations...</span>
+                        </div>
+                    ) : (
+                        <div className="pankhudi-related-grid">
+                            {relatedProducts.map((product) => (
+                                <div key={product.id} className="pankhudi-related-card">
+                                    <div
+                                        className="pankhudi-related-image"
+                                        onClick={() => handleProductClick(product.id)}
+                                    >
+                                        <img
+                                            src={product.image}
+                                            alt={product.name}
+                                            onError={(e) => {
+                                                e.target.src = "/images/placeholder-product.jpg";
+                                            }}
+                                        />
+                                        {product.discount > 0 && (
+                                            <span className="pankhudi-related-discount">
+                                                {product.discount}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="pankhudi-related-details">
+                                        <h3 onClick={() => handleProductClick(product.id)}>
+                                            {product.name}
+                                        </h3>
+                                        <div className="pankhudi-related-price">
+                                            {product.discount > 0 ? (
+                                                <>
+                                                    <span className="pankhudi-related-original">
+                                                        ₹{product.price}
+                                                    </span>
+                                                    <span className="pankhudi-related-final">
+                                                        ₹{product.final_price}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="pankhudi-related-final">
+                                                    ₹{product.price}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            className="pankhudi-related-add-btn"
+                                            onClick={() => addToCart(product)}
+                                        >
+                                            Add to Cart
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -74,24 +74,25 @@ router.get("/:userId", authenticateToken, (req, res) => {
     const { userId } = req.params;
 
     const sql = `
-        SELECT 
-            c.id AS cart_id,
-            c.quantity,
-            c.added_at,
-            p.id AS product_id,
-            p.name AS product_name,
-            p.price,
-            p.discount,
-            p.stock,
-            p.images,
-            CASE 
-                WHEN p.discount > 0 THEN ROUND(p.price * (1 - p.discount / 100), 2)
-                ELSE p.price
-            END AS final_price
-        FROM cart c
-        INNER JOIN products p ON c.product_id = p.id
-        WHERE c.user_id = ?
-    `;
+      SELECT 
+          c.id AS cart_id,
+          c.quantity,
+          c.added_at,
+          p.id AS product_id,
+          p.name AS product_name,
+          p.price,
+          p.discount,
+          p.stock,
+          p.images,
+          CASE 
+              WHEN p.discount > 0 THEN ROUND(p.price * (1 - p.discount / 100), 2)
+              ELSE p.price
+          END AS final_price
+      FROM cart c
+      INNER JOIN products p ON c.product_id = p.id
+      WHERE c.user_id = ?
+      ORDER BY c.added_at DESC
+  `;
 
     db.query(sql, [userId], (err, results) => {
         if (err) return res.status(500).json({ message: "Database error" });
@@ -105,12 +106,11 @@ router.get("/:userId", authenticateToken, (req, res) => {
                 if (item.images) firstImage = item.images;
             }
 
-            // Agar full URL (5001) hai → sirf filename nikalo
+            // If full URL given → extract filename
             if (firstImage.startsWith("http")) {
                 firstImage = path.basename(firstImage);
             }
 
-            // ✅ Hamesha 5000 port ka URL bhejo
             return {
                 ...item,
                 image: `http://localhost:5000/uploads/${firstImage}`,
