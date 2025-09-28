@@ -33,6 +33,11 @@ const ProductDetailsEnhanced = () => {
     const pollingIntervalRef = useRef(null);
     const [currentUser, setCurrentUser] = useState(null);
 
+    // Cart states
+    const [addingToCart, setAddingToCart] = useState(false);
+    const [cartMessage, setCartMessage] = useState("");
+    const [cartMessageType, setCartMessageType] = useState(""); // "success" or "error"
+
     // Get current user from token
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -59,6 +64,7 @@ const ProductDetailsEnhanced = () => {
             const { data } = await axios.get(`http://localhost:5000/api/reviews/${productId}?t=${Date.now()}`);
             setReviews(data);
             setLastUpdated(new Date());
+            console.log("Fetched reviews:", data);
         } catch (err) {
             console.error("Error fetching reviews:", err);
             setReviews([]);
@@ -175,37 +181,106 @@ const ProductDetailsEnhanced = () => {
     const calculateDiscountedPrice = () => product.discount > 0 ? product.price - (product.price * product.discount / 100) : product.price;
     const formatPrice = (price) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(price);
 
+    // Add to Cart Function
     const handleAddToCart = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Please login to add items to cart");
-                navigate('/login');
-                return;
-            }
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login to add items to cart");
+            navigate('/login');
+            return;
+        }
 
-            await axios.post(
-                "http://localhost:5000/api/cart",
+        if (product.stock === 0) {
+            setCartMessage("Product is out of stock");
+            setCartMessageType("error");
+            setTimeout(() => setCartMessage(""), 3000);
+            return;
+        }
+
+        try {
+            setAddingToCart(true);
+            setCartMessage("");
+
+            const response = await axios.post(
+                "http://localhost:5000/api/cart/add",
                 {
                     product_id: product.id,
-                    quantity,
-                    size: selectedSize,
-                    color: selectedColor,
-                    material: selectedMaterial
+                    quantity: quantity
                 },
-                { headers: { Authorization: `Bearer ${token}` } }
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
             );
 
-            alert("Product added to cart successfully!");
+            setCartMessage(response.data.message || "Product added to cart successfully!");
+            setCartMessageType("success");
+
+            // Reset message after 3 seconds
+            setTimeout(() => setCartMessage(""), 3000);
+
         } catch (err) {
-            console.error(err);
-            alert("Failed to add product to cart");
+            console.error("Error adding to cart:", err);
+            const errorMessage = err.response?.data?.message || "Failed to add product to cart";
+            setCartMessage(errorMessage);
+            setCartMessageType("error");
+
+            // Reset message after 3 seconds
+            setTimeout(() => setCartMessage(""), 3000);
+        } finally {
+            setAddingToCart(false);
         }
     };
 
+    // Buy Now Function (Add to cart and navigate to cart page)
     const handleBuyNow = async () => {
-        await handleAddToCart();
-        navigate('/cart');
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login to proceed with purchase");
+            navigate('/login');
+            return;
+        }
+
+        if (product.stock === 0) {
+            setCartMessage("Product is out of stock");
+            setCartMessageType("error");
+            setTimeout(() => setCartMessage(""), 3000);
+            return;
+        }
+
+        try {
+            setAddingToCart(true);
+
+            await axios.post(
+                "http://localhost:5000/api/cart/add",
+                {
+                    product_id: product.id,
+                    quantity: quantity
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            // Navigate to cart page after successful addition
+            navigate('/cart');
+
+        } catch (err) {
+            console.error("Error adding to cart:", err);
+            const errorMessage = err.response?.data?.message || "Failed to add product to cart";
+            setCartMessage(errorMessage);
+            setCartMessageType("error");
+
+            // Reset message after 3 seconds
+            setTimeout(() => setCartMessage(""), 3000);
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
     const handleWishlistToggle = async () => {
@@ -297,30 +372,32 @@ const ProductDetailsEnhanced = () => {
 
             // Remove review from local state immediately
             setReviews(prev => prev.filter(review => review.id !== reviewId));
+
+            console.log("Review deleted successfully!");
         } catch (err) {
             console.error("Error deleting review:", err);
             alert("Failed to delete review");
         }
     };
 
-    // Check if current user is the author of the review - UPDATED FUNCTION
+    // Check if current user is the author of the review - UPDATED
     const isReviewAuthor = (review) => {
         if (!currentUser) {
+            console.log("No current user");
             return false;
         }
 
-        // console.log("Checking review ownership:", {
-        //     currentUser,
-        //     reviewUser: review.user_id || review.userId || review.user_name,
-        //     review
-        // });
+        console.log("Checking review ownership:", {
+            currentUserId: currentUser.id,
+            reviewUserId: review.user_id,
+            currentUser,
+            review
+        });
 
-        // Check multiple possible user identifier fields
-        const isAuthor =
-            review.user_id === currentUser.id ||
-            review.userId === currentUser.id ||
-            review.user_email === currentUser.email ||
-            review.user_name === currentUser.name;
+        // Primary check - match user_id from review with current user id
+        const isAuthor = review.user_id === currentUser.id;
+
+        console.log("Is author:", isAuthor);
         return isAuthor;
     };
 
@@ -394,6 +471,13 @@ const ProductDetailsEnhanced = () => {
                     <span>{product.name}</span>
                 </nav>
             </header>
+
+            {/* Cart Message */}
+            {cartMessage && (
+                <div className={`pankhudi-cart-message ${cartMessageType}`}>
+                    {cartMessage}
+                </div>
+            )}
 
             <div className="pankhudi-product-main">
                 <div className="pankhudi-product-gallery">
@@ -547,16 +631,16 @@ const ProductDetailsEnhanced = () => {
                         <button
                             className="pankhudi-add-to-cart"
                             onClick={handleAddToCart}
-                            disabled={product.stock === 0}
+                            disabled={product.stock === 0 || addingToCart}
                         >
-                            {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                            {addingToCart ? "Adding..." : (product.stock === 0 ? 'Out of Stock' : 'Add to Cart')}
                         </button>
                         <button
                             className="pankhudi-buy-now"
                             onClick={handleBuyNow}
-                            disabled={product.stock === 0}
+                            disabled={product.stock === 0 || addingToCart}
                         >
-                            Buy Now
+                            {addingToCart ? "Adding..." : 'Buy Now'}
                         </button>
                     </div>
 
