@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
-import { addToCart } from "../../utils/api";
-
 import './Home.css';
 
-// Enhanced category images with more options
+// Category and fallback images
 const getCategoryImage = (category) => {
-    const categoryImages = {
+    const images = {
         dresses: 'https://img.kwcdn.com/product/enhanced_images/4bd92b3ed9fadfea0c9752692a9e19a1_enhanced.jpg?imageView2/2/w/800/q/70',
         tops: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=500&auto=format&fit=crop',
         skirts: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop',
@@ -30,34 +28,11 @@ const getCategoryImage = (category) => {
         plus_size: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop',
         general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&auto=format&fit=crop'
     };
-    return categoryImages[category?.toLowerCase()] || categoryImages.general;
+    return images[category?.toLowerCase()] || images.general;
 };
 
-const getFallbackProductImage = (category) => {
-    const fallbackImages = {
-        dresses: 'https://images.unsplash.com/photo-1585487000160-6ebcfceb595d?w=500&auto=format&fit=crop',
-        tops: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=500&auto=format&fit=crop',
-        skirts: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&auto=format&fit=crop',
-        ethnicwear: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=500&auto=format&fit=crop',
-        winterwear: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop',
-        accessories: 'https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop',
-        lehengas: 'https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg',
-        suits: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg',
-        jeans: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop',
-        footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop',
-        bags: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&auto=format&fit=crop',
-        jewelry: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ad5e5?w=500&auto=format&fit=crop',
-        lingerie: 'https://images.unsplash.com/photo-1581338834647-b0fb40704e21?w=500&auto=format&fit=crop',
-        activewear: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=500&auto=format&fit=crop',
-        swimwear: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop',
-        maternity: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=500&auto=format&fit=crop',
-        plus_size: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop',
-        general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&auto=format&fit=crop'
-    };
-    return fallbackImages[category?.toLowerCase()] || fallbackImages.general;
-};
+const getFallbackProductImage = getCategoryImage; // reuse same function
 
-// Enhanced slider items with more options
 const sliderItems = [
     {
         id: 1,
@@ -106,20 +81,6 @@ const sliderItems = [
     }
 ];
 
-// New filter options
-const patternOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'floral', label: 'Floral' },
-    { value: 'striped', label: 'Striped' },
-    { value: 'polka-dot', label: 'Polka Dot' },
-    { value: 'geometric', label: 'Geometric' },
-    { value: 'embroidered', label: 'Ethnic' },
-    { value: 'printed', label: 'Printed' },
-    { value: 'plain', label: 'Plain' },
-    { value: 'checkered', label: 'Checkered' },
-    { value: 'animal-print', label: 'Animal Print' }
-];
-
 const priceRanges = [
     { value: 'all', label: 'All Prices' },
     { value: '0-500', label: 'Under ₹500' },
@@ -129,7 +90,6 @@ const priceRanges = [
     { value: '5000+', label: 'Over ₹5000' }
 ];
 
-// Predefined categories to ensure they're always visible
 const predefinedCategories = [
     'dresses', 'tops', 'skirts', 'ethnicwear', 'winterwear',
     'accessories', 'lehengas', 'suits', 'jeans', 'footwear',
@@ -144,290 +104,143 @@ const Home = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [progress, setProgress] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeFilter, setActiveFilter] = useState("all");
     const [activePriceFilter, setActivePriceFilter] = useState("all");
     const [sortOption, setSortOption] = useState("featured");
     const [hoveredProduct, setHoveredProduct] = useState(null);
     const [products, setProducts] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
-    const [visibleCategories, setVisibleCategories] = useState(8); // Show 8 categories initially
-    const navigate = useNavigate();
-    const testimonialsScrollRef = useRef(null);
+    const [visibleCategories, setVisibleCategories] = useState(8);
     const [cart, setCart] = useState([]);
-
+    const navigate = useNavigate();
     const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-    // ✅ Improved Product image formatter
     const getProductImage = useCallback((product) => {
-        // Check if product has images array with content
-        if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        if (product.images && product.images.length > 0) {
             const firstImage = product.images[0];
-            // Handle both string paths and object with url property
-            const imageUrl = typeof firstImage === 'string'
-                ? firstImage
-                : (firstImage.url || firstImage.imageUrl || '');
-
-            if (imageUrl.startsWith("http")) {
-                return imageUrl;
-            } else if (imageUrl.startsWith("/")) {
-                return `${API}${imageUrl}`;
-            }
+            const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage.url || firstImage.imageUrl || '';
+            if (imageUrl.startsWith("http")) return imageUrl;
+            if (imageUrl.startsWith("/")) return `${API}${imageUrl}`;
         }
-
-        // Check if product has image property directly
         if (product.image) {
-            const imageUrl = typeof product.image === 'string'
-                ? product.image
-                : (product.image.url || product.image.imageUrl || '');
-
-            if (imageUrl.startsWith("http")) {
-                return imageUrl;
-            } else if (imageUrl.startsWith("/")) {
-                return `${API}${imageUrl}`;
-            }
+            const imageUrl = typeof product.image === 'string' ? product.image : product.image.url || product.image.imageUrl || '';
+            if (imageUrl.startsWith("http")) return imageUrl;
+            if (imageUrl.startsWith("/")) return `${API}${imageUrl}`;
         }
-
-        // Fallback to category-based image
         return getFallbackProductImage(product.category);
     }, [API]);
 
-    // Fetch API products
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                console.log("Fetching products from:", `${API}/api/products`);
                 const response = await axios.get(`${API}/api/products`);
-                console.log("API Response:", response.data);
-
                 if (Array.isArray(response.data)) {
-                    const sanitized = response.data.map((p, index) => {
-                        const productImage = getProductImage(p);
-
-                        // ✅ check if product is within 7 days
-                        const createdDate = new Date(p.createdAt || new Date());
-                        const now = new Date();
-                        const diffInDays = (now - createdDate) / (1000 * 60 * 60 * 24);
-                        const isNew = diffInDays <= 7;
-
-                        return {
-                            id: p._id || p.id || `api-${index}`,
-                            name: p.name || "No Name",
-                            description: p.description || "",
-                            price: Number(p.price) || 0,
-                            category: (p.category || "general").toLowerCase(),
-                            pattern: (p.pattern || "n/a").toLowerCase(),
-                            rating: p.rating || 0,
-                            discount: p.discount || 0,
-                            stock: p.stock || 0,
-                            brand: p.brand || "Unknown",
-                            status: p.status || "active",
-                            image: productImage,
-                            images: p.images || [],
-                            isApiProduct: true,
-                            createdAt: p.createdAt || new Date().toISOString(),
-                            tags: p.tags || [],
-                            isNew: p.isNew || false,
-                        };
-                    });
-
+                    const sanitized = response.data.map((p, index) => ({
+                        id: p._id || p.id || `api-${index}`,
+                        name: p.name || "No Name",
+                        description: p.description || "",
+                        price: Number(p.price) || 0,
+                        category: (p.category || "general").toLowerCase(),
+                        pattern: (p.pattern || "n/a").toLowerCase(),
+                        rating: p.rating || 0,
+                        discount: p.discount || 0,
+                        stock: p.stock || 0,
+                        brand: p.brand || "Unknown",
+                        status: p.status || "active",
+                        image: getProductImage(p),
+                        images: p.images || [],
+                        isApiProduct: true,
+                        createdAt: p.createdAt || new Date().toISOString(),
+                        tags: p.tags || [],
+                        isNew: p.isNew || false,
+                    }));
                     setProducts(sanitized);
-
-                    // Extract unique categories from products and combine with predefined
-                    const productCategories = [...new Set(sanitized.map((p) => p.category))];
-                    const allCategories = [...new Set([...predefinedCategories, ...productCategories])];
-                    setCategories(allCategories);
+                    const productCategories = [...new Set(sanitized.map(p => p.category))];
+                    setCategories([...new Set([...predefinedCategories, ...productCategories])]);
                 }
             } catch (err) {
-                console.error("❌ Fetch error:", err);
+                console.error(err);
                 setProducts([]);
-                // Use predefined categories even if API fails
                 setCategories(predefinedCategories);
             }
         };
-
         fetchProducts();
     }, [API, getProductImage]);
 
-    // Check login status
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
-    }, []);
-
-    // Image loading and progress
+    // Image loading progress
     useEffect(() => {
         const totalImages = products.length + sliderItems.length + categories.length;
-        if (totalImages === 0) return;
-
+        if (!totalImages) return;
         let loaded = 0;
-
         const onLoad = () => {
             loaded++;
             setProgress(Math.round((loaded / totalImages) * 100));
-            if (loaded >= totalImages) {
-                setImagesLoaded(true);
-            }
+            if (loaded >= totalImages) setImagesLoaded(true);
         };
+        categories.forEach(cat => { const img = new Image(); img.src = getCategoryImage(cat); img.onload = onLoad; img.onerror = onLoad; });
+        products.forEach(prod => { const img = new Image(); img.src = getProductImage(prod); img.onload = onLoad; img.onerror = () => { img.src = getFallbackProductImage(prod.category); onLoad(); }; });
+        sliderItems.forEach(item => { const img = new Image(); img.src = item.image; img.onload = onLoad; img.onerror = onLoad; });
+    }, [products, categories, getProductImage]);
 
-        // Load category images
-        categories.forEach(category => {
-            const img = new Image();
-            img.src = getCategoryImage(category);
-            img.onload = onLoad;
-            img.onerror = onLoad;
-        });
-
-        // Load product images
-        products.forEach(product => {
-            const img = new Image();
-            img.src = product.image;
-            img.onload = onLoad;
-            img.onerror = () => {
-                img.src = getFallbackProductImage(product.category);
-                onLoad();
-            };
-        });
-
-        // Load slider images
-        sliderItems.forEach(item => {
-            const img = new Image();
-            img.src = item.image;
-            img.onload = onLoad;
-            img.onerror = onLoad;
-        });
-    }, [products, categories]);
-
-    // Handle loading completion
     useEffect(() => {
         if (!imagesLoaded) return;
-
         const timer = setTimeout(() => setIsLoading(false), 1000);
         return () => clearTimeout(timer);
     }, [imagesLoaded]);
 
-    // Auto slide functionality
     useEffect(() => {
         if (!autoPlay || isLoading) return;
-
-        const interval = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % sliderItems.length);
-        }, 5000);
-
+        const interval = setInterval(() => { setCurrentSlide(prev => (prev + 1) % sliderItems.length); }, 5000);
         return () => clearInterval(interval);
     }, [autoPlay, isLoading]);
 
-    // Slider navigation functions
-    const nextSlide = useCallback(() => {
-        setCurrentSlide(prev => (prev + 1) % sliderItems.length);
-    }, []);
-
-    const prevSlide = useCallback(() => {
-        setCurrentSlide(prev => (prev - 1 + sliderItems.length) % sliderItems.length);
-    }, []);
-
-    const goToSlide = useCallback(index => {
-        setCurrentSlide(index);
-    }, []);
-
-    const toggleAutoPlay = useCallback(() => {
-        setAutoPlay(prev => !prev);
-    }, []);
-
-    const navigateTo = useCallback(path => {
-        navigate(path);
-    }, [navigate]);
+    const nextSlide = () => setCurrentSlide(prev => (prev + 1) % sliderItems.length);
+    const prevSlide = () => setCurrentSlide(prev => (prev - 1 + sliderItems.length) % sliderItems.length);
+    const goToSlide = (index) => setCurrentSlide(index);
+    const toggleAutoPlay = () => setAutoPlay(prev => !prev);
+    const navigateTo = (path) => navigate(path);
 
     const handleAddToCart = async (product) => {
         try {
             const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Please login first");
-                return;
-            }
-
+            if (!token) { alert("Please login first"); return; }
             const storedUser = localStorage.getItem("user");
-            if (!storedUser) {
-                alert("User info not found, please login again");
-                return;
-            }
+            if (!storedUser) { alert("User info not found, please login again"); return; }
             const user = JSON.parse(storedUser);
-
-            // ✅ Calculate discounted price before sending
-            const finalPrice = product.discount > 0
-                ? Math.round(product.price * (1 - product.discount / 100))
-                : product.price;
-
-            const payload = {
-                product_id: product.id,
-                quantity: 1,
-                user_id: user.id,
-                price: finalPrice   // ✅ Always send discounted price to backend
-            };
-
-            const response = await axios.post(
-                "http://localhost:5000/api/cart/add",
-                payload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
+            const finalPrice = product.discount > 0 ? Math.round(product.price * (1 - product.discount / 100)) : product.price;
+            const payload = { product_id: product.id, quantity: 1, user_id: user.id, price: finalPrice };
+            const response = await axios.post(`${API}/api/cart/add`, payload, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
             alert(response.data.message);
-
+            // Update local cart state
+            setCart(prev => [...prev, product]);
         } catch (error) {
-            console.error("Add to cart error:", error);
-            if (error.response) {
-                alert(error.response.data.message || "Something went wrong");
-            } else {
-                alert("Network or server error");
-            }
+            console.error(error);
+            alert(error.response?.data?.message || "Something went wrong");
         }
     };
 
-    // Filter products by pattern
-    const filterProducts = (pattern) => {
-        setActiveFilter(pattern);
-    };
+    // Filters
+    const filterByPrice = (priceRange) => setActivePriceFilter(priceRange);
+    const sortProducts = (option) => setSortOption(option);
 
-    // Filter products by price range
-    const filterByPrice = (priceRange) => {
-        setActivePriceFilter(priceRange);
-    };
-
-    // Sort products
-    const sortProducts = (option) => {
-        setSortOption(option);
-    };
-
-    // Get filtered and sorted products
     const getFilteredProducts = () => {
         let filtered = [...products];
 
-        // Apply pattern filter
+        // Pattern filter
         if (activeFilter !== 'all') {
-            filtered = filtered.filter(product => product.pattern === activeFilter);
+            filtered = filtered.filter(p => p.pattern === activeFilter);
         }
 
-        // Apply price filter
+        // Price filter
         if (activePriceFilter !== 'all') {
-            if (activePriceFilter === '0-500') {
-                filtered = filtered.filter(product => product.price < 500);
-            } else if (activePriceFilter === '500-1000') {
-                filtered = filtered.filter(product => product.price >= 500 && product.price < 1000);
-            } else if (activePriceFilter === '1000-2000') {
-                filtered = filtered.filter(product => product.price >= 1000 && product.price < 2000);
-            } else if (activePriceFilter === '2000-5000') {
-                filtered = filtered.filter(product => product.price >= 2000 && product.price < 5000);
-            } else if (activePriceFilter === '5000+') {
-                filtered = filtered.filter(product => product.price >= 5000);
-            }
+            if (activePriceFilter === '0-500') filtered = filtered.filter(p => p.price < 500);
+            else if (activePriceFilter === '500-1000') filtered = filtered.filter(p => p.price >= 500 && p.price < 1000);
+            else if (activePriceFilter === '1000-2000') filtered = filtered.filter(p => p.price >= 1000 && p.price < 2000);
+            else if (activePriceFilter === '2000-5000') filtered = filtered.filter(p => p.price >= 2000 && p.price < 5000);
+            else if (activePriceFilter === '5000+') filtered = filtered.filter(p => p.price >= 5000);
         }
 
-        // Apply sorting
+        // Sorting
         switch (sortOption) {
             case 'price-low-high':
                 filtered.sort((a, b) => a.price - b.price);
@@ -445,44 +258,32 @@ const Home = () => {
                 filtered.sort((a, b) => b.discount - a.discount);
                 break;
             default:
-                // Featured (default) - no sorting
+                // Default: no sorting, just return as is
                 break;
         }
 
         return filtered;
     };
 
-    // Toggle filters visibility on mobile
-    const toggleFilters = () => {
-        setShowFilters(!showFilters);
-    };
 
-    // Show more categories
-    const showMoreCategories = () => {
-        setVisibleCategories(categories.length);
-    };
+    const toggleFilters = () => setShowFilters(!showFilters);
+    const showMoreCategories = () => setVisibleCategories(categories.length);
 
-    if (isLoading) {
-        return (
-            <div className="loading-screen">
-                <div className="loading-content">
-                    <h1 className="brand-name">Pankhudi</h1>
-                    <div className="loading-spinner"></div>
-                    <div className="loading-progress-bar">
-                        <div className="loading-progress" style={{ width: `${progress}%` }} />
-                    </div>
-                    <p>Loading your fashion world... {progress}%</p>
-                    {progress < 100 && (
-                        <p className="slow-internet-warning">Loading images... This may take longer on slow connections.</p>
-                    )}
-                </div>
+    if (isLoading) return (
+        <div className="loading-screen">
+            <div className="loading-content">
+                <h1 className="brand-name">Pankhudi</h1>
+                <div className="loading-spinner"></div>
+                <div className="loading-progress-bar"><div className="loading-progress" style={{ width: `${progress}%` }} /></div>
+                <p>Loading your fashion world... {progress}%</p>
+                {progress < 100 && <p className="slow-internet-warning">Loading images... This may take longer on slow connections.</p>}
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
         <>
-            <Header />
+            <Header cart={cart} />
             <main className="home-main">
                 <section className="hero-section">
                     <div className="slider-container">
@@ -608,20 +409,6 @@ const Home = () => {
                     </div>
 
                     <div className={`filters-container ${showFilters ? 'show' : ''}`}>
-                        <div className="filter-group">
-                            <h4>Pattern</h4>
-                            <div className="pattern-filters">
-                                {patternOptions.map(pattern => (
-                                    <button
-                                        key={pattern.value}
-                                        className={`pattern-filter ${activeFilter === pattern.value ? 'active' : ''}`}
-                                        onClick={() => filterProducts(pattern.value)}
-                                    >
-                                        {pattern.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
 
                         <div className="filter-group">
                             <h4>Price Range</h4>
@@ -693,7 +480,6 @@ const Home = () => {
                             >
                                 {/* 🔥 Badges */}
                                 {product.isNew && <span className="api-badge">NEW</span>}
-
                                 {product.discount > 0 && (
                                     <span className="discount-badge">-{product.discount}%</span>
                                 )}
