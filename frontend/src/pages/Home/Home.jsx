@@ -725,6 +725,10 @@ const Home = () => {
                                 {/* 🔥 Product Info */}
                                 <div className="product-info">
                                     <h3>{product.name}</h3>
+                                    <p className="description">
+                                        {product.description.split("\n").slice(0, 3).join("\n")}
+                                    </p>
+
                                     <p className="brand">Brand: {product.brand || "N/A"}</p>
 
                                     {/* Price Section */}

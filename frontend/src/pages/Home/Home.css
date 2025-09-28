@@ -665,6 +665,15 @@ body {
     color: white;
 }
 
+.description {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    /* sirf 3 lines dikhengi */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .product-image {
     position: relative;
     width: 100%;

@@ -231,11 +231,14 @@ const Header = () => {
         setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
     };
 
+    // In your toggleMobileMenu function, update it like this:
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
         if (!isMobileMenuOpen) {
+            document.body.classList.add('menu-open');
             document.body.style.overflow = 'hidden';
         } else {
+            document.body.classList.remove('menu-open');
             document.body.style.overflow = '';
         }
     };
@@ -243,8 +246,18 @@ const Header = () => {
     const closeMobileMenu = () => {
         setIsMobileMenuOpen(false);
         setActiveDropdown(null);
+        document.body.classList.remove('menu-open');
         document.body.style.overflow = '';
     };
+
+    // Add cleanup in useEffect
+    useEffect(() => {
+        return () => {
+            // Cleanup on component unmount
+            document.body.classList.remove('menu-open');
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     const toggleSearch = () => {
         setIsSearchExpanded(!isSearchExpanded);
@@ -421,8 +434,6 @@ const Header = () => {
                             </motion.button>
                         </form>
 
-
-                        {/* Search Suggestions Dropdown */}
                         {/* Search Suggestions Dropdown */}
                         {((Array.isArray(searchResults) && searchResults.length > 0) ||
                             (!searchQuery && Array.isArray(trendingProducts) && trendingProducts.length > 0)) && (
@@ -434,7 +445,7 @@ const Header = () => {
                                                 key={item.id}
                                                 className="search-suggestion-item"
                                                 onClick={() => {
-                                                    navigate(`/product/${item.id}`);
+                                                    navigate(`/ProductDetail/${item.id}`);
                                                     setSearchQuery('');
                                                     setSearchResults([]);
                                                     closeMobileMenu();
@@ -448,6 +459,9 @@ const Header = () => {
                                                 />
                                                 <div className="suggestion-details">
                                                     <p className="suggestion-name">{item.name}</p>
+                                                    <p className="description">
+                                                        {item.description.split("\n").slice(0, 3).join("\n")}
+                                                    </p>
                                                     {/* Price & Discount */}
                                                     {item.discountPrice ? (
                                                         <span className="suggestion-price">
@@ -732,6 +746,47 @@ const Header = () => {
                                         </motion.button>
                                     </div>
                                 </form>
+
+                                {((Array.isArray(searchResults) && searchResults.length > 0) ||
+                                    (!searchQuery && Array.isArray(trendingProducts) && trendingProducts.length > 0)) && (
+                                        <div className="mobile-search-suggestions-dropdown">
+                                            {(Array.isArray(searchQuery ? searchResults : trendingProducts)
+                                                ? (searchQuery ? searchResults : trendingProducts)
+                                                : []).map(item => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="mobile-search-suggestion-item"
+                                                        onClick={() => {
+                                                            navigate(`/ProductDetail/${item.id}`);
+                                                            setSearchQuery('');
+                                                            setSearchResults([]);
+                                                            closeMobileMenu();
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                                            alt={item.name}
+                                                            className="mobile-suggestion-image"
+                                                        />
+                                                        <div className="mobile-suggestion-details">
+                                                            <p className="mobile-suggestion-name">{item.name}</p>
+                                                            <p className="mobile-suggestion-description">
+                                                                {item.description.split("\n").slice(0, 3).join("\n")}
+                                                            </p>
+                                                            {item.discountPrice ? (
+                                                                <span className="mobile-suggestion-price">
+                                                                    <span className="discounted-price">₹{item.discountPrice}</span>{' '}
+                                                                    <span className="original-price">₹{item.price}</span>
+                                                                </span>
+                                                            ) : (
+                                                                <span className="mobile-suggestion-price">₹{item.price}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
+
                             </div>
 
                             <nav className="mobile-nav-section">
