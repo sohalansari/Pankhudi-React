@@ -467,9 +467,6 @@ const Home = () => {
                             </button>
                         </div>
                     </div>
-
-                    {/* …inside your <section className="featured-section"> */}
-
                     <div className="products-grid">
                         {getFilteredProducts().map((product, index) => (
                             <div
@@ -478,14 +475,14 @@ const Home = () => {
                                 onMouseEnter={() => setHoveredProduct(product.id)}
                                 onMouseLeave={() => setHoveredProduct(null)}
                             >
-                                {/* 🔥 Badges */}
+                                {/* Badges */}
                                 {product.isNew && <span className="api-badge">NEW</span>}
                                 {product.discount > 0 && (
                                     <span className="discount-badge">-{product.discount}%</span>
                                 )}
 
 
-                                {/* 🔥 Product Image */}
+                                {/* Product Image */}
                                 <div className="product-image">
                                     <img
                                         src={getProductImage(product)}
@@ -508,10 +505,10 @@ const Home = () => {
                                     )}
                                 </div>
 
-                                {/* 🔥 Product Info */}
+                                {/*  Product Info */}
                                 <div className="product-info">
                                     <h3>{product.name}</h3>
-                                    <p className="description">
+                                    <p className="description-pp" >
                                         {product.description.split("\n").slice(0, 3).join("\n")}
                                     </p>
 

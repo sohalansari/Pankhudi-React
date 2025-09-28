@@ -361,7 +361,7 @@ const CartPage = () => {
                                                             <span className="pankhudi-discounted-price">
                                                                 ₹{discountedPrice}
                                                             </span>
-                                                            <span className="pankhudi-discount-badge">
+                                                            <span className="pankhudi-discount">
                                                                 {item.discount}% OFF
                                                             </span>
                                                         </>

@@ -1,363 +1,850 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import './ProductDetail.css';
+import React, { useEffect, useState, useRef } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./ProductDetail.css";
 
-const ProductDetails = () => {
+const ProductDetailsEnhanced = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [product, setProduct] = useState(null);
+    const [relatedProducts, setRelatedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedImage, setSelectedImage] = useState(0);
+    const [relatedLoading, setRelatedLoading] = useState(false);
+    const [mainImage, setMainImage] = useState("");
     const [quantity, setQuantity] = useState(1);
-    const [selectedSize, setSelectedSize] = useState('');
-    const [selectedColor, setSelectedColor] = useState('');
-    const API = process.env.REACT_APP_API_URL || "http://localhost:5001";
+    const [selectedSize, setSelectedSize] = useState("");
+    const [selectedColor, setSelectedColor] = useState("");
+    const [selectedMaterial, setSelectedMaterial] = useState("");
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("description");
 
-    // Fetch product details
+    const [reviews, setReviews] = useState([]);
+    const [reviewText, setReviewText] = useState("");
+    const [selectedRating, setSelectedRating] = useState(5);
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewError, setReviewError] = useState("");
+    const [showFullDescription, setShowFullDescription] = useState(false);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+
+    // Live fetching states
+    const [isLiveFetching, setIsLiveFetching] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(null);
+    const pollingIntervalRef = useRef(null);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // Get current user from token
     useEffect(() => {
-        const fetchProduct = async () => {
+        const token = localStorage.getItem("token");
+        if (token) {
             try {
-                setLoading(true);
-                console.log("Fetching product with ID:", id);
-
-                const response = await axios.get(`${API}/api/products/${id}`);
-                console.log("Product details response:", response.data);
-
-                if (response.data && response.data.product) {
-                    setProduct(response.data.product);
-
-                    // Set default selected options if available
-                    if (response.data.product.sizes && response.data.product.sizes.length > 0) {
-                        setSelectedSize(response.data.product.sizes[0]);
-                    }
-                    if (response.data.product.colors && response.data.product.colors.length > 0) {
-                        setSelectedColor(response.data.product.colors[0]);
-                    }
-                } else {
-                    setError("Product not found");
-                }
+                // Decode token to get user info
+                const tokenData = JSON.parse(atob(token.split('.')[1]));
+                setCurrentUser({
+                    id: tokenData.userId || tokenData.id,
+                    name: tokenData.name || tokenData.username,
+                    email: tokenData.email
+                });
+                console.log("Current user:", tokenData);
             } catch (err) {
-                console.error("Error fetching product:", err);
-                if (err.response && err.response.status === 404) {
-                    setError("Product not found");
-                } else {
-                    setError("Failed to load product details. Please try again later.");
+                console.error("Error decoding token:", err);
+            }
+        }
+    }, []);
+
+    // Separate function to fetch reviews
+    const fetchReviews = async (productId, showLoading = true) => {
+        try {
+            if (showLoading) setReviewsLoading(true);
+            const { data } = await axios.get(`http://localhost:5000/api/reviews/${productId}?t=${Date.now()}`);
+            setReviews(data);
+            setLastUpdated(new Date());
+        } catch (err) {
+            console.error("Error fetching reviews:", err);
+            setReviews([]);
+        } finally {
+            if (showLoading) setReviewsLoading(false);
+        }
+    };
+
+    // Start live fetching
+    const startLiveFetching = () => {
+        if (!product || pollingIntervalRef.current) return;
+
+        setIsLiveFetching(true);
+
+        // Fetch every 30 seconds
+        pollingIntervalRef.current = setInterval(() => {
+            fetchReviews(product.id, false);
+        }, 30000); // 30 seconds
+    };
+
+    // Stop live fetching
+    const stopLiveFetching = () => {
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+            setIsLiveFetching(false);
+        }
+    };
+
+    // Separate function to fetch related products
+    const fetchRelatedProducts = async (category, currentProductId) => {
+        try {
+            setRelatedLoading(true);
+            const { data } = await axios.get(`http://localhost:5000/api/products/related/${category}?limit=4&exclude=${currentProductId}`);
+            setRelatedProducts(data);
+        } catch (err) {
+            console.error("Error fetching related products:", err);
+            setRelatedProducts([]);
+        } finally {
+            setRelatedLoading(false);
+        }
+    };
+
+    // Separate function to fetch product data
+    const fetchProductData = async () => {
+        try {
+            setLoading(true);
+            const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
+            setProduct(data);
+            setMainImage(data.images?.[0] || "");
+            if (data.sizes?.length) setSelectedSize(data.sizes[0]);
+            if (data.colors?.length) setSelectedColor(data.colors[0]);
+            if (data.materials?.length) setSelectedMaterial(data.materials[0]);
+
+            // Check if product is in wishlist
+            const token = localStorage.getItem("token");
+            if (token) {
+                try {
+                    const wishlistResponse = await axios.get(`http://localhost:5000/api/wishlist/check/${data.id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setIsWishlisted(wishlistResponse.data.isWishlisted);
+                } catch (wishlistErr) {
+                    console.error("Error checking wishlist:", wishlistErr);
                 }
-            } finally {
-                setLoading(false);
+            }
+
+            // Fetch reviews and related products in parallel
+            await Promise.all([
+                fetchReviews(data.id),
+                fetchRelatedProducts(data.category, data.id)
+            ]);
+
+            // Auto-start live fetching after initial load
+            startLiveFetching();
+        } catch (err) {
+            console.error("Error fetching product data:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProductData();
+
+        // Cleanup on component unmount
+        return () => {
+            stopLiveFetching();
+        };
+    }, [id]);
+
+    // Auto-refresh when tab becomes visible
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && product) {
+                fetchReviews(product.id, false);
             }
         };
 
-        if (id) {
-            fetchProduct();
-        } else {
-            setError("Invalid product ID");
-            setLoading(false);
-        }
-    }, [id, API]);
-
-    // Get product image URL
-    const getProductImage = (image, index) => {
-        if (!image) return getFallbackProductImage(product?.category);
-
-        const imageUrl = typeof image === 'string' ? image : (image.url || image.imageUrl || '');
-
-        if (imageUrl.startsWith("http")) {
-            return imageUrl;
-        } else if (imageUrl.startsWith("/")) {
-            return `${API}${imageUrl}`;
-        }
-
-        return getFallbackProductImage(product?.category);
-    };
-
-    // Fallback product image
-    const getFallbackProductImage = (category) => {
-        const fallbackImages = {
-            dresses: 'https://images.unsplash.com/photo-1585487000160-6ebcfceb595d?w=500&auto=format&fit=crop',
-            tops: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=500&auto=format&fit=crop',
-            skirts: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&auto=format&fit=crop',
-            ethnicwear: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=500&auto=format&fit=crop',
-            winterwear: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop',
-            accessories: 'https://images.unsplash.com/photo-1607602132863-4c6c92a1e20e?w=500&auto=format&fit=crop',
-            lehengas: 'https://www.utsavfashion.com/media/catalog/product/cache/1/image/500x/040ec09b1e35df139433887a97daa66f/s/w/sw-l-10465-maroon-and-golden-embroidered-net-lehenga-choli.jpg',
-            suits: 'https://5.imimg.com/data5/SELLER/Default/2021/12/QO/YD/JA/3033183/women-s-printed-suit.jpg',
-            general: 'https://via.placeholder.com/500x600?text=Product+Image'
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-        return fallbackImages[category?.toLowerCase()] || fallbackImages.general;
+    }, [product]);
+
+    const handleQuantityChange = (e) => {
+        const value = parseInt(e.target.value);
+        if (value > 0 && value <= product.stock) setQuantity(value);
     };
 
-    // Add to cart functionality
-    const handleAddToCart = () => {
-        if (!product) return;
+    const incrementQuantity = () => quantity < product.stock && setQuantity(quantity + 1);
+    const decrementQuantity = () => quantity > 1 && setQuantity(quantity - 1);
 
-        const isLoggedIn = !!localStorage.getItem('token');
-        if (!isLoggedIn) {
-            alert('Please login to add items to the cart.');
-            navigate('/login');
-            return;
+    const calculateDiscountedPrice = () => product.discount > 0 ? product.price - (product.price * product.discount / 100) : product.price;
+    const formatPrice = (price) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(price);
+
+    const handleAddToCart = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login to add items to cart");
+                navigate('/login');
+                return;
+            }
+
+            await axios.post(
+                "http://localhost:5000/api/cart",
+                {
+                    product_id: product.id,
+                    quantity,
+                    size: selectedSize,
+                    color: selectedColor,
+                    material: selectedMaterial
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            alert("Product added to cart successfully!");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to add product to cart");
         }
-
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const existingItemIndex = cart.findIndex(
-            item => item.id === product._id && item.size === selectedSize && item.color === selectedColor
-        );
-
-        if (existingItemIndex !== -1) {
-            cart[existingItemIndex].quantity += quantity;
-        } else {
-            cart.push({
-                id: product._id,
-                name: product.name,
-                price: product.price,
-                image: getProductImage(product.images ? product.images[0] : product.image),
-                size: selectedSize,
-                color: selectedColor,
-                quantity: quantity
-            });
-        }
-
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert(`${product.name} added to cart!`);
     };
 
-    // Buy now functionality
-    const handleBuyNow = () => {
-        handleAddToCart();
+    const handleBuyNow = async () => {
+        await handleAddToCart();
         navigate('/cart');
     };
 
-    if (loading) {
-        return (
-            <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p>Loading product details...</p>
-            </div>
-        );
-    }
+    const handleWishlistToggle = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login to manage wishlist");
+                navigate('/login');
+                return;
+            }
 
-    if (error || !product) {
-        return (
-            <div className="error-container">
-                <h2>Product Not Found</h2>
-                <p>{error || "The product you're looking for doesn't exist."}</p>
-                <button onClick={() => navigate('/')}>Back to Home</button>
-            </div>
-        );
-    }
+            if (isWishlisted) {
+                await axios.delete(`http://localhost:5000/api/wishlist/${product.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } else {
+                await axios.post(
+                    "http://localhost:5000/api/wishlist",
+                    { product_id: product.id },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            }
 
-    // Get all product images
-    const productImages = product.images && product.images.length > 0
-        ? product.images
-        : product.image
-            ? [product.image]
-            : [getFallbackProductImage(product.category)];
+            setIsWishlisted(!isWishlisted);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    // Ensure we have at least 4 images (duplicate if necessary)
-    const displayImages = [];
-    for (let i = 0; i < 4; i++) {
-        displayImages.push(productImages[i % productImages.length]);
-    }
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setReviewError("Please login to submit a review");
+            setTimeout(() => navigate('/login'), 2000);
+            return;
+        }
+
+        if (!reviewText.trim()) {
+            setReviewError("Write a review first.");
+            return;
+        }
+
+        try {
+            setReviewLoading(true);
+            setReviewError("");
+
+            await axios.post(
+                "http://localhost:5000/api/reviews",
+                {
+                    product_id: product.id,
+                    rating: selectedRating,
+                    review: reviewText
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Reset form
+            setReviewText("");
+            setSelectedRating(5);
+
+            // Immediately refresh reviews after submission
+            await fetchReviews(product.id, false);
+
+        } catch (err) {
+            console.error("Error submitting review:", err);
+            setReviewError(err.response?.data?.message || "Failed to submit review.");
+        } finally {
+            setReviewLoading(false);
+        }
+    };
+
+    // Delete review function
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm("Are you sure you want to delete this review?")) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login to delete review");
+                return;
+            }
+
+            await axios.delete(`http://localhost:5000/api/reviews/${reviewId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Remove review from local state immediately
+            setReviews(prev => prev.filter(review => review.id !== reviewId));
+        } catch (err) {
+            console.error("Error deleting review:", err);
+            alert("Failed to delete review");
+        }
+    };
+
+    // Check if current user is the author of the review - UPDATED FUNCTION
+    const isReviewAuthor = (review) => {
+        if (!currentUser) {
+            return false;
+        }
+
+        // console.log("Checking review ownership:", {
+        //     currentUser,
+        //     reviewUser: review.user_id || review.userId || review.user_name,
+        //     review
+        // });
+
+        // Check multiple possible user identifier fields
+        const isAuthor =
+            review.user_id === currentUser.id ||
+            review.userId === currentUser.id ||
+            review.user_email === currentUser.email ||
+            review.user_name === currentUser.name;
+        return isAuthor;
+    };
+
+    const getAverageRating = () => {
+        if (reviews.length === 0) return 0;
+        const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+        return (sum / reviews.length).toFixed(1);
+    };
+
+    const getRatingDistribution = () => {
+        const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        reviews.forEach(review => distribution[review.rating]++);
+        return distribution;
+    };
+
+    // Scroll to reviews section function
+    const scrollToReviews = () => {
+        setActiveTab('reviews');
+        setTimeout(() => {
+            const reviewsSection = document.getElementById('reviews-section');
+            if (reviewsSection) {
+                reviewsSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+    };
+
+    // Manual refresh function
+    const manuallyRefreshReviews = () => {
+        if (product) {
+            fetchReviews(product.id, true);
+        }
+    };
+
+    // Format time for last updated
+    const formatLastUpdated = () => {
+        if (!lastUpdated) return 'Never';
+        return lastUpdated.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    };
+
+    if (loading) return (
+        <div className="pankhudi-loading">
+            <div className="pankhudi-loading-spinner"></div>
+            <p>Loading product details...</p>
+        </div>
+    );
+
+    if (!product) return (
+        <div className="pankhudi-error">
+            <h2>Product Not Found</h2>
+            <p>The product you're looking for doesn't exist.</p>
+            <Link to="/" className="pankhudi-back-home">Back to Home</Link>
+        </div>
+    );
+
+    const discountedPrice = calculateDiscountedPrice();
+    const hasDiscount = product.discount > 0;
+    const ratingDistribution = getRatingDistribution();
+    const averageRating = getAverageRating();
 
     return (
-        <>
-            <Header />
-            <div className="product-details-container">
-                <nav className="breadcrumb">
-                    <Link to="/">Home</Link>
-                    <span>/</span>
-                    <Link to="/products">Products</Link>
-                    <span>/</span>
-                    <span className="current">{product.name}</span>
+        <div className="pankhudi-product-details">
+            <header className="pankhudi-product-header">
+                <Link to="/" className="brand-name">Pankhudi</Link>
+                <nav className="pankhudi-breadcrumb">
+                    <Link to="/">Home</Link> &gt;
+                    <Link to={`/category/${product.category}`}>{product.category}</Link> &gt;
+                    <span>{product.name}</span>
                 </nav>
+            </header>
 
-                <div className="product-details-content">
-                    {/* Product Images Gallery */}
-                    <div className="product-gallery">
-                        <div className="main-image-container">
-                            <img
-                                src={getProductImage(displayImages[selectedImage])}
-                                alt={product.name}
-                                className="main-image"
-                            />
-                        </div>
-
-                        <div className="thumbnail-container">
-                            {displayImages.map((image, index) => (
-                                <div
-                                    key={index}
-                                    className={`thumbnail ${index === selectedImage ? 'active' : ''}`}
-                                    onClick={() => setSelectedImage(index)}
-                                >
-                                    <img
-                                        src={getProductImage(image)}
-                                        alt={`${product.name} view ${index + 1}`}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+            <div className="pankhudi-product-main">
+                <div className="pankhudi-product-gallery">
+                    <div className="pankhudi-main-image">
+                        {imageLoading && <div className="pankhudi-image-loader"></div>}
+                        <img
+                            src={mainImage}
+                            alt={product.name}
+                            onLoad={() => setImageLoading(false)}
+                            style={{ display: imageLoading ? 'none' : 'block' }}
+                        />
+                        {hasDiscount && (
+                            <span className="pankhudi-image-badge">{product.discount}% OFF</span>
+                        )}
                     </div>
-
-                    {/* Product Information */}
-                    <div className="product-info">
-                        <h1 className="product-title">{product.name}</h1>
-
-                        <div className="product-meta">
-                            <div className="rating">
-                                {[...Array(5)].map((_, i) => (
-                                    <span
-                                        key={i}
-                                        className={i < Math.floor(product.rating || 0) ? 'star filled' : 'star'}
-                                    >
-                                        {i < Math.floor(product.rating || 0) ? '★' : '☆'}
-                                    </span>
-                                ))}
-                                <span className="rating-count">({product.rating || 0})</span>
+                    <div className="pankhudi-thumbnails">
+                        {product.images?.map((img, i) => (
+                            <div key={i} className="pankhudi-thumbnail-container">
+                                <img
+                                    src={img}
+                                    alt={`${product.name} ${i + 1}`}
+                                    className={mainImage === img ? "active" : ""}
+                                    onClick={() => {
+                                        setMainImage(img);
+                                        setImageLoading(true);
+                                    }}
+                                />
                             </div>
-
-                            <span className="sku">SKU: {product._id || 'N/A'}</span>
-                            <span className="product-id">Product ID: {id}</span>
-                        </div>
-
-                        <div className="price-container">
-                            {product.discount > 0 ? (
-                                <>
-                                    <span className="original-price">₹{product.price}</span>
-                                    <span className="discounted-price">
-                                        ₹{Math.round(product.price * (1 - product.discount / 100))}
-                                    </span>
-                                    <span className="discount-badge">-{product.discount}% OFF</span>
-                                </>
-                            ) : (
-                                <span className="price">₹{product.price}</span>
-                            )}
-                        </div>
-
-                        <p className="product-description">
-                            {product.description || "No description available for this product."}
-                        </p>
-
-                        {/* Size Selection */}
-                        {product.sizes && product.sizes.length > 0 && (
-                            <div className="option-section">
-                                <h3>Size: <span className="selected-option">{selectedSize}</span></h3>
-                                <div className="option-buttons">
-                                    {product.sizes.map(size => (
-                                        <button
-                                            key={size}
-                                            className={`option-btn ${selectedSize === size ? 'selected' : ''}`}
-                                            onClick={() => setSelectedSize(size)}
-                                        >
-                                            {size}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Color Selection */}
-                        {product.colors && product.colors.length > 0 && (
-                            <div className="option-section">
-                                <h3>Color: <span className="selected-option">{selectedColor}</span></h3>
-                                <div className="color-options">
-                                    {product.colors.map(color => (
-                                        <div
-                                            key={color}
-                                            className={`color-option ${selectedColor === color ? 'selected' : ''}`}
-                                            style={{ backgroundColor: color.toLowerCase() }}
-                                            onClick={() => setSelectedColor(color)}
-                                            title={color}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Quantity Selection */}
-                        <div className="quantity-section">
-                            <h3>Quantity</h3>
-                            <div className="quantity-selector">
-                                <button
-                                    className="quantity-btn"
-                                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                >-</button>
-                                <span className="quantity-value">{quantity}</span>
-                                <button
-                                    className="quantity-btn"
-                                    onClick={() => setQuantity(q => q + 1)}
-                                >+</button>
-                            </div>
-                            <span className={`stock-status ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                                {product.stock > 0
-                                    ? `${product.stock} available in stock`
-                                    : 'Out of stock'}
-                            </span>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="action-buttons">
-                            <button
-                                className="btn-add-to-cart"
-                                onClick={handleAddToCart}
-                                disabled={product.stock <= 0}
-                            >
-                                Add to Cart
-                            </button>
-                            <button
-                                className="btn-buy-now"
-                                onClick={handleBuyNow}
-                                disabled={product.stock <= 0}
-                            >
-                                Buy Now
-                            </button>
-                        </div>
-
-                        {/* Additional Information */}
-                        <div className="additional-info">
-                            <div className="info-item">
-                                <span className="icon">🚚</span>
-                                <div>
-                                    <h4>Free Shipping</h4>
-                                    <p>Free standard shipping on orders over ₹999</p>
-                                </div>
-                            </div>
-                            <div className="info-item">
-                                <span className="icon">↩️</span>
-                                <div>
-                                    <h4>Easy Returns</h4>
-                                    <p>30-day hassle-free returns policy</p>
-                                </div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* Product Tabs */}
-                <div className="product-tabs">
-                    <div className="tabs-header">
-                        <button className="tab-btn active">Description</button>
-                        <button className="tab-btn">Additional Information</button>
+                <div className="pankhudi-product-info">
+                    <div className="pankhudi-product-header-info">
+                        <h1 className="pankhudi-product-title">{product.name}</h1>
+                        <button
+                            className={`pankhudi-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                            onClick={handleWishlistToggle}
+                            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                        >
+                            ♥
+                        </button>
                     </div>
-                    <div className="tab-content">
-                        <h3>Product Description</h3>
-                        <p>{product.description || "No detailed description available for this product."}</p>
 
-                        <h4>Features</h4>
-                        <ul>
-                            <li>Premium quality fabric for comfort and durability</li>
-                            <li>Designed for perfect fit and style</li>
-                            <li>Easy to care for and maintain</li>
-                        </ul>
+                    <div className="pankhudi-rating-section">
+                        <div className="pankhudi-rating-main">
+                            <span className="pankhudi-rating">⭐ {averageRating}</span>
+                            <span className="pankhudi-review-count">({reviews.length} reviews)</span>
+                            {isLiveFetching && <span className="pankhudi-live-badge">LIVE</span>}
+                        </div>
+                        <button
+                            className="pankhudi-view-all-reviews"
+                            onClick={scrollToReviews}
+                        >
+                            View all reviews
+                        </button>
+                    </div>
+
+                    <div className="pankhudi-price-section">
+                        {hasDiscount ? (
+                            <>
+                                <span className="pankhudi-discounted-price">{formatPrice(discountedPrice)}</span>
+                                <span className="pankhudi-original-price">{formatPrice(product.price)}</span>
+                                <span className="pankhudi-discount-badge">{product.discount}% OFF</span>
+                            </>
+                        ) : (
+                            <span className="pankhudi-price">{formatPrice(product.price)}</span>
+                        )}
+                        <span className="pankhudi-tax">+ Tax</span>
+                    </div>
+
+                    {/* Product Variants */}
+                    {(product.sizes?.length > 0 || product.colors?.length > 0 || product.materials?.length > 0) && (
+                        <div className="pankhudi-variants">
+                            {product.sizes?.length > 0 && (
+                                <div className="pankhudi-variant-group">
+                                    <label>Size:</label>
+                                    <div className="pankhudi-variant-options">
+                                        {product.sizes.map(size => (
+                                            <button
+                                                key={size}
+                                                className={`pankhudi-variant-btn ${selectedSize === size ? 'active' : ''}`}
+                                                onClick={() => setSelectedSize(size)}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {product.colors?.length > 0 && (
+                                <div className="pankhudi-variant-group">
+                                    <label>Color:</label>
+                                    <div className="pankhudi-variant-options">
+                                        {product.colors.map(color => (
+                                            <button
+                                                key={color}
+                                                className={`pankhudi-variant-btn color ${selectedColor === color ? 'active' : ''}`}
+                                                onClick={() => setSelectedColor(color)}
+                                                style={{ backgroundColor: color.toLowerCase() }}
+                                                aria-label={color}
+                                            >
+                                                {selectedColor === color && '✓'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {product.materials?.length > 0 && (
+                                <div className="pankhudi-variant-group">
+                                    <label>Material:</label>
+                                    <div className="pankhudi-variant-options">
+                                        {product.materials.map(material => (
+                                            <button
+                                                key={material}
+                                                className={`pankhudi-variant-btn ${selectedMaterial === material ? 'active' : ''}`}
+                                                onClick={() => setSelectedMaterial(material)}
+                                            >
+                                                {material}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Quantity Selector */}
+                    <div className="pankhudi-quantity-selector">
+                        <label>Quantity:</label>
+                        <div className="pankhudi-quantity-controls">
+                            <button onClick={decrementQuantity} disabled={quantity <= 1}>−</button>
+                            <input
+                                type="number"
+                                value={quantity}
+                                onChange={handleQuantityChange}
+                                min="1"
+                                max={product.stock}
+                            />
+                            <button onClick={incrementQuantity} disabled={quantity >= product.stock}>+</button>
+                        </div>
+                        <span className="pankhudi-stock">
+                            {product.stock > 10 ? 'In Stock' : product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock'}
+                        </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pankhudi-action-buttons">
+                        <button
+                            className="pankhudi-add-to-cart"
+                            onClick={handleAddToCart}
+                            disabled={product.stock === 0}
+                        >
+                            {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                        <button
+                            className="pankhudi-buy-now"
+                            onClick={handleBuyNow}
+                            disabled={product.stock === 0}
+                        >
+                            Buy Now
+                        </button>
+                    </div>
+
+                    {/* Product Features */}
+                    <div className="pankhudi-features">
+                        <div className="pankhudi-feature">
+                            <span className="pankhudi-feature-icon">🚚</span>
+                            <span>Free shipping on orders above ₹999</span>
+                        </div>
+                        <div className="pankhudi-feature">
+                            <span className="pankhudi-feature-icon">↩️</span>
+                            <span>Easy 30-day returns</span>
+                        </div>
+                        <div className="pankhudi-feature">
+                            <span className="pankhudi-feature-icon">🔒</span>
+                            <span>Secure payment</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <Footer />
-        </>
+
+            {/* Product Tabs */}
+            <div className="pankhudi-product-tabs">
+                <div className="pankhudi-tab-headers">
+                    <button
+                        className={`pankhudi-tab-header ${activeTab === 'description' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('description')}
+                    >
+                        Description
+                    </button>
+                    <button
+                        className={`pankhudi-tab-header ${activeTab === 'specifications' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('specifications')}
+                    >
+                        Specifications
+                    </button>
+                    <button
+                        className={`pankhudi-tab-header ${activeTab === 'reviews' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('reviews')}
+                    >
+                        Reviews ({reviews.length}) {isLiveFetching && '🟢'}
+                    </button>
+                </div>
+
+                <div className="pankhudi-tab-content">
+                    {activeTab === 'description' && (
+                        <div className="pankhudi-description">
+                            <p className={showFullDescription ? 'expanded' : ''}>
+                                {product.description}
+                            </p>
+                            {product.description && product.description.length > 200 && (
+                                <button
+                                    className="pankhudi-read-more"
+                                    onClick={() => setShowFullDescription(!showFullDescription)}
+                                >
+                                    {showFullDescription ? 'Read Less' : 'Read More'}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'specifications' && (
+                        <div className="pankhudi-specifications">
+                            <div className="pankhudi-spec-grid">
+                                {product.brand && (
+                                    <div className="pankhudi-spec-item">
+                                        <span className="pankhudi-spec-label">Brand</span>
+                                        <span className="pankhudi-spec-value">{product.brand}</span>
+                                    </div>
+                                )}
+                                {product.category && (
+                                    <div className="pankhudi-spec-item">
+                                        <span className="pankhudi-spec-label">Category</span>
+                                        <span className="pankhudi-spec-value">{product.category}</span>
+                                    </div>
+                                )}
+                                {product.material && (
+                                    <div className="pankhudi-spec-item">
+                                        <span className="pankhudi-spec-label">Material</span>
+                                        <span className="pankhudi-spec-value">{product.material}</span>
+                                    </div>
+                                )}
+                                {product.dimensions && (
+                                    <div className="pankhudi-spec-item">
+                                        <span className="pankhudi-spec-label">Dimensions</span>
+                                        <span className="pankhudi-spec-value">{product.dimensions}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'reviews' && (
+                        <div className="pankhudi-review-section" id="reviews-section">
+                            {/* Review Summary with live indicator */}
+                            <div className="pankhudi-review-summary">
+                                <div className="pankhudi-overall-rating">
+                                    <h3>{averageRating}</h3>
+                                    <div className="pankhudi-rating-stars">
+                                        {'⭐'.repeat(5)}
+                                    </div>
+                                    <p>{reviews.length} reviews</p>
+                                    {isLiveFetching && (
+                                        <div className="pankhudi-live-status-mini">
+                                            <span className="pankhudi-live-dot active"></span>
+                                            Auto-updating every 30s
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="pankhudi-rating-breakdown">
+                                    {[5, 4, 3, 2, 1].map(rating => (
+                                        <div key={rating} className="pankhudi-rating-bar">
+                                            <span>{rating} star</span>
+                                            <div className="pankhudi-bar-container">
+                                                <div
+                                                    className="pankhudi-bar"
+                                                    style={{
+                                                        width: `${(ratingDistribution[rating] / reviews.length) * 100 || 0}%`
+                                                    }}
+                                                ></div>
+                                            </div>
+                                            <span>({ratingDistribution[rating]})</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Review Form */}
+                            <div className="pankhudi-review-form">
+                                <h4>Write a Review</h4>
+                                <form onSubmit={handleReviewSubmit}>
+                                    <div className="pankhudi-rating-selector">
+                                        <label>Rating:</label>
+                                        <div className="pankhudi-star-rating">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    className={`pankhudi-star ${selectedRating >= star ? 'active' : ''}`}
+                                                    onClick={() => setSelectedRating(star)}
+                                                >
+                                                    ★
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pankhudi-review-textarea">
+                                        <textarea
+                                            value={reviewText}
+                                            onChange={e => setReviewText(e.target.value)}
+                                            placeholder="Share your experience with this product..."
+                                            rows="4"
+                                        />
+                                    </div>
+
+                                    {reviewError && (
+                                        <div className="pankhudi-review-error">{reviewError}</div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        className="pankhudi-submit-review"
+                                        disabled={reviewLoading}
+                                    >
+                                        {reviewLoading ? "Submitting..." : "Submit Review"}
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Reviews List - Scrollable */}
+                            <div className="pankhudi-reviews-list-container">
+                                <div className="pankhudi-reviews-header">
+                                    <h4>Customer Reviews ({reviews.length})</h4>
+                                    <div className="pankhudi-reviews-controls">
+                                        <button
+                                            className="pankhudi-refresh-btn-small"
+                                            onClick={manuallyRefreshReviews}
+                                            disabled={reviewsLoading}
+                                        >
+                                            {reviewsLoading ? '🔄' : '🔁'} Refresh
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {reviewsLoading ? (
+                                    <div className="pankhudi-reviews-loading">
+                                        <div className="pankhudi-loading-spinner"></div>
+                                        <p>Loading reviews...</p>
+                                    </div>
+                                ) : reviews.length === 0 ? (
+                                    <p className="pankhudi-no-reviews">No reviews yet. Be the first to review!</p>
+                                ) : (
+                                    <div className="pankhudi-reviews-scrollable">
+                                        {reviews.map((review) => (
+                                            <div key={review.id} className="pankhudi-review-item">
+                                                <div className="pankhudi-review-header">
+                                                    <div className="pankhudi-reviewer-info">
+                                                        {review.user_image && (
+                                                            <img
+                                                                src={review.user_image}
+                                                                alt={review.user_name}
+                                                                className="pankhudi-reviewer-avatar"
+                                                            />
+                                                        )}
+                                                        <div>
+                                                            <h5>{review.user_name}</h5>
+                                                            <div className="pankhudi-review-rating">
+                                                                {'⭐'.repeat(review.rating)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="pankhudi-review-meta">
+                                                        <span className="pankhudi-review-date">
+                                                            {new Date(review.created_at).toLocaleDateString('en-IN', {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric'
+                                                            })}
+                                                        </span>
+                                                        {isReviewAuthor(review) && (
+                                                            <button
+                                                                className="pankhudi-delete-review-btn"
+                                                                onClick={() => handleDeleteReview(review.id)}
+                                                                title="Delete this review"
+                                                            >
+                                                                🗑️ Delete
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="pankhudi-review-content">{review.review}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Related Products */}
+            <section className="pankhudi-related-products">
+                <h2>You May Also Like</h2>
+                <div className="pankhudi-related-grid">
+                    {relatedLoading ? (
+                        <div className="pankhudi-related-loading">Loading related products...</div>
+                    ) : relatedProducts.length === 0 ? (
+                        <p className="pankhudi-no-related">No related products found</p>
+                    ) : (
+                        relatedProducts.map(product => (
+                            <div key={product.id} className="pankhudi-related-item">
+                                <Link to={`/product/${product.id}`}>
+                                    <div className="pankhudi-related-image">
+                                        <img src={product.images?.[0]} alt={product.name} />
+                                        {product.discount > 0 && (
+                                            <span className="pankhudi-related-badge">{product.discount}% OFF</span>
+                                        )}
+                                    </div>
+                                    <div className="pankhudi-related-info">
+                                        <h4>{product.name}</h4>
+                                        <div className="pankhudi-related-price">
+                                            {product.discount > 0 ? (
+                                                <>
+                                                    <span className="pankhudi-related-discounted">
+                                                        {formatPrice(product.price - (product.price * product.discount / 100))}
+                                                    </span>
+                                                    <span className="pankhudi-related-original">
+                                                        {formatPrice(product.price)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span>{formatPrice(product.price)}</span>
+                                            )}
+                                        </div>
+                                        <div className="pankhudi-related-rating">
+                                            ⭐ {product.rating || 'New'}
+                                        </div>
+                                    </div>
+                                </Link>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </section>
+        </div>
     );
 };
 
-export default ProductDetails;
+export default ProductDetailsEnhanced;

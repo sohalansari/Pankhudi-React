@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home/Home";
 import Products from "./pages/Products/Products";
-import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import Cart from "./pages/Cart/Cart";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Ragister/Register";
@@ -19,6 +18,7 @@ import Collections from "./pages/Collection/Collections";
 import About from "./pages/About/About";
 import ScrollToTop from "./context/ScrollToTop";
 import ProtectedRoute from "./context/ProtectedRoute";
+import ProductDetails from "./pages/ProductDetail/ProductDetail";
 
 const AppRoutes = () => {
     return (
@@ -27,7 +27,7 @@ const AppRoutes = () => {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
-                <Route path="/ProductDetail/:id" element={<ProductDetail />} />
+                {/* <Route path="/ProductDetail/:id" element={<ProductDetail />} /> */}
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -44,6 +44,7 @@ const AppRoutes = () => {
                 <Route path="/dummy-payment" element={<ProtectedRoute> <DummyPayment /> </ProtectedRoute>} />
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
                 <Route path="/orders" element={<ProtectedRoute> <OrderHistory /></ProtectedRoute>} />
+                <Route path="/ProductDetail/:id" element={<ProductDetails />} />
             </Routes>
         </>
     );

@@ -10,6 +10,7 @@ const profileRoutes = require("./routes/profile");
 const productsRoutes = require("./routes/products");
 const chatRoutes = require("./routes/chat");
 const cartRoutes = require("./routes/cart");
+const reviewRoutes = require("./routes/reviews");
 
 const app = express();
 
@@ -51,6 +52,8 @@ app.use("/api", profileRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/reviews", reviewRoutes);
+
 
 
 // health
