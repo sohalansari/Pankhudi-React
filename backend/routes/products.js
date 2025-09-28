@@ -19,7 +19,7 @@ const parseProduct = (r, req) => {
     const createdAt = new Date(r.created_at);
     const now = new Date();
     const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
-    const isNew = diffDays <= 10; // last 7 days = new
+    const isNew = diffDays <= 10; // last 10 days = new
 
     return {
         ...r,
