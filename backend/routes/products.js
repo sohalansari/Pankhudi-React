@@ -1,6 +1,35 @@
 const express = require("express");
 const router = express.Router();
 
+// Helper to parse images, calculate discount and mark new products
+const parseProduct = (r, req) => {
+    let imgs = [];
+    try {
+        const parsedImages = JSON.parse(r.images);
+        imgs = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
+    } catch {
+        imgs = r.images ? [r.images] : [];
+    }
+
+    const discountPrice = r.discount && r.discount > 0
+        ? Math.round(r.price * (1 - r.discount / 100))
+        : null;
+
+    // Mark as new if created_at is within last 7 days
+    const createdAt = new Date(r.created_at);
+    const now = new Date();
+    const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+    const isNew = diffDays <= 10; // last 7 days = new
+
+    return {
+        ...r,
+        discountPrice,
+        isNew,
+        image: imgs.length > 0 ? (imgs[0].startsWith('http') ? imgs[0] : `${req.protocol}://${req.get("host")}/uploads/${imgs[0]}`) : null,
+        images: imgs.map(img => img.startsWith('http') ? img : `${req.protocol}://${req.get("host")}/uploads/${img}`)
+    };
+};
+
 // ------------------- Get All Products -------------------
 router.get("/", (req, res) => {
     const db = req.db;
@@ -9,28 +38,7 @@ router.get("/", (req, res) => {
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ success: false, message: err.message });
 
-        const parsed = results.map(r => {
-            // Parse images
-            let imgs = [];
-            try {
-                const parsedImages = JSON.parse(r.images);
-                imgs = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-            } catch {
-                imgs = r.images ? [r.images] : [];
-            }
-
-            // Calculate discount price
-            const discountPrice = r.discount && r.discount > 0
-                ? Math.round(r.price * (1 - r.discount / 100))
-                : null;
-
-            return {
-                ...r,
-                discountPrice, // add discounted price
-                images: imgs.map(img => img.startsWith('http') ? img : `${req.protocol}://${req.get("host")}/uploads/${img}`)
-            };
-        });
-
+        const parsed = results.map(r => parseProduct(r, req));
         res.json(parsed);
     });
 });
@@ -44,24 +52,7 @@ router.get("/:id", (req, res) => {
         if (err) return res.status(500).json({ success: false, message: err.message });
         if (!results.length) return res.status(404).json({ success: false, message: "Product not found" });
 
-        let imgs = [];
-        try {
-            const parsedImages = JSON.parse(results[0].images);
-            imgs = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-        } catch {
-            imgs = results[0].images ? [results[0].images] : [];
-        }
-
-        const discountPrice = results[0].discount && results[0].discount > 0
-            ? Math.round(results[0].price * (1 - results[0].discount / 100))
-            : null;
-
-        const product = {
-            ...results[0],
-            discountPrice,
-            images: imgs.map(img => img.startsWith('http') ? img : `${req.protocol}://${req.get("host")}/uploads/${img}`)
-        };
-
+        const product = parseProduct(results[0], req);
         res.json(product);
     });
 });
@@ -75,26 +66,7 @@ router.get("/search", (req, res) => {
     db.query(sql, [`%${search}%`], (err, results) => {
         if (err) return res.status(500).json({ success: false, message: err.message });
 
-        const parsed = results.map(r => {
-            let imgs = [];
-            try {
-                const parsedImages = JSON.parse(r.images);
-                imgs = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-            } catch {
-                imgs = r.images ? [r.images] : [];
-            }
-
-            const discountPrice = r.discount && r.discount > 0
-                ? Math.round(r.price * (1 - r.discount / 100))
-                : null;
-
-            return {
-                ...r,
-                discountPrice,
-                images: imgs.map(img => img.startsWith('http') ? img : `${req.protocol}://${req.get("host")}/uploads/${img}`)
-            };
-        });
-
+        const parsed = results.map(r => parseProduct(r, req));
         res.json(parsed);
     });
 });
@@ -107,26 +79,7 @@ router.get("/trending", (req, res) => {
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ success: false, message: err.message });
 
-        const parsed = results.map(r => {
-            let imgs = [];
-            try {
-                const parsedImages = JSON.parse(r.images);
-                imgs = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-            } catch {
-                imgs = r.images ? [r.images] : [];
-            }
-
-            const discountPrice = r.discount && r.discount > 0
-                ? Math.round(r.price * (1 - r.discount / 100))
-                : null;
-
-            return {
-                ...r,
-                discountPrice,
-                images: imgs.map(img => img.startsWith('http') ? img : `${req.protocol}://${req.get("host")}/uploads/${img}`)
-            };
-        });
-
+        const parsed = results.map(r => parseProduct(r, req));
         res.json(parsed);
     });
 });

@@ -33,7 +33,7 @@ router.post("/add", upload.array("images", 4), (req, res) => {
         category_id,
         brand,
         status,
-        rating,   // ⭐ added
+        rating,
     } = req.body;
 
     if (!name) return res.status(400).json({ error: "Name required" });

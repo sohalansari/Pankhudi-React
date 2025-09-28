@@ -18,11 +18,12 @@ import AIChatbot from "./pages/AIChatbot/AIChatbot";
 import Collections from "./pages/Collection/Collections";
 import About from "./pages/About/About";
 import ScrollToTop from "./context/ScrollToTop";
+import ProtectedRoute from "./context/ProtectedRoute";
 
 const AppRoutes = () => {
     return (
         <>
-            <ScrollToTop /> {/* 👈 Always active */}
+            <ScrollToTop />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
@@ -33,14 +34,16 @@ const AppRoutes = () => {
                 <Route path="/forgot" element={<ForgotPassword />} />
                 <Route path="*" element={<NotFound />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/profile/:id" element={<Profile />} />
-                <Route path="/dummy-payment" element={<DummyPayment />} />
-                <Route path="/order-confirmation" element={<OrderConfirmation />} />
-                <Route path="/orders" element={<OrderHistory />} />
                 <Route path="/ai-chat" element={<AIChatbot />} />
                 <Route path="/collections" element={<Collections />} />
                 <Route path="/about" element={<About />} />
+
+                {/*  Protected Routes */}
+                <Route path="/checkout" element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />
+                <Route path="/profile/:id" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
+                <Route path="/dummy-payment" element={<ProtectedRoute> <DummyPayment /> </ProtectedRoute>} />
+                <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
+                <Route path="/orders" element={<ProtectedRoute> <OrderHistory /></ProtectedRoute>} />
             </Routes>
         </>
     );

@@ -156,7 +156,7 @@ const Home = () => {
     const testimonialsScrollRef = useRef(null);
     const [cart, setCart] = useState([]);
 
-    const API = process.env.REACT_APP_API_URL || "http://localhost:5001";
+    const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
     // ✅ Improved Product image formatter
     const getProductImage = useCallback((product) => {
@@ -202,10 +202,13 @@ const Home = () => {
 
                 if (Array.isArray(response.data)) {
                     const sanitized = response.data.map((p, index) => {
-                        console.log("Processing product:", p);
-
                         const productImage = getProductImage(p);
-                        console.log("Product image URL:", productImage);
+
+                        // ✅ check if product is within 7 days
+                        const createdDate = new Date(p.createdAt || new Date());
+                        const now = new Date();
+                        const diffInDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+                        const isNew = diffInDays <= 7;
 
                         return {
                             id: p._id || p.id || `api-${index}`,
@@ -223,9 +226,11 @@ const Home = () => {
                             images: p.images || [],
                             isApiProduct: true,
                             createdAt: p.createdAt || new Date().toISOString(),
-                            tags: p.tags || []
+                            tags: p.tags || [],
+                            isNew: p.isNew || false,
                         };
                     });
+
                     setProducts(sanitized);
 
                     // Extract unique categories from products and combine with predefined
@@ -687,10 +692,12 @@ const Home = () => {
                                 onMouseLeave={() => setHoveredProduct(null)}
                             >
                                 {/* 🔥 Badges */}
-                                {product.isApiProduct && <span className="api-badge">New</span>}
+                                {product.isNew && <span className="api-badge">NEW</span>}
+
                                 {product.discount > 0 && (
                                     <span className="discount-badge">-{product.discount}%</span>
                                 )}
+
 
                                 {/* 🔥 Product Image */}
                                 <div className="product-image">
@@ -844,6 +851,7 @@ const Home = () => {
                                             }}
                                             onClick={() => navigateTo(`/ProductDetail/${product.id}`)}
                                         />
+                                        {product.isNew && <span className="api-badge">NEW</span>}
                                         {product.pattern && product.pattern !== 'n/a' && (
                                             <span className="trending-pattern">{product.pattern}</span>
                                         )}

@@ -4,13 +4,14 @@ import { FaEnvelope, FaLock, FaPhone, FaUser, FaCheck } from 'react-icons/fa';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // 👈 import here
 
 const Login = () => {
     const [form, setForm] = useState({
         emailOrPhone: '',
         password: '',
-        terms: false, // Added terms field
+        terms: false,
     });
 
     const [error, setError] = useState({});
@@ -19,6 +20,9 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [loginMethod, setLoginMethod] = useState('email');
     const [rememberMe, setRememberMe] = useState(false);
+
+    const { login } = useAuth(); // 👈 use our context login
+    const navigate = useNavigate();
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -36,18 +40,12 @@ const Login = () => {
             [name]: type === 'checkbox' ? checked : value
         }));
 
-        // Clear errors when user types
-        if (error[name]) {
-            setError(prev => ({ ...prev, [name]: '' }));
-        }
-        if (message.text) {
-            setMessage({ text: '', type: '' });
-        }
+        if (error[name]) setError(prev => ({ ...prev, [name]: '' }));
+        if (message.text) setMessage({ text: '', type: '' });
     };
 
     const validateForm = () => {
         const errs = {};
-
         if (loginMethod === 'email') {
             if (!form.emailOrPhone) {
                 errs.emailOrPhone = 'Email is required';
@@ -61,18 +59,14 @@ const Login = () => {
                 errs.emailOrPhone = 'Please enter a valid 10-digit phone number';
             }
         }
-
         if (!form.password) {
             errs.password = 'Password is required';
         } else if (form.password.length < 6) {
             errs.password = 'Password must be at least 6 characters';
         }
-
-        // Terms validation
         if (!form.terms) {
             errs.terms = 'You must accept the Terms & Conditions and Privacy Policy';
         }
-
         return errs;
     };
 
@@ -83,7 +77,6 @@ const Login = () => {
 
         const errs = validateForm();
         setError(errs);
-
         if (Object.keys(errs).length > 0) {
             setIsLoading(false);
             return;
@@ -103,12 +96,8 @@ const Login = () => {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage({ text: 'Login successful! Redirecting...', type: 'success' });
-                localStorage.setItem('token', data.token);
-
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                }
+                // ✅ update context + localStorage both
+                login(data.token, data.user);
 
                 if (rememberMe) {
                     localStorage.setItem('rememberedEmail', form.emailOrPhone);
@@ -116,8 +105,9 @@ const Login = () => {
                     localStorage.removeItem('rememberedEmail');
                 }
 
+                setMessage({ text: 'Login successful! Redirecting...', type: 'success' });
                 setTimeout(() => {
-                    window.location.href = data.user?.is_premium ? '/' : '/';
+                    navigate('/'); // redirect anywhere
                 }, 1500);
             } else {
                 setMessage({ text: data.message || 'Invalid credentials. Please try again.', type: 'error' });
@@ -146,16 +136,10 @@ const Login = () => {
             const data = await res.json();
 
             if (res.ok) {
+                login(data.token, data.user);
                 setMessage({ text: 'Google login successful! Redirecting...', type: 'success' });
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('authMethod', 'google');
-
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                }
-
                 setTimeout(() => {
-                    window.location.href = data.user?.is_premium ? '/dashboard' : '/';
+                    navigate('/');
                 }, 1500);
             } else {
                 setMessage({ text: data.message || 'Google login failed', type: 'error' });
