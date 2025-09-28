@@ -1,6 +1,7 @@
-// AddProduct.js
+// AddProduct.js - UPDATED WITH MARKDOWN EDITOR
 import React, { useState } from "react";
 import axios from "axios";
+import MDEditor from '@uiw/react-md-editor';
 import "./AddProduct.css";
 
 const API = "http://localhost:5001";
@@ -36,6 +37,7 @@ export default function AddProduct() {
     const validateForm = () => {
         const newErrors = {};
         if (!form.name.trim()) newErrors.name = "Product name is required";
+        if (!form.description.trim()) newErrors.description = "Product description is required";
         if (!form.price || form.price <= 0) newErrors.price = "Valid price is required";
         if (form.discount < 0 || form.discount > 100) newErrors.discount = "Discount must be between 0–100%";
         if (form.rating < 0 || form.rating > 5) newErrors.rating = "Rating must be between 0 and 5";
@@ -64,6 +66,12 @@ export default function AddProduct() {
         const { name, value } = e.target;
         setNewCategory({ ...newCategory, [name]: value });
         if (categoryErrors[name]) setCategoryErrors({ ...categoryErrors, [name]: "" });
+    };
+
+    // Markdown editor change handler
+    const handleDescriptionChange = (value) => {
+        setForm({ ...form, description: value });
+        if (errors.description) setErrors({ ...errors, description: "" });
     };
 
     const onFiles = e => {
@@ -178,19 +186,24 @@ export default function AddProduct() {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="description" className="form-label">Description</label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                placeholder="Product description..."
-                                value={form.description}
-                                onChange={onChange}
-                                rows="4"
-                                className="form-textarea"
-                            />
+                            <label htmlFor="description" className="form-label">
+                                Description *
+                                <span className="help-text">(Use markdown for formatting: # Heading, **Bold**, *Italic*, - Lists)</span>
+                            </label>
+                            <div className={`md-editor-container ${errors.description ? "editor-error" : ""}`}>
+                                <MDEditor
+                                    value={form.description}
+                                    onChange={handleDescriptionChange}
+                                    height={200}
+                                    preview="edit"
+                                    className="md-editor"
+                                />
+                            </div>
+                            {errors.description && <span className="error-text">{errors.description}</span>}
                         </div>
                     </div>
 
+                    {/* Rest of your form remains exactly the same */}
                     <div className="form-section">
                         <h3 className="section-title">Pricing & Inventory</h3>
                         <div className="form-grid">

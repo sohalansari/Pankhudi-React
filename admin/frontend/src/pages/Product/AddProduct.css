@@ -368,3 +368,40 @@
         width: 100%;
     }
 }
+
+/* Markdown Editor Styles */
+.md-editor-container {
+    margin-top: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.md-editor-container.editor-error {
+    border-color: #f56565;
+}
+
+.md-editor {
+    border: none !important;
+}
+
+.w-md-editor {
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.w-md-editor-toolbar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.w-md-editor-content {
+    border: none !important;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #718096;
+    margin-left: 8px;
+    font-weight: normal;
+}
