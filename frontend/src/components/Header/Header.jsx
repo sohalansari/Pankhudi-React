@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { fetchCartCount } from '../../utils/api'
+import { fetchCartCount } from '../../utils/api';
 import {
     FiSearch,
     FiUser,
@@ -16,7 +16,8 @@ import {
     FiMic,
     FiImage,
     FiChevronDown,
-    FiChevronUp
+    FiChevronUp,
+    FiMapPin
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiChatAiLine } from "react-icons/ri";
@@ -34,6 +35,7 @@ const Header = () => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [trendingProducts, setTrendingProducts] = useState([]);
+    const [userAddress, setUserAddress] = useState('');
     const searchInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -48,14 +50,86 @@ const Header = () => {
         try {
             const userFromStorage = localStorage.getItem('user');
             if (userFromStorage) {
-                setUserData(JSON.parse(userFromStorage));
+                const userData = JSON.parse(userFromStorage);
+                setUserData(userData);
+
+                // Fetch user address from localStorage or user data
+                const savedAddress = localStorage.getItem('userAddress') ||
+                    userData.address ||
+                    'Add your delivery address';
+                setUserAddress(savedAddress);
             }
         } catch (error) {
             console.error('Error parsing user data:', error);
         }
     };
 
-    // ------------------- Fetch Cart Count from DB -------------------
+    // useEffect(() => {
+    //     const fetchUserAddress = async () => {
+    //         if (userData?.id) {
+    //             try {
+    //                 // Use the existing profile address endpoint instead
+    //                 const response = await fetch(`http://localhost:5000/api/users/${userData.id}/address`, {
+    //                     method: 'GET',
+    //                     headers: {
+    //                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    //                         'Content-Type': 'application/json'
+    //                     }
+    //                 });
+
+    //                 if (response.ok) {
+    //                     const data = await response.json();
+    //                     if (data.success) {
+    //                         setUserAddress(data.address.address || 'Add your delivery address');
+    //                         localStorage.setItem('userAddress', data.address.address);
+    //                     } else {
+    //                         setUserAddress('Add your delivery address');
+    //                     }
+    //                 } else {
+    //                     // If response is not ok, use fallback
+    //                     throw new Error(`HTTP error! status: ${response.status}`);
+    //                 }
+    //             } catch (error) {
+    //                 // Fallback strategies
+    //                 const savedAddress = localStorage.getItem('userAddress');
+    //                 if (savedAddress) {
+    //                     setUserAddress(savedAddress);
+    //                 } else if (userData.address) {
+    //                     // Use address from userData if available
+    //                     setUserAddress(userData.address);
+    //                 } else {
+    //                     setUserAddress('Add your delivery address');
+    //                 }
+    //             }
+    //         }
+    //     };
+
+    //     if (isLoggedIn && userData?.id) {
+    //         fetchUserAddress();
+    //     } else {
+    //         // Reset address when not logged in
+    //         setUserAddress('');
+    //     }
+    // }, [isLoggedIn, userData]);
+
+
+    useEffect(() => {
+        // Simple solution - use address from userData directly
+        if (isLoggedIn && userData) {
+            const address = userData.address || localStorage.getItem('userAddress') || 'Add your delivery address';
+            setUserAddress(address);
+
+            // Save to localStorage for future use
+            if (userData.address) {
+                localStorage.setItem('userAddress', userData.address);
+            }
+        } else {
+            setUserAddress('');
+        }
+    }, [isLoggedIn, userData]);
+
+
+    // Fetch cart count
     useEffect(() => {
         const fetchCount = async () => {
             try {
@@ -63,7 +137,7 @@ const Header = () => {
                 const data = await fetchCartCount(userData.id);
                 setCartItemsCount(data.count || 0);
             } catch (err) {
-                console.error("❌ Error fetching cart count:", err);
+                console.error("Error fetching cart count:", err);
             }
         };
 
@@ -113,7 +187,7 @@ const Header = () => {
         };
     }, []);
 
-    // ------------------- Live Search -------------------
+    // Live Search
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -131,7 +205,7 @@ const Header = () => {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // ------------------- Trending Products -------------------
+    // Trending Products
     useEffect(() => {
         const fetchTrending = async () => {
             try {
@@ -210,8 +284,10 @@ const Header = () => {
     const confirmLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('userAddress');
         setIsLoggedIn(false);
         setUserData(null);
+        setUserAddress('');
         setActiveDropdown(null);
         setShowLogoutConfirm(false);
         setShowLogoutSuccess(true);
@@ -231,7 +307,6 @@ const Header = () => {
         setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
     };
 
-    // In your toggleMobileMenu function, update it like this:
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
         if (!isMobileMenuOpen) {
@@ -250,10 +325,8 @@ const Header = () => {
         document.body.style.overflow = '';
     };
 
-    // Add cleanup in useEffect
     useEffect(() => {
         return () => {
-            // Cleanup on component unmount
             document.body.classList.remove('menu-open');
             document.body.style.overflow = '';
         };
@@ -324,6 +397,32 @@ const Header = () => {
 
                 {/* Desktop Navigation */}
                 <div className="desktop-nav-section">
+                    {/* User Info Display - NEW FEATURE */}
+                    {isLoggedIn && userData && (
+                        <div className="user-info-display-main">
+                            <motion.div
+                                className="user-welcome-text"
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                Hi, <span className="user-name-highlight">{userData.name?.split(' ')[0]}</span>
+                            </motion.div>
+                            <motion.div
+                                className="user-address-display"
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 }}
+                                onClick={() => navigate('/profile/address')}
+                            >
+                                <FiMapPin size={14} className="address-icon" />
+                                <span className="address-text">
+                                    Deliver to: {userAddress.length > 25 ? `${userAddress.substring(0, 25)}...` : userAddress}
+                                </span>
+                            </motion.div>
+                        </div>
+                    )}
+
                     {/* Main Navigation Links */}
                     <nav className="desktop-nav-links-container">
                         <ul className="desktop-nav-list">
@@ -382,7 +481,7 @@ const Header = () => {
                         </ul>
                     </nav>
 
-                    {/* Search Bar - Collapsible on mobile */}
+                    {/* Search Bar */}
                     <div className={`desktop-search-container ${isSearchExpanded ? 'search-expanded' : ''}`}>
                         <form onSubmit={handleSearch} className="desktop-search-form">
                             <motion.div
@@ -451,7 +550,6 @@ const Header = () => {
                                                     closeMobileMenu();
                                                 }}
                                             >
-                                                {/* Image */}
                                                 <img
                                                     src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
                                                     alt={item.name}
@@ -462,7 +560,6 @@ const Header = () => {
                                                     <p className="description">
                                                         {item.description.split("\n").slice(0, 3).join("\n")}
                                                     </p>
-                                                    {/* Price & Discount */}
                                                     {item.discountPrice ? (
                                                         <span className="suggestion-price">
                                                             <span className="discounted-price">₹{item.discountPrice}</span>{' '}
@@ -476,7 +573,6 @@ const Header = () => {
                                         ))}
                                 </div>
                             )}
-
                     </div>
 
                     {/* User Actions */}
@@ -674,7 +770,12 @@ const Header = () => {
                                         <div className="mobile-user-info-section">
                                             <p className="mobile-user-name-text">{userData?.name || 'Hi, User'}</p>
                                             <p className="mobile-user-email-text">{userData?.email || 'yourmail@gmail.com'}</p>
-                                            {userData?.phone && <p className="mobile-user-phone-text">{userData.phone}</p>}
+                                            {userAddress && (
+                                                <div className="mobile-user-address-text">
+                                                    <FiMapPin size={12} />
+                                                    {userAddress.length > 30 ? `${userAddress.substring(0, 30)}...` : userAddress}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
@@ -786,7 +887,6 @@ const Header = () => {
                                                 ))}
                                         </div>
                                     )}
-
                             </div>
 
                             <nav className="mobile-nav-section">
@@ -797,10 +897,11 @@ const Header = () => {
                                     >
                                         <NavLink
                                             to="/"
-                                            exact
-                                            className="mobile-nav-link-item"
+                                            end
+                                            className={({ isActive }) =>
+                                                `mobile-nav-link-item ${isActive ? 'mobile-active-link' : ''}`
+                                            }
                                             onClick={closeMobileMenu}
-                                            activeClassName="mobile-active-link"
                                         >
                                             <FiHome size={20} /> Home
                                         </NavLink>
@@ -810,11 +911,11 @@ const Header = () => {
                                         whileTap={{ scale: 0.98 }}
                                     >
                                         <NavLink
-                                            to="ai-chat"
-                                            exact
-                                            className="mobile-nav-link-item"
+                                            to="/ai-chat"
+                                            className={({ isActive }) =>
+                                                `mobile-nav-link-item ${isActive ? 'mobile-active-link' : ''}`
+                                            }
                                             onClick={closeMobileMenu}
-                                            activeClassName="mobile-active-link"
                                         >
                                             <RiChatAiLine size={20} /> AI Chat
                                         </NavLink>
@@ -994,4 +1095,4 @@ const Header = () => {
     );
 };
 
-export default Header;
+export default Header;  

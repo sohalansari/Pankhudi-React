@@ -12,11 +12,6 @@ import {
   FaLock,
   FaBell,
   FaPalette,
-  FaGlobe,
-  FaLinkedin,
-  FaGithub,
-  FaTwitter,
-  FaInstagram,
   FaQrcode,
   FaShareAlt,
   FaDownload
@@ -185,12 +180,11 @@ const Profile = () => {
             setAvatarPreview(avatarUrl);
           }
         } else {
-          // ✅ API responded but not success (session expired)
           setSessionExpired(true);
         }
       } catch (err) {
         console.error("Profile fetch error:", err);
-        setSessionExpired(true); // ✅ handle errors like 401
+        setSessionExpired(true);
       } finally {
         setLoading(false);
       }
@@ -209,14 +203,34 @@ const Profile = () => {
       }
     },
   });
+  // ✅ Delete Avatar
+  const handleDeleteAvatar = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.delete(`${API_BASE}/avatar`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-  // ✅ Save profile
+      if (res.data.success) {
+        setAvatarPreview(null);
+        setUser({ ...user, avatar: null });
+        setFormData({ ...formData, avatar: null });
+        alert("Avatar deleted successfully!");
+      } else {
+        alert("Failed to delete avatar");
+      }
+    } catch (err) {
+      console.error("Delete avatar error:", err);
+      alert("Error deleting avatar");
+    }
+  };
+
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
       const data = new FormData();
 
-      ["name", "email", "phone", "address", "password", "is_premium", "bio", "website", "socialLinks"].forEach(
+      ["name", "email", "phone", "address", "password", "is_premium"].forEach(
         (field) => {
           if (formData[field] !== undefined) {
             if (field === "socialLinks") {
@@ -284,13 +298,6 @@ const Profile = () => {
       localStorage.removeItem("user");
     }
   }, [sessionExpired]);
-  // ✅ Logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
-
   // ✅ Password strength
   const getPasswordStrength = (password) => {
     if (!password) return 0;
@@ -396,9 +403,6 @@ const Profile = () => {
           <FaArrowLeft /> Back
         </button>
         <h2 className="brand-name">Pankhudi</h2>
-        <button className="logout-btn" onClick={handleLogout}>
-          <FaSignOutAlt /> Logout
-        </button>
       </div>
 
       {loading ? (
@@ -465,7 +469,11 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-
+                {editMode && avatarPreview && (
+                  <button className="delete-avatar-btn" onClick={handleDeleteAvatar}>
+                    Delete Photo
+                  </button>
+                )}
                 <div className="profile-badges">
                   {user.is_premium === 1 && (
                     <div className="premium-badge">
@@ -503,7 +511,6 @@ const Profile = () => {
               </div>
 
               {/* ✅ Fields */}
-
 // Update your field mapping code with copy functionality
               {["name", "email", "phone", "address"].map((field) => (
                 <div className="profile-item" key={field}>

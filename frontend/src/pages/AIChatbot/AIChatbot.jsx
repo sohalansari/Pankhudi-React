@@ -557,7 +557,7 @@ function AIChatbot() {
                         <FaBars />
                     </button>
                     <FaTshirt className="brand-icon" />
-                    <h1>Pankhudi Fashion Assistant</h1>
+                    <h1 > Pankhudi</h1>
                 </div>
 
                 {/* Header */}

@@ -5,7 +5,7 @@ export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const initialMessage = {
         id: 1,
-        text: "Welcome to StyleHub! I'm your shopping assistant for men's and kids' fashion. How can I help you today?",
+        text: "Welcome to Pankhudi Assistant! I'm your shopping assistant for Women's and kids' fashion. How can I help you today?",
         sender: "bot",
         options: [
             "Browse products",

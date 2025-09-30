@@ -79,7 +79,7 @@
 }
 
 .header-container-main {
-    max-width: 1440px;
+    max-width: 5000px;
     margin: 0 auto;
     padding: 0 var(--spacing-lg);
     display: flex;
@@ -138,6 +138,77 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     margin-top: -2px;
+}
+
+/* ===== USER INFO DISPLAY - NEW STYLES ===== */
+.user-info-display-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    min-width: 180px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.user-info-display-main:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 2px 8px var(--shadow-light);
+    transform: translateY(-1px);
+}
+
+.user-welcome-text {
+    font-size: 13px;
+    color: var(--primary-color);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 2px;
+}
+
+.user-name-highlight {
+    color: var(--primary-dark);
+    font-weight: var(--font-weight-bold);
+}
+
+.user-address-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.user-address-display:hover {
+    color: var(--primary-color);
+}
+
+.address-icon {
+    color: var(--error-color);
+    flex-shrink: 0;
+}
+
+.address-text {
+    font-weight: var(--font-weight-medium);
+    line-height: 1.2;
+}
+
+/* Mobile User Address */
+.mobile-user-address-text {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
 }
 
 /* ===== DESKTOP NAVIGATION ===== */
@@ -1220,6 +1291,20 @@ body.menu-open {
         font-size: 0.9rem;
         padding: var(--spacing-sm);
     }
+
+    /* User Info Display Responsive */
+    .user-info-display-main {
+        margin-right: var(--spacing-md);
+        min-width: 160px;
+    }
+
+    .user-welcome-text {
+        font-size: 12px;
+    }
+
+    .address-text {
+        font-size: 10px;
+    }
 }
 
 /* Tablet */
@@ -1262,6 +1347,11 @@ body.menu-open {
     .signup-btn-main {
         padding: var(--spacing-sm) var(--spacing-md);
         font-size: 0.85rem;
+    }
+
+    /* Hide user info display on mobile - shown in mobile menu instead */
+    .user-info-display-main {
+        display: none;
     }
 }
 
@@ -1378,6 +1468,10 @@ body.menu-open {
     .mobile-user-phone-text {
         font-size: 0.8rem;
     }
+
+    .mobile-user-address-text {
+        font-size: 11px;
+    }
 }
 
 /* High DPI Screens */
@@ -1414,6 +1508,16 @@ body.menu-open {
     .desktop-search-input-group:focus-within {
         background: var(--bg-lighter);
     }
+
+    /* User Info Display Dark Mode */
+    .user-info-display-main {
+        background: rgba(42, 42, 42, 0.9);
+        border: 1px solid var(--border-light);
+    }
+
+    .user-info-display-main:hover {
+        background: rgba(42, 42, 42, 1);
+    }
 }
 
 /* Print Styles */
@@ -1427,7 +1531,8 @@ body.menu-open {
 
     .mobile-menu-toggle-btn,
     .desktop-search-container,
-    .nav-icon-btn {
+    .nav-icon-btn,
+    .user-info-display-main {
         display: none !important;
     }
 }
@@ -1446,7 +1551,8 @@ body.menu-open {
 
     .desktop-nav-link,
     .nav-icon-btn,
-    .user-profile-btn-main {
+    .user-profile-btn-main,
+    .user-info-display-main {
         transition: none;
     }
 }
@@ -1481,6 +1587,10 @@ body.menu-open {
         transform: none;
     }
 
+    .user-info-display-main:hover {
+        transform: none;
+    }
+
     /* Increase tap targets for mobile */
     .mobile-nav-link-item,
     .mobile-logout-btn-main {
@@ -1497,4 +1607,13 @@ body.menu-open {
         min-height: 40px;
         min-width: 40px;
     }
+}
+
+/* Remove old delivery info styles since we're using the new user-info-display-main */
+.desktop-delivery-info {
+    display: none;
+}
+
+.mobile-delivery-info {
+    display: none;
 }

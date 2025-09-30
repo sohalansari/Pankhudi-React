@@ -50,13 +50,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
   padding-bottom: 15px;
   border-bottom: 1px solid var(--border);
 }
 
-.back-bt,
-.logout-btn {
+.back-bt {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -70,8 +68,7 @@ body {
   transition: all 0.2s;
 }
 
-.back-bt:hover,
-.logout-btn:hover {
+.back-bt:hover {
   background: var(--primary-light);
   color: white;
   border-color: var(--primary-light);
@@ -625,9 +622,7 @@ input:checked+.slider:before {
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
   .profile-header {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
+    flex-direction: row-reverse;
   }
 
   .profile-tabs {

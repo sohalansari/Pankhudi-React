@@ -349,54 +349,62 @@ const Home = () => {
                         {autoPlay ? '❚❚' : '▶'}
                     </button>
                 </section>
-
-                <section id="categories-section" className="categories-section">
+                <section className="trending-section">
                     <div className="section-header">
-                        <h2>Shop by Category</h2>
+                        <h2>Trending Now</h2>
                         <button
-                            className="view-all-btn"
-                            onClick={() => navigateTo('/categories')}
+                            className="view-all"
+                            onClick={() => navigateTo('/trending')}
                         >
                             View All
-                            <span className="arrow-icon">→</span>
                         </button>
                     </div>
-                    <div className="categories-container">
-                        <div className="categories-grid">
-                            {categories.slice(0, visibleCategories).map((category, index) => (
-                                <div
-                                    key={index}
-                                    className="category-card"
-                                    onClick={() => navigateTo(`/category/${category}`)}
-                                >
-                                    <div className="category-image-container">
+                    <div className="trending-grid">
+                        {products
+                            .filter(p => p.rating >= 3.5)
+                            .slice(0, 5)
+                            .map((product, index) => (
+                                <div key={index} className="trending-card">
+                                    <div className="trending-image">
                                         <img
-                                            src={getCategoryImage(category)}
-                                            alt={category}
+                                            src={getProductImage(product)}
+                                            alt={product.name}
                                             loading="lazy"
-                                            className="category-image"
                                             onError={(e) => {
-                                                e.target.src = getFallbackProductImage(category);
+                                                e.target.src = getFallbackProductImage(product.category);
                                             }}
+                                            onClick={() => navigateTo(`/ProductDetail/${product.id}`)}
                                         />
-                                        <div className="category-overlay">
-                                            <button className="shop-now-btn">
-                                                Shop Now
-                                                <span className="btn-arrow">→</span>
-                                            </button>
+                                        {product.isNew && <span className="api-badge">NEW</span>}
+                                        {product.pattern && product.pattern !== 'n/a' && (
+                                            <span className="trending-pattern">{product.pattern}</span>
+                                        )}
+                                    </div>
+                                    <div className="trending-info">
+                                        <h3>{product.name}</h3>
+                                        <div className="trending-price">
+                                            {product.discount > 0 ? (
+                                                <>
+                                                    <span className="original">₹{product.price}</span>
+                                                    <span>₹{Math.round(product.price * (1 - product.discount / 100))}</span>
+                                                </>
+                                            ) : (
+                                                <span>₹{product.price}</span>
+                                            )}
+                                        </div>
+                                        <div className="trending-rating">
+                                            {[...Array(5)].map((_, i) => (
+                                                <span
+                                                    key={i}
+                                                    className={i < Math.floor(product.rating) ? 'star filled' : 'star'}
+                                                >
+                                                    {i < Math.floor(product.rating) ? '★' : '☆'}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
-                                    <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}</h3>
                                 </div>
                             ))}
-                        </div>
-                        {visibleCategories < categories.length && (
-                            <div className="show-more-container">
-                                <button className="show-more-btn" onClick={showMoreCategories}>
-                                    Show All Categories
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </section>
 
@@ -611,66 +619,55 @@ const Home = () => {
                         </button>
                     </div>
                 </section>
-
-                <section className="trending-section">
+                <section id="categories-section" className="categories-section">
                     <div className="section-header">
-                        <h2>Trending Now</h2>
+                        <h2>Shop by Category</h2>
                         <button
-                            className="view-all"
-                            onClick={() => navigateTo('/trending')}
+                            className="view-all-btn"
+                            onClick={() => navigateTo('/categories')}
                         >
                             View All
+                            <span className="arrow-icon">→</span>
                         </button>
                     </div>
-                    <div className="trending-grid">
-                        {products
-                            .filter(p => p.rating >= 3.5)
-                            .slice(0, 5)
-                            .map((product, index) => (
-                                <div key={index} className="trending-card">
-                                    <div className="trending-image">
+                    <div className="categories-container">
+                        <div className="categories-grid">
+                            {categories.slice(0, visibleCategories).map((category, index) => (
+                                <div
+                                    key={index}
+                                    className="category-card"
+                                    onClick={() => navigateTo(`/category/${category}`)}
+                                >
+                                    <div className="category-image-container">
                                         <img
-                                            src={getProductImage(product)}
-                                            alt={product.name}
+                                            src={getCategoryImage(category)}
+                                            alt={category}
                                             loading="lazy"
+                                            className="category-image"
                                             onError={(e) => {
-                                                e.target.src = getFallbackProductImage(product.category);
+                                                e.target.src = getFallbackProductImage(category);
                                             }}
-                                            onClick={() => navigateTo(`/ProductDetail/${product.id}`)}
                                         />
-                                        {product.isNew && <span className="api-badge">NEW</span>}
-                                        {product.pattern && product.pattern !== 'n/a' && (
-                                            <span className="trending-pattern">{product.pattern}</span>
-                                        )}
-                                    </div>
-                                    <div className="trending-info">
-                                        <h3>{product.name}</h3>
-                                        <div className="trending-price">
-                                            {product.discount > 0 ? (
-                                                <>
-                                                    <span className="original">₹{product.price}</span>
-                                                    <span>₹{Math.round(product.price * (1 - product.discount / 100))}</span>
-                                                </>
-                                            ) : (
-                                                <span>₹{product.price}</span>
-                                            )}
-                                        </div>
-                                        <div className="trending-rating">
-                                            {[...Array(5)].map((_, i) => (
-                                                <span
-                                                    key={i}
-                                                    className={i < Math.floor(product.rating) ? 'star filled' : 'star'}
-                                                >
-                                                    {i < Math.floor(product.rating) ? '★' : '☆'}
-                                                </span>
-                                            ))}
+                                        <div className="category-overlay">
+                                            <button className="shop-now-btn">
+                                                Shop Now
+                                                <span className="btn-arrow">→</span>
+                                            </button>
                                         </div>
                                     </div>
+                                    <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}</h3>
                                 </div>
                             ))}
+                        </div>
+                        {visibleCategories < categories.length && (
+                            <div className="show-more-container">
+                                <button className="show-more-btn" onClick={showMoreCategories}>
+                                    Show All Categories
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
-
                 <section className="newsletter-section">
                     <div className="newsletter-container">
                         <div className="newsletter-text">
