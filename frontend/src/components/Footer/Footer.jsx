@@ -96,10 +96,10 @@ const Footer = () => {
                         <div className="footer-column">
                             <h3 className="footer-title">Quick Links</h3>
                             <ul className="footer-links">
+                                <li><Link to="/ai-chat">AI Chat</Link></li>
                                 <li><Link to="/orders">Order History</Link></li>
-                                <li><Link to="/ai-chat">Go to AI Chat</Link></li>
                                 <li><Link to="/products">Shop</Link></li>
-                                <li><Link to="/collections/new-arrivals">New Arrivals</Link></li>
+                                <li><Link to="/collections/new-arrivals">Help</Link></li>
                                 <li><Link to="/collections/bestsellers">Bestsellers</Link></li>
                                 <li><Link to="/about">About Us</Link></li>
                                 <li><Link to="/contact">Contact</Link></li>

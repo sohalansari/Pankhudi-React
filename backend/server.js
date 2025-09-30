@@ -11,6 +11,7 @@ const productsRoutes = require("./routes/products");
 const chatRoutes = require("./routes/chat");
 const cartRoutes = require("./routes/cart");
 const reviewRoutes = require("./routes/reviews");
+const searchRoutes = require("./routes/searchRoutes");
 
 const app = express();
 
@@ -45,7 +46,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // ✅ Serve uploads from admin folder also
 app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
 
-
 // routes
 app.use("/api", authRoutes);
 app.use("/api", profileRoutes);
@@ -53,8 +53,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/reviews", reviewRoutes);
-
-
+app.use("/api/search", searchRoutes); // ✅ Search routes added
 
 // health
 app.get("/health", (req, res) => res.json({ status: "ok" }));
@@ -66,6 +65,7 @@ app.use((req, res) => res.status(404).json({ message: "Not found" }));
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
+    console.log(`🔍 Search API available at: http://localhost:${port}/api/search`);
 });
 
 process.on("unhandledRejection", (reason) => {

@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 // Get all users
 exports.getAllUsers = async (req, res) => {
     try {
-        const [rows] = await db.promise().query("SELECT * FROM users");
+        const [rows] = await db.promise().query("SELECT * FROM users ORDER BY created_at DESC");
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -31,19 +31,18 @@ exports.createUser = async (req, res) => {
         const { name, email, phone, address, is_verified, is_premium, is_active, password } = req.body;
         if (!password) return res.status(400).json({ message: "Password is required" });
 
-        // Check for duplicate phone or email
+        // Check for duplicate email or phone
         const [existing] = await db.promise().query(
-            "SELECT * FROM users WHERE phone=? OR email=?",
-            [phone, email]
+            "SELECT * FROM users WHERE email=? OR phone=?",
+            [email, phone]
         );
-        if (existing.length > 0) {
-            return res.status(400).json({ message: "User with this phone or email already exists" });
-        }
+        if (existing.length) return res.status(400).json({ message: "User with this email or phone already exists" });
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const [result] = await db.promise().query(
-            `INSERT INTO users (name, email, phone, address, is_verified, is_premium, is_active, password, created_at)
+            `INSERT INTO users 
+             (name, email, phone, address, is_verified, is_premium, is_active, password, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
             [name, email, phone, address, is_verified ? 1 : 0, is_premium ? 1 : 0, is_active ? 1 : 0, hashedPassword]
         );
@@ -56,35 +55,34 @@ exports.createUser = async (req, res) => {
     }
 };
 
-// Partial update user (safe)
+// Update user (partial safe update)
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const allowedFields = ['name', 'email', 'phone', 'address', 'is_verified', 'is_premium', 'is_active', 'password'];
-        const fieldsToUpdate = [];
+        const fields = [];
         const params = [];
 
         for (let field of allowedFields) {
             if (req.body[field] !== undefined) {
                 if (field === 'password' && req.body.password.trim() !== "") {
-                    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-                    fieldsToUpdate.push(`${field}=?`);
-                    params.push(hashedPassword);
+                    const hashed = await bcrypt.hash(req.body.password, 10);
+                    fields.push(`${field}=?`);
+                    params.push(hashed);
                 } else if (field !== 'password') {
-                    // Convert booleans to 0/1 for MySQL
-                    if (field === 'is_verified' || field === 'is_premium' || field === 'is_active') {
+                    if (['is_verified', 'is_premium', 'is_active'].includes(field)) {
                         params.push(req.body[field] ? 1 : 0);
                     } else {
                         params.push(req.body[field]);
                     }
-                    fieldsToUpdate.push(`${field}=?`);
+                    fields.push(`${field}=?`);
                 }
             }
         }
 
-        if (fieldsToUpdate.length === 0) return res.status(400).json({ message: "No valid fields to update" });
+        if (!fields.length) return res.status(400).json({ message: "No valid fields to update" });
 
-        const query = `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE id=?`;
+        const query = `UPDATE users SET ${fields.join(', ')} WHERE id=?`;
         params.push(id);
 
         await db.promise().query(query, params);
@@ -109,7 +107,7 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// Toggle verify/unverify
+// Toggle verify/unverify user
 exports.toggleVerify = async (req, res) => {
     try {
         const { id } = req.params;

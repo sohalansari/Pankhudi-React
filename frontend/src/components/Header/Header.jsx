@@ -17,7 +17,9 @@ import {
     FiImage,
     FiChevronDown,
     FiChevronUp,
-    FiMapPin
+    FiMapPin,
+    FiFilter,
+    FiRefreshCw
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiChatAiLine } from "react-icons/ri";
@@ -36,13 +38,29 @@ const Header = () => {
     const [searchResults, setSearchResults] = useState([]);
     const [trendingProducts, setTrendingProducts] = useState([]);
     const [userAddress, setUserAddress] = useState('');
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [trendingRefreshTime, setTrendingRefreshTime] = useState(0);
+    const [isRefreshingTrending, setIsRefreshingTrending] = useState(false);
+
     const searchInputRef = useRef(null);
     const dropdownRef = useRef(null);
+    const searchContainerRef = useRef(null);
+    const mobileMenuRef = useRef(null);
     const navigate = useNavigate();
+
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
     const [cartItemsCount, setCartItemsCount] = useState(0);
 
+    // Popular search suggestions
+    const popularSearches = [
+        "Sarees", "Dresses", "Jewelry", "Kurtas", "Lehenga",
+        "Earrings", "Bangles", "Wedding Collection", "Summer Dresses"
+    ];
+
+    // Fetch user data and recent searches
     const fetchUserData = () => {
         const token = localStorage.getItem('token');
         setIsLoggedIn(!!token);
@@ -53,7 +71,6 @@ const Header = () => {
                 const userData = JSON.parse(userFromStorage);
                 setUserData(userData);
 
-                // Fetch user address from localStorage or user data
                 const savedAddress = localStorage.getItem('userAddress') ||
                     userData.address ||
                     'Add your delivery address';
@@ -62,64 +79,57 @@ const Header = () => {
         } catch (error) {
             console.error('Error parsing user data:', error);
         }
+
+        // Load recent searches
+        const savedSearches = localStorage.getItem('recentSearches');
+        if (savedSearches) {
+            setRecentSearches(JSON.parse(savedSearches));
+        }
     };
 
-    // useEffect(() => {
-    //     const fetchUserAddress = async () => {
-    //         if (userData?.id) {
-    //             try {
-    //                 // Use the existing profile address endpoint instead
-    //                 const response = await fetch(`http://localhost:5000/api/users/${userData.id}/address`, {
-    //                     method: 'GET',
-    //                     headers: {
-    //                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    //                         'Content-Type': 'application/json'
-    //                     }
-    //                 });
+    // Save search to recent searches
+    const saveToRecentSearches = (query) => {
+        if (!query.trim()) return;
 
-    //                 if (response.ok) {
-    //                     const data = await response.json();
-    //                     if (data.success) {
-    //                         setUserAddress(data.address.address || 'Add your delivery address');
-    //                         localStorage.setItem('userAddress', data.address.address);
-    //                     } else {
-    //                         setUserAddress('Add your delivery address');
-    //                     }
-    //                 } else {
-    //                     // If response is not ok, use fallback
-    //                     throw new Error(`HTTP error! status: ${response.status}`);
-    //                 }
-    //             } catch (error) {
-    //                 // Fallback strategies
-    //                 const savedAddress = localStorage.getItem('userAddress');
-    //                 if (savedAddress) {
-    //                     setUserAddress(savedAddress);
-    //                 } else if (userData.address) {
-    //                     // Use address from userData if available
-    //                     setUserAddress(userData.address);
-    //                 } else {
-    //                     setUserAddress('Add your delivery address');
-    //                 }
-    //             }
-    //         }
-    //     };
+        const updatedSearches = [
+            query,
+            ...recentSearches.filter(search => search.toLowerCase() !== query.toLowerCase())
+        ].slice(0, 5); // Keep only last 5 searches
 
-    //     if (isLoggedIn && userData?.id) {
-    //         fetchUserAddress();
-    //     } else {
-    //         // Reset address when not logged in
-    //         setUserAddress('');
-    //     }
-    // }, [isLoggedIn, userData]);
+        setRecentSearches(updatedSearches);
+        localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    };
 
+    // Refresh trending products manually - FIXED WITH LOADING STATE
+    const refreshTrendingProducts = async () => {
+        try {
+            setIsRefreshingTrending(true);
+            setTrendingRefreshTime(Date.now()); // Force re-fetch
+            const res = await fetch(`http://localhost:5000/api/search/trending?t=${Date.now()}`);
+            const data = await res.json();
+            if (data.success) {
+                setTrendingProducts(data.products || []);
+            }
+        } catch (err) {
+            console.error('Failed to refresh trending products:', err);
+        } finally {
+            setIsRefreshingTrending(false);
+        }
+    };
+
+    // Auto-refresh trending products every 2 minutes
+    useEffect(() => {
+        const interval = setInterval(() => {
+            refreshTrendingProducts();
+        }, 2 * 60 * 1000); // 2 minutes
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
-        // Simple solution - use address from userData directly
         if (isLoggedIn && userData) {
             const address = userData.address || localStorage.getItem('userAddress') || 'Add your delivery address';
             setUserAddress(address);
-
-            // Save to localStorage for future use
             if (userData.address) {
                 localStorage.setItem('userAddress', userData.address);
             }
@@ -127,7 +137,6 @@ const Header = () => {
             setUserAddress('');
         }
     }, [isLoggedIn, userData]);
-
 
     // Fetch cart count
     useEffect(() => {
@@ -175,61 +184,147 @@ const Header = () => {
         return () => window.removeEventListener('storage', updateCounts);
     }, []);
 
+    // Enhanced click outside handler
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Close dropdowns
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setActiveDropdown(null);
             }
+
+            // Close search suggestions when clicking outside
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+                setShowSearchSuggestions(false);
+            }
+
+            // Close mobile menu when clicking outside
+            if (isMobileMenuOpen &&
+                mobileMenuRef.current &&
+                !mobileMenuRef.current.contains(event.target) &&
+                !event.target.closest('.mobile-menu-toggle-btn')) {
+                closeMobileMenu();
+            }
         };
+
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [isMobileMenuOpen]);
 
-    // Live Search
+    // Live search suggestions
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
+            setSearchLoading(false);
             return;
         }
+
+        setSearchLoading(true);
         const timer = setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/products?search=${searchQuery}`);
+                const res = await fetch(`http://localhost:5000/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
+                if (!res.ok) throw new Error('Suggestions failed');
                 const data = await res.json();
-                setSearchResults(data);
+                setSearchResults(data.suggestions || []);
             } catch (err) {
-                console.error(err);
+                console.error('Suggestions error:', err);
+                setSearchResults([]);
+            } finally {
+                setSearchLoading(false);
             }
         }, 300);
+
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Trending Products
+    // Trending Products with cache busting
     useEffect(() => {
         const fetchTrending = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/products/trending');
+                const res = await fetch(`http://localhost:5000/api/search/trending?t=${trendingRefreshTime}`);
                 const data = await res.json();
-                setTrendingProducts(data);
+                if (data.success) {
+                    setTrendingProducts(data.products || []);
+                }
             } catch (err) {
-                console.error(err);
+                console.error('Trending products fetch error:', err);
+                setTrendingProducts([]);
             }
         };
         fetchTrending();
-    }, []);
+    }, [trendingRefreshTime]);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
+    // Enhanced Search Handler
+    const handleSearch = async (e) => {
+        if (e) e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-            setSearchQuery('');
-            setSearchResults([]);
-            closeMobileMenu();
-            setIsSearchExpanded(false);
+            try {
+                const response = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(searchQuery)}`);
+                if (!response.ok) throw new Error('Search failed');
+                const data = await response.json();
+
+                // Save to recent searches
+                saveToRecentSearches(searchQuery);
+
+                // Navigate to search results page with data
+                navigate('/search', {
+                    state: {
+                        searchResults: data.products,
+                        searchQuery: searchQuery,
+                        totalResults: data.total
+                    }
+                });
+
+                setSearchQuery('');
+                setSearchResults([]);
+                setShowSearchSuggestions(false);
+                closeMobileMenu();
+                setIsSearchExpanded(false);
+
+            } catch (err) {
+                console.error('Search error:', err);
+                // Fallback to simple search
+                navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+            }
         }
     };
 
+    // Enhanced click handler for suggestions - FIXED
+    const handleSuggestionClick = (e, callback) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (callback) {
+            callback();
+        }
+    };
+
+    // Fixed search handlers
+    const handleQuickSearch = (query) => {
+        setSearchQuery(query);
+        saveToRecentSearches(query);
+        navigate('/search', {
+            state: {
+                searchQuery: query
+            }
+        });
+        setShowSearchSuggestions(false);
+        setSearchResults([]);
+        closeMobileMenu();
+        setIsSearchExpanded(false);
+    };
+
+    const handleProductClick = (productId) => {
+        if (productId) {
+            navigate(`/ProductDetail/${productId}`);
+            setSearchQuery('');
+            setSearchResults([]);
+            setShowSearchSuggestions(false);
+            closeMobileMenu();
+        }
+    };
+
+    // Voice Search
     const handleVoiceSearch = () => {
         if ('webkitSpeechRecognition' in window) {
             const recognition = new window.webkitSpeechRecognition();
@@ -246,7 +341,7 @@ const Header = () => {
                 const transcript = e.results[0][0].transcript;
                 setSearchQuery(transcript);
                 setIsListening(false);
-                searchInputRef.current.focus();
+                searchInputRef.current?.focus();
             };
 
             recognition.onerror = (e) => {
@@ -264,6 +359,7 @@ const Header = () => {
         }
     };
 
+    // Image Search
     const handleImageSearch = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -272,11 +368,19 @@ const Header = () => {
             const file = e.target.files[0];
             if (file) {
                 alert(`Image search for ${file.name} would be processed here`);
+                // Implement actual image search logic here
             }
         };
         input.click();
     };
 
+    // Clear Recent Searches
+    const clearRecentSearches = () => {
+        setRecentSearches([]);
+        localStorage.removeItem('recentSearches');
+    };
+
+    // Logout Handlers
     const handleLogout = () => {
         setShowLogoutConfirm(true);
     };
@@ -303,6 +407,7 @@ const Header = () => {
         closeMobileMenu();
     };
 
+    // Dropdown and Menu Handlers
     const toggleDropdown = (dropdown) => {
         setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
     };
@@ -341,6 +446,7 @@ const Header = () => {
         }
     };
 
+    // User Avatar Functions
     const getUserInitials = () => {
         if (!userData?.name) return '';
         return userData.name
@@ -359,6 +465,407 @@ const Header = () => {
         ];
         const hash = userData.name.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0);
         return colors[hash % colors.length];
+    };
+
+    // Enhanced Navigation Handler for Mobile Menu
+    const handleMobileNavigation = (path) => {
+        navigate(path);
+        closeMobileMenu();
+    };
+
+    // Render Search Suggestions - COMPLETELY FIXED CLICK ISSUES
+    const renderSearchSuggestions = () => {
+        const hasSearchResults = Array.isArray(searchResults) && searchResults.length > 0;
+        const hasTrendingProducts = Array.isArray(trendingProducts) && trendingProducts.length > 0;
+        const hasRecentSearches = recentSearches.length > 0;
+
+        if (!showSearchSuggestions) return null;
+
+        return (
+            <div
+                className="search-suggestions-dropdown"
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+                {/* Recent Searches */}
+                {hasRecentSearches && !searchQuery && (
+                    <div className="suggestions-section">
+                        <div className="suggestions-header">
+                            <span>Recent Searches</span>
+                            <button
+                                className="clear-recent-btn"
+                                onClick={(e) => handleSuggestionClick(e, clearRecentSearches)}
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        {recentSearches.map((search, index) => (
+                            <div
+                                key={index}
+                                className="search-suggestion-item recent-search"
+                                onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                            >
+                                <FiClock size={16} />
+                                <span>{search}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Popular Searches */}
+                {!searchQuery && (
+                    <div className="suggestions-section">
+                        <div className="suggestions-header">
+                            <span>Popular Searches</span>
+                        </div>
+                        <div className="popular-tags">
+                            {popularSearches.map((search, index) => (
+                                <button
+                                    key={index}
+                                    className="popular-tag"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                >
+                                    {search}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Search Results */}
+                {searchQuery && hasSearchResults && (
+                    <div className="suggestions-section">
+                        <div className="suggestions-header">
+                            <span>Products</span>
+                            {searchLoading && <span className="searching-text">Searching...</span>}
+                        </div>
+                        {searchResults.slice(0, 5).map(item => {
+                            // FIXED: Use discount percentage from backend
+                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
+                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
+                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
+                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="search-suggestion-item product-suggestion"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                >
+                                    <img
+                                        src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                        alt={item.name}
+                                        className="suggestion-image"
+                                        onError={(e) => {
+                                            e.target.src = '/default-product.png';
+                                        }}
+                                    />
+                                    <div className="suggestion-details">
+                                        <p className="suggestion-name">{item.name}</p>
+                                        <p className="suggestion-description">
+                                            {item.description?.split("\n").slice(0, 2).join(" ").substring(0, 60)}...
+                                        </p>
+                                        <div className="suggestion-price">
+                                            {discountPercentage > 0 ? (
+                                                <>
+                                                    <span className="discounted-price">₹{finalPrice.toFixed(2)}</span>
+                                                    <span className="original-price">₹{originalPrice.toFixed(2)}</span>
+                                                    <span className="discount-badge">
+                                                        {discountPercentage}% OFF
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="normal-price">₹{originalPrice.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {/* View All Results */}
+                        {searchResults.length > 5 && (
+                            <div
+                                className="view-all-results"
+                                onClick={(e) => handleSuggestionClick(e, handleSearch)}
+                            >
+                                View all {searchResults.length} results for "{searchQuery}"
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* No Results */}
+                {searchQuery && !hasSearchResults && !searchLoading && (
+                    <div className="suggestions-section">
+                        <div className="no-results-suggestion">
+                            <p>No products found for "{searchQuery}"</p>
+                            <button
+                                className="browse-all-btn"
+                                onClick={(e) => handleSuggestionClick(e, () => navigate('/products'))}
+                            >
+                                Browse All Products
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Trending Products when no search query */}
+                {!searchQuery && hasTrendingProducts && (
+                    <div className="suggestions-section">
+                        <div className="suggestions-header">
+                            <span>Trending Now</span>
+                            <button
+                                className={`refresh-trending-btn ${isRefreshingTrending ? 'refreshing' : ''}`}
+                                onClick={(e) => handleSuggestionClick(e, refreshTrendingProducts)}
+                                title="Refresh trending products"
+                                disabled={isRefreshingTrending}
+                            >
+                                <FiRefreshCw size={12} className={isRefreshingTrending ? 'spinning' : ''} />
+                            </button>
+                        </div>
+                        {trendingProducts.map(item => {
+                            // FIXED: Use discount percentage from backend for trending
+                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
+                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
+                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
+                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="search-suggestion-item product-suggestion"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                >
+                                    <img
+                                        src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                        alt={item.name}
+                                        className="suggestion-image"
+                                        onError={(e) => {
+                                            e.target.src = '/default-product.png';
+                                        }}
+                                    />
+                                    <div className="suggestion-details">
+                                        <p className="suggestion-name">{item.name}</p>
+                                        <div className="suggestion-price trending-price">
+                                            {discountPercentage > 0 ? (
+                                                <>
+                                                    <span className="discounted-price">₹{finalPrice.toFixed(2)}</span>
+                                                    <span className="original-price">₹{originalPrice.toFixed(2)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="normal-price">₹{originalPrice.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                        <div className="trending-badge">
+                                            🔥 Trending
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Mobile Search Suggestions - COMPLETELY FIXED CLICK ISSUES
+    const renderMobileSearchSuggestions = () => {
+        const hasSearchResults = Array.isArray(searchResults) && searchResults.length > 0;
+        const hasTrendingProducts = Array.isArray(trendingProducts) && trendingProducts.length > 0;
+        const hasRecentSearches = recentSearches.length > 0;
+
+        if (!showSearchSuggestions) return null;
+
+        return (
+            <div
+                className="mobile-search-suggestions-dropdown"
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+                {/* Recent Searches */}
+                {hasRecentSearches && !searchQuery && (
+                    <div className="mobile-suggestions-section">
+                        <div className="mobile-suggestions-header">
+                            <span>Recent Searches</span>
+                            <button
+                                className="mobile-clear-recent-btn"
+                                onClick={(e) => handleSuggestionClick(e, clearRecentSearches)}
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        {recentSearches.map((search, index) => (
+                            <div
+                                key={index}
+                                className="mobile-recent-search-item"
+                                onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                            >
+                                <FiClock size={16} />
+                                <span>{search}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Popular Searches */}
+                {!searchQuery && (
+                    <div className="mobile-suggestions-section">
+                        <div className="mobile-suggestions-header">
+                            <span>Popular Searches</span>
+                        </div>
+                        <div className="mobile-popular-tags">
+                            {popularSearches.map((search, index) => (
+                                <button
+                                    key={index}
+                                    className="mobile-popular-tag"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                >
+                                    {search}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Search Results */}
+                {searchQuery && hasSearchResults && (
+                    <div className="mobile-suggestions-section">
+                        <div className="mobile-suggestions-header">
+                            <span>Products</span>
+                            {searchLoading && <span className="searching-text">Searching...</span>}
+                        </div>
+                        {searchResults.slice(0, 5).map(item => {
+                            // FIXED: Use discount percentage from backend
+                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
+                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
+                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
+                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="mobile-search-suggestion-item"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                >
+                                    <img
+                                        src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                        alt={item.name}
+                                        className="mobile-suggestion-image"
+                                        onError={(e) => {
+                                            e.target.src = '/default-product.png';
+                                        }}
+                                    />
+                                    <div className="mobile-suggestion-details">
+                                        <p className="mobile-suggestion-name">{item.name}</p>
+                                        <p className="mobile-suggestion-description">
+                                            {item.description?.split("\n").slice(0, 2).join(" ").substring(0, 60)}...
+                                        </p>
+                                        <div className="mobile-suggestion-price">
+                                            {discountPercentage > 0 ? (
+                                                <>
+                                                    <span className="mobile-discounted-price">₹{finalPrice.toFixed(2)}</span>
+                                                    <span className="mobile-original-price">₹{originalPrice.toFixed(2)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="mobile-normal-price">₹{originalPrice.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {/* View All Results */}
+                        {searchResults.length > 5 && (
+                            <div
+                                className="mobile-view-all-results"
+                                onClick={(e) => handleSuggestionClick(e, handleSearch)}
+                            >
+                                View all {searchResults.length} results for "{searchQuery}"
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* No Results */}
+                {searchQuery && !hasSearchResults && !searchLoading && (
+                    <div className="mobile-suggestions-section">
+                        <div className="mobile-no-results-suggestion">
+                            <p>No products found for "{searchQuery}"</p>
+                            <button
+                                className="mobile-browse-all-btn"
+                                onClick={(e) => handleSuggestionClick(e, () => handleMobileNavigation('/products'))}
+                            >
+                                Browse All Products
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Trending Products */}
+                {!searchQuery && hasTrendingProducts && (
+                    <div className="mobile-suggestions-section">
+                        <div className="mobile-suggestions-header">
+                            <span>Trending Now</span>
+                            <button
+                                className={`mobile-refresh-trending-btn ${isRefreshingTrending ? 'refreshing' : ''}`}
+                                onClick={(e) => handleSuggestionClick(e, refreshTrendingProducts)}
+                                title="Refresh trending products"
+                                disabled={isRefreshingTrending}
+                            >
+                                <FiRefreshCw size={12} className={isRefreshingTrending ? 'spinning' : ''} />
+                            </button>
+                        </div>
+                        {trendingProducts.map(item => {
+                            // FIXED: Use discount percentage from backend for trending
+                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
+                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
+                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
+                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="mobile-search-suggestion-item"
+                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                >
+                                    <img
+                                        src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
+                                        alt={item.name}
+                                        className="mobile-suggestion-image"
+                                        onError={(e) => {
+                                            e.target.src = '/default-product.png';
+                                        }}
+                                    />
+                                    <div className="mobile-suggestion-details">
+                                        <p className="mobile-suggestion-name">{item.name}</p>
+                                        <div className="mobile-suggestion-price">
+                                            {discountPercentage > 0 ? (
+                                                <>
+                                                    <span className="mobile-discounted-price">₹{finalPrice.toFixed(2)}</span>
+                                                    <span className="mobile-original-price">₹{originalPrice.toFixed(2)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="mobile-normal-price">₹{originalPrice.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                        <div className="mobile-trending-badge">
+                                            🔥 Trending
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Loading State */}
+                {searchLoading && (
+                    <div className="mobile-search-loading">
+                        <div className="mobile-loading-spinner"></div>
+                        <span>Searching...</span>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -397,7 +904,7 @@ const Header = () => {
 
                 {/* Desktop Navigation */}
                 <div className="desktop-nav-section">
-                    {/* User Info Display - NEW FEATURE */}
+                    {/* User Info Display */}
                     {isLoggedIn && userData && (
                         <div className="user-info-display-main">
                             <motion.div
@@ -481,8 +988,11 @@ const Header = () => {
                         </ul>
                     </nav>
 
-                    {/* Search Bar */}
-                    <div className={`desktop-search-container ${isSearchExpanded ? 'search-expanded' : ''}`}>
+                    {/* Enhanced Search Bar */}
+                    <div
+                        className={`desktop-search-container ${isSearchExpanded ? 'search-expanded' : ''}`}
+                        ref={searchContainerRef}
+                    >
                         <form onSubmit={handleSearch} className="desktop-search-form">
                             <motion.div
                                 className="desktop-search-input-group"
@@ -492,9 +1002,10 @@ const Header = () => {
                             >
                                 <input
                                     type="text"
-                                    placeholder="Search for products..."
+                                    placeholder="Search for dresses, sarees, jewelry..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => setShowSearchSuggestions(true)}
                                     ref={searchInputRef}
                                     className="desktop-search-input-field"
                                 />
@@ -533,46 +1044,8 @@ const Header = () => {
                             </motion.button>
                         </form>
 
-                        {/* Search Suggestions Dropdown */}
-                        {((Array.isArray(searchResults) && searchResults.length > 0) ||
-                            (!searchQuery && Array.isArray(trendingProducts) && trendingProducts.length > 0)) && (
-                                <div className="search-suggestions-dropdown">
-                                    {(Array.isArray(searchQuery ? searchResults : trendingProducts)
-                                        ? (searchQuery ? searchResults : trendingProducts)
-                                        : []).map(item => (
-                                            <div
-                                                key={item.id}
-                                                className="search-suggestion-item"
-                                                onClick={() => {
-                                                    navigate(`/ProductDetail/${item.id}`);
-                                                    setSearchQuery('');
-                                                    setSearchResults([]);
-                                                    closeMobileMenu();
-                                                }}
-                                            >
-                                                <img
-                                                    src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
-                                                    alt={item.name}
-                                                    className="suggestion-image"
-                                                />
-                                                <div className="suggestion-details">
-                                                    <p className="suggestion-name">{item.name}</p>
-                                                    <p className="description">
-                                                        {item.description.split("\n").slice(0, 3).join("\n")}
-                                                    </p>
-                                                    {item.discountPrice ? (
-                                                        <span className="suggestion-price">
-                                                            <span className="discounted-price">₹{item.discountPrice}</span>{' '}
-                                                            <span className="original-price">₹{item.price}</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="suggestion-price">₹{item.price}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
+                        {/* Enhanced Search Suggestions */}
+                        {renderSearchSuggestions()}
                     </div>
 
                     {/* User Actions */}
@@ -753,8 +1226,23 @@ const Header = () => {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            ref={mobileMenuRef}
                         >
+                            {/* Mobile Menu Header with Close Button */}
                             <div className="mobile-menu-header-section">
+                                <div className="mobile-menu-header-top">
+                                    <h3 className="mobile-menu-title">Menu</h3>
+                                    <motion.button
+                                        className="mobile-menu-close-btn"
+                                        onClick={closeMobileMenu}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        aria-label="Close menu"
+                                    >
+                                        <FiX size={24} />
+                                    </motion.button>
+                                </div>
+
                                 {isLoggedIn ? (
                                     <div className="mobile-user-profile-wrapper">
                                         <div
@@ -771,7 +1259,10 @@ const Header = () => {
                                             <p className="mobile-user-name-text">{userData?.name || 'Hi, User'}</p>
                                             <p className="mobile-user-email-text">{userData?.email || 'yourmail@gmail.com'}</p>
                                             {userAddress && (
-                                                <div className="mobile-user-address-text">
+                                                <div
+                                                    className="mobile-user-address-text"
+                                                    onClick={() => handleMobileNavigation('/profile/address')}
+                                                >
                                                     <FiMapPin size={12} />
                                                     {userAddress.length > 30 ? `${userAddress.substring(0, 30)}...` : userAddress}
                                                 </div>
@@ -782,10 +1273,7 @@ const Header = () => {
                                     <div className="mobile-auth-buttons-container">
                                         <motion.button
                                             className="mobile-login-btn-main"
-                                            onClick={() => {
-                                                navigate('/login');
-                                                closeMobileMenu();
-                                            }}
+                                            onClick={() => handleMobileNavigation('/login')}
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
@@ -793,10 +1281,7 @@ const Header = () => {
                                         </motion.button>
                                         <motion.button
                                             className="mobile-signup-btn-main"
-                                            onClick={() => {
-                                                navigate('/register');
-                                                closeMobileMenu();
-                                            }}
+                                            onClick={() => handleMobileNavigation('/register')}
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
@@ -815,6 +1300,7 @@ const Header = () => {
                                             placeholder="Search for products..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
+                                            onFocus={() => setShowSearchSuggestions(true)}
                                             className="mobile-search-input-field"
                                             ref={searchInputRef}
                                         />
@@ -834,7 +1320,7 @@ const Header = () => {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
-                                            <FiMic size={16} /> Voice Search
+                                            <FiMic size={16} /> Voice
                                         </motion.button>
                                         <motion.button
                                             type="button"
@@ -843,50 +1329,13 @@ const Header = () => {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
-                                            <FiImage size={16} /> Image Search
+                                            <FiImage size={16} /> Image
                                         </motion.button>
                                     </div>
                                 </form>
 
-                                {((Array.isArray(searchResults) && searchResults.length > 0) ||
-                                    (!searchQuery && Array.isArray(trendingProducts) && trendingProducts.length > 0)) && (
-                                        <div className="mobile-search-suggestions-dropdown">
-                                            {(Array.isArray(searchQuery ? searchResults : trendingProducts)
-                                                ? (searchQuery ? searchResults : trendingProducts)
-                                                : []).map(item => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="mobile-search-suggestion-item"
-                                                        onClick={() => {
-                                                            navigate(`/ProductDetail/${item.id}`);
-                                                            setSearchQuery('');
-                                                            setSearchResults([]);
-                                                            closeMobileMenu();
-                                                        }}
-                                                    >
-                                                        <img
-                                                            src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
-                                                            alt={item.name}
-                                                            className="mobile-suggestion-image"
-                                                        />
-                                                        <div className="mobile-suggestion-details">
-                                                            <p className="mobile-suggestion-name">{item.name}</p>
-                                                            <p className="mobile-suggestion-description">
-                                                                {item.description.split("\n").slice(0, 3).join("\n")}
-                                                            </p>
-                                                            {item.discountPrice ? (
-                                                                <span className="mobile-suggestion-price">
-                                                                    <span className="discounted-price">₹{item.discountPrice}</span>{' '}
-                                                                    <span className="original-price">₹{item.price}</span>
-                                                                </span>
-                                                            ) : (
-                                                                <span className="mobile-suggestion-price">₹{item.price}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    )}
+                                {/* Mobile Search Suggestions */}
+                                {renderMobileSearchSuggestions()}
                             </div>
 
                             <nav className="mobile-nav-section">
@@ -895,69 +1344,56 @@ const Header = () => {
                                         className="mobile-nav-item"
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <NavLink
-                                            to="/"
-                                            end
-                                            className={({ isActive }) =>
-                                                `mobile-nav-link-item ${isActive ? 'mobile-active-link' : ''}`
-                                            }
-                                            onClick={closeMobileMenu}
+                                        <button
+                                            className="mobile-nav-link-item"
+                                            onClick={() => handleMobileNavigation('/')}
                                         >
                                             <FiHome size={20} /> Home
-                                        </NavLink>
+                                        </button>
                                     </motion.li>
                                     <motion.li
                                         className="mobile-nav-item"
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <NavLink
-                                            to="/ai-chat"
-                                            className={({ isActive }) =>
-                                                `mobile-nav-link-item ${isActive ? 'mobile-active-link' : ''}`
-                                            }
-                                            onClick={closeMobileMenu}
+                                        <button
+                                            className="mobile-nav-link-item"
+                                            onClick={() => handleMobileNavigation('/ai-chat')}
                                         >
                                             <RiChatAiLine size={20} /> AI Chat
-                                        </NavLink>
+                                        </button>
                                     </motion.li>
                                     <motion.li
                                         className="mobile-nav-item"
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <NavLink
-                                            to="/products"
+                                        <button
                                             className="mobile-nav-link-item"
-                                            onClick={closeMobileMenu}
-                                            activeClassName="mobile-active-link"
+                                            onClick={() => handleMobileNavigation('/products')}
                                         >
                                             <FiShoppingBag size={20} /> Shop All
-                                        </NavLink>
+                                        </button>
                                     </motion.li>
                                     <motion.li
                                         className="mobile-nav-item"
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <NavLink
-                                            to="/collections"
+                                        <button
                                             className="mobile-nav-link-item"
-                                            onClick={closeMobileMenu}
-                                            activeClassName="mobile-active-link"
+                                            onClick={() => handleMobileNavigation('/collections')}
                                         >
                                             <FiImage size={20} /> Collections
-                                        </NavLink>
+                                        </button>
                                     </motion.li>
                                     <motion.li
                                         className="mobile-nav-item"
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <NavLink
-                                            to="/about"
+                                        <button
                                             className="mobile-nav-link-item"
-                                            onClick={closeMobileMenu}
-                                            activeClassName="mobile-active-link"
+                                            onClick={() => handleMobileNavigation('/about')}
                                         >
                                             <FiHelpCircle size={20} /> About Us
-                                        </NavLink>
+                                        </button>
                                     </motion.li>
 
                                     {isLoggedIn && (
@@ -967,37 +1403,31 @@ const Header = () => {
                                                 className="mobile-nav-item"
                                                 whileTap={{ scale: 0.98 }}
                                             >
-                                                <NavLink
-                                                    to={`/profile/${userData?.id || 'user'}`}
+                                                <button
                                                     className="mobile-nav-link-item"
-                                                    onClick={closeMobileMenu}
-                                                    activeClassName="mobile-active-link"
+                                                    onClick={() => handleMobileNavigation(`/profile/${userData?.id || 'user'}`)}
                                                 >
                                                     <FiUser size={20} /> Profile
-                                                </NavLink>
+                                                </button>
                                             </motion.li>
                                             <motion.li
                                                 className="mobile-nav-item"
                                                 whileTap={{ scale: 0.98 }}
                                             >
-                                                <NavLink
-                                                    to="/orders"
+                                                <button
                                                     className="mobile-nav-link-item"
-                                                    onClick={closeMobileMenu}
-                                                    activeClassName="mobile-active-link"
+                                                    onClick={() => handleMobileNavigation('/orders')}
                                                 >
                                                     <FiClock size={20} /> Orders
-                                                </NavLink>
+                                                </button>
                                             </motion.li>
                                             <motion.li
                                                 className="mobile-nav-item"
                                                 whileTap={{ scale: 0.98 }}
                                             >
-                                                <NavLink
-                                                    to="/wishlist"
+                                                <button
                                                     className="mobile-nav-link-item"
-                                                    onClick={closeMobileMenu}
-                                                    activeClassName="mobile-active-link"
+                                                    onClick={() => handleMobileNavigation('/wishlist')}
                                                 >
                                                     <FiHeart size={20} /> Wishlist
                                                     {wishlistItemsCount > 0 && (
@@ -1009,20 +1439,18 @@ const Header = () => {
                                                             {wishlistItemsCount}
                                                         </motion.span>
                                                     )}
-                                                </NavLink>
+                                                </button>
                                             </motion.li>
                                             <motion.li
                                                 className="mobile-nav-item"
                                                 whileTap={{ scale: 0.98 }}
                                             >
-                                                <NavLink
-                                                    to="/settings"
+                                                <button
                                                     className="mobile-nav-link-item"
-                                                    onClick={closeMobileMenu}
-                                                    activeClassName="mobile-active-link"
+                                                    onClick={() => handleMobileNavigation('/settings')}
                                                 >
                                                     <FiSettings size={20} /> Settings
-                                                </NavLink>
+                                                </button>
                                             </motion.li>
                                             <motion.li
                                                 className="mobile-nav-item"
@@ -1095,4 +1523,4 @@ const Header = () => {
     );
 };
 
-export default Header;  
+export default Header;

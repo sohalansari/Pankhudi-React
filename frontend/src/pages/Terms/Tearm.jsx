@@ -1,13 +1,26 @@
 import React, { useEffect } from 'react';
+import Footer from "../../components/Footer/Footer"
+import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
 import './Tearm.css';
 
 const TermsAndConditions = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+    const navigate = useNavigate();
+
+
 
     return (
         <div className="terms-container">
+            <header>
+                <button className="back-bt" onClick={() => navigate(-1)}>
+                    <FaArrowLeft /> Back
+                </button>
+                <h2 className='brand-name'>Pankhudi</h2>
+            </header>
             <div className="terms-header">
                 <h1 className="terms-title">Terms & Conditions</h1>
                 <p className="terms-effective-date">Last Updated: {new Date().toLocaleDateString('en-IN')}</p>
@@ -248,6 +261,7 @@ const TermsAndConditions = () => {
                     </ul>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 };

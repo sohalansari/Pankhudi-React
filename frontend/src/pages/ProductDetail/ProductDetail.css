@@ -1664,23 +1664,6 @@
     font-size: 18px;
 }
 
-/* Info States */
-.pankhudi-info-banner {
-    background: linear-gradient(135deg, #d1ecf1, #b6effb);
-    color: #0c5460;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #b6effb;
-    margin: 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.pankhudi-info-banner::before {
-    content: "ℹ️";
-    font-size: 18px;
-}
 
 /* Live Status Indicators */
 .pankhudi-live-badge {

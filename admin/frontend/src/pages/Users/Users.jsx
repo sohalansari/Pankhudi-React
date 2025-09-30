@@ -79,7 +79,40 @@ function Users() {
         }
         return sortable;
     }, [filteredUsers, sortConfig]);
+    // Filter & Search - Updated with proper boolean handling
+    useEffect(() => {
+        let result = users;
 
+        if (searchTerm) {
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(u =>
+                u.name?.toLowerCase().includes(lower) ||
+                u.email?.toLowerCase().includes(lower) ||
+                u.phone?.toLowerCase().includes(lower) ||
+                u.address?.toLowerCase().includes(lower)
+            );
+        }
+
+        // Proper boolean conversion for filters
+        if (filters.verified !== "all") {
+            result = result.filter(u =>
+                Boolean(u.is_verified) === (filters.verified === "true")
+            );
+        }
+        if (filters.premium !== "all") {
+            result = result.filter(u =>
+                Boolean(u.is_premium) === (filters.premium === "true")
+            );
+        }
+        if (filters.active !== "all") {
+            result = result.filter(u =>
+                Boolean(u.is_active) === (filters.active === "true")
+            );
+        }
+
+        setFilteredUsers(result);
+        setCurrentPage(1);
+    }, [users, searchTerm, filters]);
     // Pagination
     const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
     const currentUsers = useMemo(() => {

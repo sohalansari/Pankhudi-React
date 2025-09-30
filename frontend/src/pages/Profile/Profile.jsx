@@ -511,7 +511,8 @@ const Profile = () => {
               </div>
 
               {/* ✅ Fields */}
-// Update your field mapping code with copy functionality
+              *“You can update your profile easily.” <br></br>
+              *“When you update your profile, please log out and log in once to see the proper updates.”
               {["name", "email", "phone", "address"].map((field) => (
                 <div className="profile-item" key={field}>
                   <div className="field-header">

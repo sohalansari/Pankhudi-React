@@ -19,6 +19,7 @@ import About from "./pages/About/About";
 import ScrollToTop from "./context/ScrollToTop";
 import ProtectedRoute from "./context/ProtectedRoute";
 import ProductDetails from "./pages/ProductDetail/ProductDetail";
+import SearchResults from "./pages/SearchResult/SearchResults";
 
 const AppRoutes = () => {
     return (
@@ -37,6 +38,7 @@ const AppRoutes = () => {
                 <Route path="/ai-chat" element={<AIChatbot />} />
                 <Route path="/collections" element={<Collections />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/search" element={<SearchResults />} />
 
                 {/*  Protected Routes */}
                 <Route path="/checkout" element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />

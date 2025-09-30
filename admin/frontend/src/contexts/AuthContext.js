@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import mockApi from '../utils/mockApi'; // Fixed import path
+
 
 const AuthContext = createContext();
 
