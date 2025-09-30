@@ -3,6 +3,98 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ProductDetail.css";
 
+// Separate ReviewItem component to handle hooks properly
+const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Get user's first letter for avatar
+    const getUserInitial = (userName) => {
+        if (!userName) return 'U';
+        return userName.charAt(0).toUpperCase();
+    };
+
+    // Get random background color based on user name
+    const getAvatarColor = (userName) => {
+        if (!userName) return '#007bff';
+
+        const colors = [
+            '#007bff', '#28a745', '#dc3545', '#ffc107',
+            '#6f42c1', '#fd7e14', '#20c997', '#e83e8c'
+        ];
+        const index = userName.charCodeAt(0) % colors.length;
+        return colors[index];
+    };
+
+    const userInitial = getUserInitial(review.user_name);
+    const avatarColor = getAvatarColor(review.user_name);
+    const needsReadMore = review.review.length > 200;
+
+    return (
+        <div className="pankhudi-review-item">
+            <div className="pankhudi-review-header">
+                <div className="pankhudi-reviewer-info">
+                    <div className="pankhudi-avatar-container">
+                        {review.user_image ? (
+                            <img
+                                src={review.user_image}
+                                alt={review.user_name}
+                                className="pankhudi-reviewer-avatar"
+                            />
+                        ) : (
+                            <div
+                                className="pankhudi-avatar-fallback"
+                                style={{ backgroundColor: avatarColor }}
+                            >
+                                {userInitial}
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <h5>{review.user_name || 'Anonymous User'}</h5>
+                        <div className="pankhudi-review-rating">
+                            {'⭐'.repeat(review.rating)}
+                        </div>
+                    </div>
+                </div>
+                <div className="pankhudi-review-meta">
+                    <span className="pankhudi-review-date">
+                        {new Date(review.created_at).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
+                    </span>
+                    {isReviewAuthor(review) && (
+                        <button
+                            className="pankhudi-delete-review-btn"
+                            onClick={() => onDeleteReview(review.id)}
+                            title="Delete this review"
+                        >
+                            🗑️ Delete
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className="pankhudi-review-content-wrapper">
+                <p
+                    className={`pankhudi-review-content ${isExpanded ? 'expanded' : ''}`}
+                >
+                    {review.review}
+                </p>
+
+                {needsReadMore && (
+                    <button
+                        className="pankhudi-read-more-btn"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        {isExpanded ? 'Read Less' : 'Read More'}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const ProductDetailsEnhanced = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -546,7 +638,6 @@ const ProductDetailsEnhanced = () => {
                         ) : (
                             <span className="pankhudi-price">{formatPrice(product.price)}</span>
                         )}
-                        <span className="pankhudi-tax">+ Tax</span>
                     </div>
 
                     {/* Product Variants */}
@@ -836,44 +927,13 @@ const ProductDetailsEnhanced = () => {
                                 ) : (
                                     <div className="pankhudi-reviews-scrollable">
                                         {reviews.map((review) => (
-                                            <div key={review.id} className="pankhudi-review-item">
-                                                <div className="pankhudi-review-header">
-                                                    <div className="pankhudi-reviewer-info">
-                                                        {review.user_image && (
-                                                            <img
-                                                                src={review.user_image}
-                                                                alt={review.user_name}
-                                                                className="pankhudi-reviewer-avatar"
-                                                            />
-                                                        )}
-                                                        <div>
-                                                            <h5>{review.user_name}</h5>
-                                                            <div className="pankhudi-review-rating">
-                                                                {'⭐'.repeat(review.rating)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="pankhudi-review-meta">
-                                                        <span className="pankhudi-review-date">
-                                                            {new Date(review.created_at).toLocaleDateString('en-IN', {
-                                                                year: 'numeric',
-                                                                month: 'long',
-                                                                day: 'numeric'
-                                                            })}
-                                                        </span>
-                                                        {isReviewAuthor(review) && (
-                                                            <button
-                                                                className="pankhudi-delete-review-btn"
-                                                                onClick={() => handleDeleteReview(review.id)}
-                                                                title="Delete this review"
-                                                            >
-                                                                🗑️ Delete
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <p className="pankhudi-review-content">{review.review}</p>
-                                            </div>
+                                            <ReviewItem
+                                                key={review.id}
+                                                review={review}
+                                                currentUser={currentUser}
+                                                onDeleteReview={handleDeleteReview}
+                                                isReviewAuthor={isReviewAuthor}
+                                            />
                                         ))}
                                     </div>
                                 )}

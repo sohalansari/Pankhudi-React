@@ -392,10 +392,10 @@ const Profile = () => {
   return (
     <div className={`profile-page ${theme}`}>
       <div className="profile-header">
-        <button className="back-btn" onClick={() => navigate(-1)}>
+        <button className="back-bt" onClick={() => navigate(-1)}>
           <FaArrowLeft /> Back
         </button>
-        <h2>Pankhudi</h2>
+        <h2 className="brand-name">Pankhudi</h2>
         <button className="logout-btn" onClick={handleLogout}>
           <FaSignOutAlt /> Logout
         </button>

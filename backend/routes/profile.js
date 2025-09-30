@@ -29,7 +29,7 @@ const upload = multer({ storage });
 // ===============================
 router.get("/profile", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id; // ✅ auth.js ke JWT ke hisaab se
+    const userId = req.user.id;
 
     const sql = `
         SELECT id, name, email, phone, address, avatar, is_premium, created_at
@@ -56,7 +56,7 @@ router.get("/profile", authenticate, (req, res) => {
 // ===============================
 router.put("/profile", authenticate, upload.single("avatar"), async (req, res) => {
     const db = req.db;
-    const userId = req.user.id; // ✅ auth.js ke JWT ke hisaab se
+    const userId = req.user.id;
     const { name, email, phone, address, is_premium, password } = req.body;
 
     if (name && name.length < 3) return res.status(400).json({ success: false, message: "Name must be at least 3 characters" });
@@ -89,7 +89,6 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
     db.query(sql, updateValues, (err) => {
         if (err) return res.status(500).json({ success: false, message: "Server error" });
 
-        // Return updated user
         const selectSql = `
             SELECT id, name, email, phone, address, avatar, is_premium, created_at
             FROM users
@@ -103,6 +102,64 @@ router.put("/profile", authenticate, upload.single("avatar"), async (req, res) =
             user.createdAt = user.created_at;
 
             return res.json({ success: true, user });
+        });
+    });
+});
+
+// ===============================
+// @desc    Delete user avatar
+// @route   DELETE /api/profile/avatar
+// @access  Private
+// ===============================
+router.delete("/profile/avatar", authenticate, (req, res) => {
+    const db = req.db;
+    const userId = req.user.id;
+
+    const sql = `SELECT avatar FROM users WHERE id = ?`;
+    db.query(sql, [userId], (err, rows) => {
+        if (err) return res.status(500).json({ success: false, message: "Server error" });
+        if (!rows.length) return res.status(404).json({ success: false, message: "User not found" });
+
+        const avatarPath = rows[0].avatar;
+        if (avatarPath && fs.existsSync(path.join(__dirname, "../", avatarPath))) {
+            fs.unlinkSync(path.join(__dirname, "../", avatarPath));
+        }
+
+        db.query(`UPDATE users SET avatar = NULL WHERE id = ?`, [userId], (err2) => {
+            if (err2) return res.status(500).json({ success: false, message: "Server error" });
+            return res.json({ success: true, message: "Avatar deleted successfully" });
+        });
+    });
+});
+
+// ===============================
+// @desc    Update password
+// @route   PUT /api/profile/password
+// @access  Private
+// ===============================
+router.put("/profile/password", authenticate, async (req, res) => {
+    const db = req.db;
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: "Both current and new password are required" });
+    }
+
+    db.query(`SELECT password FROM users WHERE id = ?`, [userId], async (err, rows) => {
+        if (err) return res.status(500).json({ success: false, message: "Server error" });
+        if (!rows.length) return res.status(404).json({ success: false, message: "User not found" });
+
+        const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
+        if (!isMatch) return res.status(400).json({ success: false, message: "Current password is incorrect" });
+
+        if (newPassword.length < 8) return res.status(400).json({ success: false, message: "New password must be at least 8 characters" });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        db.query(`UPDATE users SET password = ? WHERE id = ?`, [hashedPassword, userId], (err2) => {
+            if (err2) return res.status(500).json({ success: false, message: "Server error" });
+            return res.json({ success: true, message: "Password updated successfully" });
         });
     });
 });
