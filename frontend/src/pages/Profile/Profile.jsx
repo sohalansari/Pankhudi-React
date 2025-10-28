@@ -388,12 +388,15 @@ const Profile = () => {
   if (sessionExpired) {
     return (
       <div className="session-expired">
-        <h2>Session Expired</h2>
-        <p>Your session has expired. Please login again.</p>
-        <button onClick={() => navigate("/login")}>Go to Login</button>
+        <div className="expired-card">
+          <h2>⚠️ Session Expired</h2>
+          <p>Your session has expired. Please login again.</p>
+          <button onClick={() => navigate("/login")}>Go to Login</button>
+        </div>
       </div>
     );
   }
+
   if (!user) return <div className="loading">Loading profile...</div>;
 
   return (

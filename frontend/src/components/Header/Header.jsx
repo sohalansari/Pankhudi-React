@@ -48,6 +48,7 @@ const Header = () => {
     const dropdownRef = useRef(null);
     const searchContainerRef = useRef(null);
     const mobileMenuRef = useRef(null);
+    const mobileSearchContainerRef = useRef(null);
     const navigate = useNavigate();
 
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -94,17 +95,17 @@ const Header = () => {
         const updatedSearches = [
             query,
             ...recentSearches.filter(search => search.toLowerCase() !== query.toLowerCase())
-        ].slice(0, 5); // Keep only last 5 searches
+        ].slice(0, 5);
 
         setRecentSearches(updatedSearches);
         localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     };
 
-    // Refresh trending products manually - FIXED WITH LOADING STATE
+    // Refresh trending products manually
     const refreshTrendingProducts = async () => {
         try {
             setIsRefreshingTrending(true);
-            setTrendingRefreshTime(Date.now()); // Force re-fetch
+            setTrendingRefreshTime(Date.now());
             const res = await fetch(`http://localhost:5000/api/search/trending?t=${Date.now()}`);
             const data = await res.json();
             if (data.success) {
@@ -121,7 +122,7 @@ const Header = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             refreshTrendingProducts();
-        }, 2 * 60 * 1000); // 2 minutes
+        }, 2 * 60 * 1000);
 
         return () => clearInterval(interval);
     }, []);
@@ -184,7 +185,7 @@ const Header = () => {
         return () => window.removeEventListener('storage', updateCounts);
     }, []);
 
-    // Enhanced click outside handler
+    // FIXED: Enhanced click outside handler - Mobile menu won't close when clicking search suggestions
     useEffect(() => {
         const handleClickOutside = (event) => {
             // Close dropdowns
@@ -192,17 +193,31 @@ const Header = () => {
                 setActiveDropdown(null);
             }
 
-            // Close search suggestions when clicking outside
-            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+            // Close search suggestions when clicking outside (desktop)
+            if (searchContainerRef.current &&
+                !searchContainerRef.current.contains(event.target) &&
+                !isMobileMenuOpen) {
                 setShowSearchSuggestions(false);
             }
 
-            // Close mobile menu when clicking outside
+            // FIXED: Don't close mobile menu when clicking on search suggestions
             if (isMobileMenuOpen &&
                 mobileMenuRef.current &&
                 !mobileMenuRef.current.contains(event.target) &&
                 !event.target.closest('.mobile-menu-toggle-btn')) {
-                closeMobileMenu();
+
+                // Check if click is inside mobile search container or suggestions
+                const isClickInMobileSearch = mobileSearchContainerRef.current?.contains(event.target);
+                const isClickInSearchSuggestions = event.target.closest('.mobile-search-suggestions-dropdown');
+                const isClickInSearchInput = event.target.closest('.mobile-search-input-field');
+                const isClickInSearchButton = event.target.closest('.mobile-search-submit-btn');
+                const isClickInSearchOption = event.target.closest('.mobile-search-option-btn');
+
+                // Only close menu if click is NOT in search area
+                if (!isClickInMobileSearch && !isClickInSearchSuggestions &&
+                    !isClickInSearchInput && !isClickInSearchButton && !isClickInSearchOption) {
+                    closeMobileMenu();
+                }
             }
         };
 
@@ -226,19 +241,37 @@ const Header = () => {
                 const res = await fetch(`http://localhost:5000/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
                 if (!res.ok) throw new Error('Suggestions failed');
                 const data = await res.json();
-                setSearchResults(data.suggestions || []);
+
+                const filteredResults = (data.suggestions || []).filter(item =>
+                    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase()))
+                ).sort((a, b) => {
+                    const aStartsWith = a.name.toLowerCase().startsWith(searchQuery.toLowerCase());
+                    const bStartsWith = b.name.toLowerCase().startsWith(searchQuery.toLowerCase());
+
+                    if (aStartsWith && !bStartsWith) return -1;
+                    if (!aStartsWith && bStartsWith) return 1;
+
+                    const aNameMatch = a.name.toLowerCase().indexOf(searchQuery.toLowerCase());
+                    const bNameMatch = b.name.toLowerCase().indexOf(searchQuery.toLowerCase());
+
+                    return aNameMatch - bNameMatch;
+                });
+
+                setSearchResults(filteredResults);
             } catch (err) {
                 console.error('Suggestions error:', err);
                 setSearchResults([]);
             } finally {
                 setSearchLoading(false);
             }
-        }, 300);
+        }, 200);
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Trending Products with cache busting
+    // Trending Products
     useEffect(() => {
         const fetchTrending = async () => {
             try {
@@ -256,23 +289,29 @@ const Header = () => {
     }, [trendingRefreshTime]);
 
     // Enhanced Search Handler
+    // Header.jsx mein handleSearch function update karein
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
         if (searchQuery.trim()) {
             try {
+                // Analyze search query for natural language processing
+                const analyzedQuery = analyzeSearchQuery(searchQuery);
+
                 const response = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(searchQuery)}`);
                 if (!response.ok) throw new Error('Search failed');
                 const data = await response.json();
 
-                // Save to recent searches
                 saveToRecentSearches(searchQuery);
 
-                // Navigate to search results page with data
+                // Navigate to search results page with analyzed data
                 navigate('/search', {
                     state: {
                         searchResults: data.products,
                         searchQuery: searchQuery,
-                        totalResults: data.total
+                        analyzedQuery: analyzedQuery,
+                        totalResults: data.count,
+                        appliedFilters: data.appliedFilters || {},
+                        message: data.message || `Search results for "${searchQuery}"`
                     }
                 });
 
@@ -289,23 +328,56 @@ const Header = () => {
             }
         }
     };
+    // Analyze search query for natural language processing
+    const analyzeSearchQuery = (query) => {
+        const analyzed = {
+            originalQuery: query,
+            searchTerms: query,
+            filters: {},
+            category: null
+        };
 
-    // Enhanced click handler for suggestions - FIXED
-    const handleSuggestionClick = (e, callback) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (callback) {
-            callback();
-        }
+        // Price filters
+        const pricePatterns = [
+            { pattern: /under\s*(\d+)/i, key: 'maxPrice' },
+            { pattern: /below\s*(\d+)/i, key: 'maxPrice' },
+            { pattern: /less than\s*(\d+)/i, key: 'maxPrice' },
+            { pattern: /upto\s*(\d+)/i, key: 'maxPrice' },
+            { pattern: /above\s*(\d+)/i, key: 'minPrice' },
+            { pattern: /over\s*(\d+)/i, key: 'minPrice' }
+        ];
+
+        pricePatterns.forEach(({ pattern, key }) => {
+            const match = query.match(pattern);
+            if (match) {
+                analyzed.filters[key] = parseInt(match[1]);
+                analyzed.searchTerms = analyzed.searchTerms.replace(pattern, '').trim();
+            }
+        });
+
+        // Category detection
+        const categories = ['shoes', 'dress', 'saree', 'jewelry', 'kurta', 'lehenga', 'mobile', 'laptop'];
+        categories.forEach(category => {
+            if (analyzed.searchTerms.toLowerCase().includes(category)) {
+                analyzed.category = category;
+            }
+        });
+
+        return analyzed;
     };
 
-    // Fixed search handlers
+    // Quick search handler
     const handleQuickSearch = (query) => {
         setSearchQuery(query);
         saveToRecentSearches(query);
+
+        // Analyze the query before navigation
+        const analyzedQuery = analyzeSearchQuery(query);
+
         navigate('/search', {
             state: {
-                searchQuery: query
+                searchQuery: query,
+                analyzedQuery: analyzedQuery
             }
         });
         setShowSearchSuggestions(false);
@@ -321,6 +393,18 @@ const Header = () => {
             setSearchResults([]);
             setShowSearchSuggestions(false);
             closeMobileMenu();
+        }
+    };
+
+    // Handle input change
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+
+        if (value.trim().length > 0) {
+            setShowSearchSuggestions(true);
+        } else {
+            setShowSearchSuggestions(false);
         }
     };
 
@@ -342,6 +426,7 @@ const Header = () => {
                 setSearchQuery(transcript);
                 setIsListening(false);
                 searchInputRef.current?.focus();
+                setShowSearchSuggestions(true);
             };
 
             recognition.onerror = (e) => {
@@ -367,8 +452,30 @@ const Header = () => {
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                alert(`Image search for ${file.name} would be processed here`);
-                // Implement actual image search logic here
+                // Implement image search logic here
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch('http://localhost:5000/api/search/image', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            navigate('/search', {
+                                state: {
+                                    searchResults: data.products,
+                                    searchQuery: 'Image Search',
+                                    isImageSearch: true
+                                }
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Image search error:', err);
+                        alert('Image search failed. Please try again.');
+                    });
             }
         };
         input.click();
@@ -443,6 +550,8 @@ const Header = () => {
             setTimeout(() => {
                 searchInputRef.current?.focus();
             }, 100);
+        } else {
+            setShowSearchSuggestions(false);
         }
     };
 
@@ -473,7 +582,23 @@ const Header = () => {
         closeMobileMenu();
     };
 
-    // Render Search Suggestions - COMPLETELY FIXED CLICK ISSUES
+    // Calculate product price
+    const calculateProductPrice = (item) => {
+        const originalPrice = parseFloat(item.originalPrice || item.price || item.mrp || 0);
+        const discountPercentage = parseFloat(item.discountPercentage || item.discount || 0);
+
+        const validDiscount = Math.max(0, Math.min(100, discountPercentage));
+        const discountAmount = validDiscount > 0 ? (originalPrice * validDiscount) / 100 : 0;
+        const finalPrice = validDiscount > 0 ? (originalPrice - discountAmount) : originalPrice;
+
+        return {
+            originalPrice,
+            discountPercentage: validDiscount,
+            finalPrice
+        };
+    };
+
+    // Desktop Search Suggestions
     const renderSearchSuggestions = () => {
         const hasSearchResults = Array.isArray(searchResults) && searchResults.length > 0;
         const hasTrendingProducts = Array.isArray(trendingProducts) && trendingProducts.length > 0;
@@ -484,7 +609,7 @@ const Header = () => {
         return (
             <div
                 className="search-suggestions-dropdown"
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Recent Searches */}
                 {hasRecentSearches && !searchQuery && (
@@ -493,7 +618,11 @@ const Header = () => {
                             <span>Recent Searches</span>
                             <button
                                 className="clear-recent-btn"
-                                onClick={(e) => handleSuggestionClick(e, clearRecentSearches)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    clearRecentSearches();
+                                }}
                             >
                                 Clear
                             </button>
@@ -502,7 +631,11 @@ const Header = () => {
                             <div
                                 key={index}
                                 className="search-suggestion-item recent-search"
-                                onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleQuickSearch(search);
+                                }}
                             >
                                 <FiClock size={16} />
                                 <span>{search}</span>
@@ -522,7 +655,11 @@ const Header = () => {
                                 <button
                                     key={index}
                                     className="popular-tag"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleQuickSearch(search);
+                                    }}
                                 >
                                     {search}
                                 </button>
@@ -539,17 +676,17 @@ const Header = () => {
                             {searchLoading && <span className="searching-text">Searching...</span>}
                         </div>
                         {searchResults.slice(0, 5).map(item => {
-                            // FIXED: Use discount percentage from backend
-                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
-                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
-                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
-                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+                            const { originalPrice, discountPercentage, finalPrice } = calculateProductPrice(item);
 
                             return (
                                 <div
                                     key={item.id}
                                     className="search-suggestion-item product-suggestion"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleProductClick(item.id);
+                                    }}
                                 >
                                     <img
                                         src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
@@ -585,7 +722,11 @@ const Header = () => {
                         {searchResults.length > 5 && (
                             <div
                                 className="view-all-results"
-                                onClick={(e) => handleSuggestionClick(e, handleSearch)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSearch();
+                                }}
                             >
                                 View all {searchResults.length} results for "{searchQuery}"
                             </div>
@@ -600,7 +741,11 @@ const Header = () => {
                             <p>No products found for "{searchQuery}"</p>
                             <button
                                 className="browse-all-btn"
-                                onClick={(e) => handleSuggestionClick(e, () => navigate('/products'))}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    navigate('/products');
+                                }}
                             >
                                 Browse All Products
                             </button>
@@ -615,7 +760,11 @@ const Header = () => {
                             <span>Trending Now</span>
                             <button
                                 className={`refresh-trending-btn ${isRefreshingTrending ? 'refreshing' : ''}`}
-                                onClick={(e) => handleSuggestionClick(e, refreshTrendingProducts)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    refreshTrendingProducts();
+                                }}
                                 title="Refresh trending products"
                                 disabled={isRefreshingTrending}
                             >
@@ -623,17 +772,17 @@ const Header = () => {
                             </button>
                         </div>
                         {trendingProducts.map(item => {
-                            // FIXED: Use discount percentage from backend for trending
-                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
-                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
-                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
-                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+                            const { originalPrice, discountPercentage, finalPrice } = calculateProductPrice(item);
 
                             return (
                                 <div
                                     key={item.id}
                                     className="search-suggestion-item product-suggestion"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleProductClick(item.id);
+                                    }}
                                 >
                                     <img
                                         src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
@@ -668,7 +817,7 @@ const Header = () => {
         );
     };
 
-    // Mobile Search Suggestions - COMPLETELY FIXED CLICK ISSUES
+    // Mobile Search Suggestions
     const renderMobileSearchSuggestions = () => {
         const hasSearchResults = Array.isArray(searchResults) && searchResults.length > 0;
         const hasTrendingProducts = Array.isArray(trendingProducts) && trendingProducts.length > 0;
@@ -679,7 +828,14 @@ const Header = () => {
         return (
             <div
                 className="mobile-search-suggestions-dropdown"
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
             >
                 {/* Recent Searches */}
                 {hasRecentSearches && !searchQuery && (
@@ -688,7 +844,11 @@ const Header = () => {
                             <span>Recent Searches</span>
                             <button
                                 className="mobile-clear-recent-btn"
-                                onClick={(e) => handleSuggestionClick(e, clearRecentSearches)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    clearRecentSearches();
+                                }}
                             >
                                 Clear
                             </button>
@@ -697,7 +857,11 @@ const Header = () => {
                             <div
                                 key={index}
                                 className="mobile-recent-search-item"
-                                onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleQuickSearch(search);
+                                }}
                             >
                                 <FiClock size={16} />
                                 <span>{search}</span>
@@ -717,7 +881,11 @@ const Header = () => {
                                 <button
                                     key={index}
                                     className="mobile-popular-tag"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleQuickSearch(search))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleQuickSearch(search);
+                                    }}
                                 >
                                     {search}
                                 </button>
@@ -734,17 +902,17 @@ const Header = () => {
                             {searchLoading && <span className="searching-text">Searching...</span>}
                         </div>
                         {searchResults.slice(0, 5).map(item => {
-                            // FIXED: Use discount percentage from backend
-                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
-                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
-                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
-                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+                            const { originalPrice, discountPercentage, finalPrice } = calculateProductPrice(item);
 
                             return (
                                 <div
                                     key={item.id}
                                     className="mobile-search-suggestion-item"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleProductClick(item.id);
+                                    }}
                                 >
                                     <img
                                         src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
@@ -764,6 +932,9 @@ const Header = () => {
                                                 <>
                                                     <span className="mobile-discounted-price">₹{finalPrice.toFixed(2)}</span>
                                                     <span className="mobile-original-price">₹{originalPrice.toFixed(2)}</span>
+                                                    <span className="mobile-discount-badge">
+                                                        {discountPercentage}% OFF
+                                                    </span>
                                                 </>
                                             ) : (
                                                 <span className="mobile-normal-price">₹{originalPrice.toFixed(2)}</span>
@@ -777,7 +948,11 @@ const Header = () => {
                         {searchResults.length > 5 && (
                             <div
                                 className="mobile-view-all-results"
-                                onClick={(e) => handleSuggestionClick(e, handleSearch)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSearch();
+                                }}
                             >
                                 View all {searchResults.length} results for "{searchQuery}"
                             </div>
@@ -792,7 +967,11 @@ const Header = () => {
                             <p>No products found for "{searchQuery}"</p>
                             <button
                                 className="mobile-browse-all-btn"
-                                onClick={(e) => handleSuggestionClick(e, () => handleMobileNavigation('/products'))}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleMobileNavigation('/products');
+                                }}
                             >
                                 Browse All Products
                             </button>
@@ -807,7 +986,11 @@ const Header = () => {
                             <span>Trending Now</span>
                             <button
                                 className={`mobile-refresh-trending-btn ${isRefreshingTrending ? 'refreshing' : ''}`}
-                                onClick={(e) => handleSuggestionClick(e, refreshTrendingProducts)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    refreshTrendingProducts();
+                                }}
                                 title="Refresh trending products"
                                 disabled={isRefreshingTrending}
                             >
@@ -815,17 +998,17 @@ const Header = () => {
                             </button>
                         </div>
                         {trendingProducts.map(item => {
-                            // FIXED: Use discount percentage from backend for trending
-                            const originalPrice = parseFloat(item.originalPrice || item.price) || 0;
-                            const discountPercentage = parseFloat(item.discountPercentage || item.discount) || 0;
-                            const discountAmount = discountPercentage > 0 ? (originalPrice * discountPercentage) / 100 : 0;
-                            const finalPrice = discountPercentage > 0 ? (originalPrice - discountAmount) : originalPrice;
+                            const { originalPrice, discountPercentage, finalPrice } = calculateProductPrice(item);
 
                             return (
                                 <div
                                     key={item.id}
                                     className="mobile-search-suggestion-item"
-                                    onClick={(e) => handleSuggestionClick(e, () => handleProductClick(item.id))}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleProductClick(item.id);
+                                    }}
                                 >
                                     <img
                                         src={item.images && item.images.length > 0 ? item.images[0] : '/default-product.png'}
@@ -1004,7 +1187,7 @@ const Header = () => {
                                     type="text"
                                     placeholder="Search for dresses, sarees, jewelry..."
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={handleInputChange}
                                     onFocus={() => setShowSearchSuggestions(true)}
                                     ref={searchInputRef}
                                     className="desktop-search-input-field"
@@ -1291,23 +1474,40 @@ const Header = () => {
                                 )}
                             </div>
 
-                            {/* Mobile Search */}
-                            <div className="mobile-search-wrapper">
+                            {/* FIXED: Mobile Search - Won't close menu when interacting */}
+                            <div
+                                className="mobile-search-wrapper"
+                                ref={mobileSearchContainerRef}
+                                onClick={(e) => {
+                                    // FIXED: Prevent menu close when clicking anywhere in search area
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                            >
                                 <form onSubmit={handleSearch} className="mobile-search-form-container">
                                     <div className="mobile-search-input-group">
                                         <input
                                             type="text"
                                             placeholder="Search for products..."
                                             value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onChange={handleInputChange}
                                             onFocus={() => setShowSearchSuggestions(true)}
                                             className="mobile-search-input-field"
                                             ref={searchInputRef}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            }}
                                         />
                                         <button
                                             type="submit"
                                             className="mobile-search-submit-btn"
                                             disabled={!searchQuery.trim()}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleSearch(e);
+                                            }}
                                         >
                                             <FiSearch size={18} />
                                         </button>
@@ -1316,7 +1516,11 @@ const Header = () => {
                                         <motion.button
                                             type="button"
                                             className={`mobile-search-option-btn ${isListening ? 'voice-active' : ''}`}
-                                            onClick={handleVoiceSearch}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleVoiceSearch();
+                                            }}
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
@@ -1325,7 +1529,11 @@ const Header = () => {
                                         <motion.button
                                             type="button"
                                             className="mobile-search-option-btn"
-                                            onClick={handleImageSearch}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleImageSearch();
+                                            }}
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
@@ -1334,7 +1542,7 @@ const Header = () => {
                                     </div>
                                 </form>
 
-                                {/* Mobile Search Suggestions */}
+                                {/* FIXED: Mobile Search Suggestions */}
                                 {renderMobileSearchSuggestions()}
                             </div>
 

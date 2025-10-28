@@ -466,6 +466,33 @@
     opacity: 0.7;
 }
 
+
+.msg-body p {
+    margin: 4px 0;
+    white-space: pre-wrap;
+    /* keeps line breaks */
+}
+
+.msg-body strong {
+    font-weight: bold;
+    color: var(--accent-color, #8A2BE2);
+}
+
+.msg-body em {
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.msg-body ul,
+.msg-body ol {
+    margin: 6px 0 6px 20px;
+}
+
+.msg-body a {
+    color: #8A2BE2;
+    text-decoration: underline;
+}
+
 .msg-actions {
     display: flex;
     align-items: flex-start;

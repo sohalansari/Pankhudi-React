@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 import './AIChatbot.css';
 
 import {
@@ -657,11 +660,26 @@ function AIChatbot() {
                                         {m.role === 'user' ? <FaUser /> : <FaRobot />}
                                     </div>
                                     <div className="msg-body">
-                                        <p>{m.content}</p>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                p: ({ node, ...props }) => <p {...props} />,
+                                                strong: ({ node, ...props }) => <strong {...props} />,
+                                                em: ({ node, ...props }) => <em {...props} />,
+                                                ul: ({ node, ...props }) => <ul {...props} />,
+                                                li: ({ node, ...props }) => <li {...props} />,
+                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+                                                br: () => <br />,
+                                            }}
+                                        >
+                                            {m.content}
+                                        </ReactMarkdown>
+
                                         {settings.messageTimeStamps && (
                                             <small>{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
                                         )}
                                     </div>
+
                                     <div className="msg-actions">
                                         <button onClick={() => copyMessage(m.content)}><FaCopy /></button>
                                         <button onClick={() => deleteMessage(i)}><FaTrash /></button>

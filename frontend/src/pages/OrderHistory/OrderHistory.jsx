@@ -339,7 +339,7 @@ const OrderHistory = () => {
             <div className="order-history-header">
                 <div className="header-content">
                     <FiShoppingBag className="header-icon" />
-                    <h1>My Orders</h1>
+                    <h1><span className='brand-name'>Pankhudi</span>My Orders</h1>
                     <p>View and manage your order history</p>
                 </div>
                 <div className="order-count-badge">
