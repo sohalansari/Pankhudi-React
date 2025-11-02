@@ -18,6 +18,7 @@ import Collections from "./pages/Collection/Collections";
 import About from "./pages/About/About";
 import ScrollToTop from "./context/ScrollToTop";
 import ProtectedRoute from "./context/ProtectedRoute";
+import PublicRoute from "./context/PublicRoute"; // ✅ new import
 import ProductDetails from "./pages/ProductDetail/ProductDetail";
 import SearchResults from "./pages/SearchResult/SearchResults";
 
@@ -26,27 +27,29 @@ const AppRoutes = () => {
         <>
             <ScrollToTop />
             <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
-                {/* <Route path="/ProductDetail/:id" element={<ProductDetail />} /> */}
                 <Route path="/cart" element={<Cart />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
                 <Route path="/forgot" element={<ForgotPassword />} />
-                <Route path="*" element={<NotFound />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/ai-chat" element={<AIChatbot />} />
                 <Route path="/collections" element={<Collections />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/search" element={<SearchResults />} />
+                <Route path="/ProductDetail/:id" element={<ProductDetails />} />
 
-                {/*  Protected Routes */}
+                {/* Login/Register ko PublicRoute se wrap kiya */}
+                <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
+                <Route path="/register" element={<PublicRoute> <Register /> </PublicRoute>} />
+                {/* Protected Routes */}
                 <Route path="/checkout" element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />
                 <Route path="/profile/:id" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
                 <Route path="/dummy-payment" element={<ProtectedRoute> <DummyPayment /> </ProtectedRoute>} />
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
-                <Route path="/orders" element={<ProtectedRoute> <OrderHistory /></ProtectedRoute>} />
-                <Route path="/ProductDetail/:id" element={<ProductDetails />} />
+                <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </>
     );

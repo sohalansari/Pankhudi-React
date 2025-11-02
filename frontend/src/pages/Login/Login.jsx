@@ -5,7 +5,7 @@ import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext'; // 👈 import here
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
     const [form, setForm] = useState({
@@ -21,8 +21,12 @@ const Login = () => {
     const [loginMethod, setLoginMethod] = useState('email');
     const [rememberMe, setRememberMe] = useState(false);
 
-    const { login } = useAuth(); // 👈 use our context login
+    const { token } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
+    useEffect(() => {
+        if (token) navigate("/", { replace: true });
+    }, [token, navigate])
 
     useEffect(() => {
         window.scrollTo(0, 0);

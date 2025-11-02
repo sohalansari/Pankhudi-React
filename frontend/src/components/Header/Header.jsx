@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { fetchCartCount } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 import {
     FiSearch,
     FiUser,
@@ -49,16 +50,17 @@ const Header = () => {
     const searchContainerRef = useRef(null);
     const mobileMenuRef = useRef(null);
     const mobileSearchContainerRef = useRef(null);
-    const navigate = useNavigate();
 
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
     const [cartItemsCount, setCartItemsCount] = useState(0);
+    const navigate = useNavigate();
+    const { token, logout } = useAuth();
 
     // Popular search suggestions
     const popularSearches = [
-        "Sarees", "Dresses", "Jewelry", "Kurtas", "Lehenga",
-        "Earrings", "Bangles", "Wedding Collection", "Summer Dresses"
+        "Sarees", "Dresses", "Kurtas", "Kurti", "Lehenga",
+        "Bangles", "Wedding Collection", "Summer Dresses"
     ];
 
     // Fetch user data and recent searches
@@ -289,7 +291,6 @@ const Header = () => {
     }, [trendingRefreshTime]);
 
     // Enhanced Search Handler
-    // Header.jsx mein handleSearch function update karein
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
         if (searchQuery.trim()) {
@@ -328,6 +329,7 @@ const Header = () => {
             }
         }
     };
+
     // Analyze search query for natural language processing
     const analyzeSearchQuery = (query) => {
         const analyzed = {
@@ -487,21 +489,34 @@ const Header = () => {
         localStorage.removeItem('recentSearches');
     };
 
-    // Logout Handlers
+    // FIXED: Enhanced Logout Handlers
     const handleLogout = () => {
         setShowLogoutConfirm(true);
     };
 
     const confirmLogout = () => {
+        // Clear all user data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userAddress');
+
+        // Update state
         setIsLoggedIn(false);
         setUserData(null);
         setUserAddress('');
         setActiveDropdown(null);
+
+        // Call context logout if available
+        if (logout) {
+            logout();
+        }
+
+        // Show success message
         setShowLogoutConfirm(false);
         setShowLogoutSuccess(true);
+
+        // Close mobile menu if open
+        closeMobileMenu();
     };
 
     const cancelLogout = () => {
@@ -511,7 +526,6 @@ const Header = () => {
     const handleSuccessClose = () => {
         setShowLogoutSuccess(false);
         navigate('/login');
-        closeMobileMenu();
     };
 
     // Dropdown and Menu Handlers
@@ -1680,7 +1694,7 @@ const Header = () => {
                 )}
             </AnimatePresence>
 
-            {/* Logout Confirmation Dialog */}
+            {/* FIXED: Logout Confirmation Dialog */}
             {showLogoutConfirm && (
                 <div className="custom-alert-overlay">
                     <div className="custom-alert-box">
@@ -1706,7 +1720,7 @@ const Header = () => {
                 </div>
             )}
 
-            {/* Logout Success Dialog */}
+            {/* FIXED: Logout Success Dialog */}
             {showLogoutSuccess && (
                 <div className="custom-alert-overlay">
                     <div className="custom-alert-box">

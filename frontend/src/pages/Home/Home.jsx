@@ -138,7 +138,7 @@ const Home = () => {
                     const sanitized = response.data.map((p, index) => ({
                         id: p._id || p.id || `api-${index}`,
                         name: p.name || "No Name",
-                        description: p.description || "",
+
                         price: Number(p.price) || 0,
                         category: (p.category || "general").toLowerCase(),
                         pattern: (p.pattern || "n/a").toLowerCase(),
@@ -516,9 +516,7 @@ const Home = () => {
                                 {/*  Product Info */}
                                 <div className="product-info">
                                     <h3>{product.name}</h3>
-                                    <p className="description-pp" >
-                                        {product.description.split("\n").slice(0, 3).join("\n")}
-                                    </p>
+
 
                                     <p className="brand">Brand: {product.brand || "N/A"}</p>
 
@@ -554,6 +552,7 @@ const Home = () => {
                                         })}
                                         <span>({(Number(product.rating) || 0).toFixed(1)})</span>
                                     </div>
+
 
                                     {/* Stock and Status */}
                                     <div className="product-meta">
