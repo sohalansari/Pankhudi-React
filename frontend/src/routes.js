@@ -18,9 +18,11 @@ import Collections from "./pages/Collection/Collections";
 import About from "./pages/About/About";
 import ScrollToTop from "./context/ScrollToTop";
 import ProtectedRoute from "./context/ProtectedRoute";
-import PublicRoute from "./context/PublicRoute"; // ✅ new import
+import PublicRoute from "./context/PublicRoute";
 import ProductDetails from "./pages/ProductDetail/ProductDetail";
 import SearchResults from "./pages/SearchResult/SearchResults";
+
+import CategoryPage from "./pages/CategoryPage/CategoryPage";
 
 const AppRoutes = () => {
     return (
@@ -38,6 +40,8 @@ const AppRoutes = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/search" element={<SearchResults />} />
                 <Route path="/ProductDetail/:id" element={<ProductDetails />} />
+                <Route path="/category/:id" element={<CategoryPage />} />
+
 
                 {/* Login/Register ko PublicRoute se wrap kiya */}
                 <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />

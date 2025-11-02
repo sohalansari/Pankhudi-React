@@ -93,5 +93,23 @@ router.get("/related/:category", (req, res) => {
         res.json(results.map(r => parseProduct(r, req)));
     });
 });
+// ------------------ ✅ Get Category-wise Products ------------------
+router.get("/category/:id", (req, res) => {
+    const db = req.db;
+    const categoryId = req.params.id;
+
+    // SQL query to fetch all products for a specific category
+    const sql = "SELECT * FROM products WHERE category_id = ?";
+    db.query(sql, [categoryId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: err.message });
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: "No products found in this category." });
+        }
+
+        res.json(results.map(r => parseProduct(r, req)));
+    });
+});
+
 
 module.exports = router;

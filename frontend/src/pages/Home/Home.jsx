@@ -10,7 +10,7 @@ import './Home.css';
 const getCategoryImage = (category) => {
     const images = {
         dresses: 'https://img.kwcdn.com/product/enhanced_images/4bd92b3ed9fadfea0c9752692a9e19a1_enhanced.jpg?imageView2/2/w/800/q/70',
-        tops: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=500&auto=format&fit=crop',
+        women: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=500&auto=format&fit=crop',
         skirts: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop',
         ethnicwear: 'https://www.lavanyathelabel.com/cdn/shop/files/LBL101KS62_1_1200x.jpg?v=1740035852',
         winterwear: 'https://hulaglobal.com/wp-content/uploads/2024/11/Classic-wool-coat-683x1024.webp',
@@ -30,6 +30,30 @@ const getCategoryImage = (category) => {
     };
     return images[category?.toLowerCase()] || images.general;
 };
+// Category name to ID map
+const getCategoryId = (category) => {
+    const map = {
+        dresses: 1,
+        women: 2,
+        skirts: 3,
+        ethnicwear: 4,
+        winterwear: 5,
+        accessories: 6,
+        lehengas: 7,
+        suits: 8,
+        jeans: 9,
+        footwear: 10,
+        bags: 11,
+        jewelry: 12,
+        lingerie: 13,
+        activewear: 14,
+        swimwear: 15,
+        maternity: 16,
+        plus_size: 17
+    };
+    return map[category?.toLowerCase()] || 0;
+};
+
 
 const getFallbackProductImage = getCategoryImage; // reuse same function
 
@@ -91,7 +115,7 @@ const priceRanges = [
 ];
 
 const predefinedCategories = [
-    'dresses', 'tops', 'skirts', 'ethnicwear', 'winterwear',
+    'dresses', 'women', 'skirts', 'ethnicwear', 'winterwear',
     'accessories', 'lehengas', 'suits', 'jeans', 'footwear',
     'bags', 'jewelry', 'lingerie', 'activewear', 'swimwear',
     'maternity', 'plus_size'
@@ -621,21 +645,20 @@ const Home = () => {
                 <section id="categories-section" className="categories-section">
                     <div className="section-header">
                         <h2>Shop by Category</h2>
-                        <button
-                            className="view-all-btn"
-                            onClick={() => navigateTo('/categories')}
-                        >
+
+                        {/* ✅ View All button will show all categories */}
+                        <button className='view-all-btn' onClick={() => navigate('/category/all')}>
                             View All
                             <span className="arrow-icon">→</span>
                         </button>
                     </div>
+
                     <div className="categories-container">
                         <div className="categories-grid">
                             {categories.slice(0, visibleCategories).map((category, index) => (
                                 <div
                                     key={index}
                                     className="category-card"
-                                    onClick={() => navigateTo(`/category/${category}`)}
                                 >
                                     <div className="category-image-container">
                                         <img
@@ -644,20 +667,28 @@ const Home = () => {
                                             loading="lazy"
                                             className="category-image"
                                             onError={(e) => {
-                                                e.target.src = getFallbackProductImage(category);
+                                                e.target.src = getCategoryImage("general");
                                             }}
                                         />
+
+                                        {/* ✅ Hover button navigates by category ID */}
                                         <div className="category-overlay">
-                                            <button className="shop-now-btn">
-                                                Shop Now
-                                                <span className="btn-arrow">→</span>
+                                            <button
+                                                className="shop-now-btn"
+                                                onClick={() => navigate(`/category/${getCategoryId(category)}`)}
+                                            >
+                                                Shop Now <span className="btn-arrow">→</span>
                                             </button>
                                         </div>
                                     </div>
-                                    <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}</h3>
+
+                                    <h3 className="category-title">
+                                        {category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}
+                                    </h3>
                                 </div>
                             ))}
                         </div>
+
                         {visibleCategories < categories.length && (
                             <div className="show-more-container">
                                 <button className="show-more-btn" onClick={showMoreCategories}>
@@ -667,6 +698,7 @@ const Home = () => {
                         )}
                     </div>
                 </section>
+
                 <section className="newsletter-section">
                     <div className="newsletter-container">
                         <div className="newsletter-text">
