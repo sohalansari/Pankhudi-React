@@ -165,17 +165,11 @@ const Home = () => {
 
                         price: Number(p.price) || 0,
                         category: (p.category || "general").toLowerCase(),
-                        pattern: (p.pattern || "n/a").toLowerCase(),
                         rating: p.rating || 0,
                         discount: p.discount || 0,
-                        stock: p.stock || 0,
-                        brand: p.brand || "Unknown",
-                        status: p.status || "active",
                         image: getProductImage(p),
                         images: p.images || [],
-                        isApiProduct: true,
                         createdAt: p.createdAt || new Date().toISOString(),
-                        tags: p.tags || [],
                         isNew: p.isNew || false,
                     }));
                     setProducts(sanitized);
@@ -540,10 +534,6 @@ const Home = () => {
                                 {/*  Product Info */}
                                 <div className="product-info">
                                     <h3>{product.name}</h3>
-
-
-                                    <p className="brand">Brand: {product.brand || "N/A"}</p>
-
                                     {/* Price Section */}
                                     <div className="price-container">
                                         {product.discount > 0 ? (
@@ -576,26 +566,6 @@ const Home = () => {
                                         })}
                                         <span>({(Number(product.rating) || 0).toFixed(1)})</span>
                                     </div>
-
-
-                                    {/* Stock and Status */}
-                                    <div className="product-meta">
-                                        <p className="stock">
-                                            <span className="meta-label">Stock:</span>
-                                            <span
-                                                className={`stock-value ${product.stock > 0 ? "in-stock" : "out-of-stock"}`}
-                                            >
-                                                {product.stock > 0 ? `${product.stock} available` : "Out of stock"}
-                                            </span>
-                                        </p>
-                                        <p className="status">
-                                            <span className="meta-label">Status:</span>
-                                            <span className={`status-value ${product.status === "Active" ? "active" : "inactive"}`}>
-                                                {product.status || "Active"}
-                                            </span>
-                                        </p>
-                                    </div>
-
                                     {/* Add to Cart */}
                                     <button
                                         className={`add-to-cart ${product.stock <= 0 ? "disabled" : ""}`}

@@ -12,6 +12,7 @@ const chatRoutes = require("./routes/chat");
 const cartRoutes = require("./routes/cart");
 const reviewRoutes = require("./routes/reviews");
 const searchRoutes = require("./routes/searchRoutes");
+const categoryRoutes = require("./routes/categories");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/products", productsRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/search", searchRoutes); // ✅ Search routes added
+app.use("/api/categories", categoryRoutes);
 
 // health
 app.get("/health", (req, res) => res.json({ status: "ok" }));
