@@ -30,6 +30,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin/reports", reportsRoutes);
 app.use("/api/cart", cartRoutes);   // 🛒 cart route enabled
+app.use('/api', require('./routes/categories'));
 
 // ✅ Test route
 app.get("/", (req, res) => {

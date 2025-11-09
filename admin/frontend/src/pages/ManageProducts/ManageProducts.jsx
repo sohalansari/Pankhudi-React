@@ -5,23 +5,19 @@ import "./ManageProducts.css";
 
 const API = "http://localhost:5001/api/products";
 
-// Sample categories data
-const CATEGORIES = [
-    { id: 1, name: "Men's Clothing", description: "Clothing for men" },
-    { id: 2, name: "Women's Clothing", description: "Clothing for women" },
-    { id: 3, name: "Kids' Clothing", description: "Clothing for children" },
-    { id: 4, name: "Accessories", description: "Fashion accessories" },
-    { id: 5, name: "Footwear", description: "Shoes and footwear" }
-];
-
 export default function ManageProducts() {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
+    const [subSubCategories, setSubSubCategories] = useState([]); // ✅ NEW: Sub-sub-categories state
     const [editingProduct, setEditingProduct] = useState(null);
     const [editForm, setEditForm] = useState({});
     const [newImages, setNewImages] = useState([]);
     const [newVideo, setNewVideo] = useState(null);
     const [search, setSearch] = useState("");
     const [filterCategory, setFilterCategory] = useState("");
+    const [filterSubCategory, setFilterSubCategory] = useState("");
+    const [filterSubSubCategory, setFilterSubSubCategory] = useState(""); // ✅ NEW: Sub-sub-category filter
     const [filterBrand, setFilterBrand] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterStock, setFilterStock] = useState("all");
@@ -30,9 +26,30 @@ export default function ManageProducts() {
     const [filterTrending, setFilterTrending] = useState("all");
     const [filterBestseller, setFilterBestseller] = useState("all");
     const [sortBy, setSortBy] = useState("id");
-    const [sortOrder, setSortOrder] = useState("asc");
+    const [sortOrder, setSortOrder] = useState("desc");
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [selectedProducts, setSelectedProducts] = useState([]);
+
+    // ✅ Load categories, sub-categories and sub-sub-categories
+    const fetchCategories = async () => {
+        try {
+            const [categoriesRes, subCategoriesRes, subSubCategoriesRes] = await Promise.all([
+                axios.get(`${API}/categories`),
+                axios.get(`${API}/sub-categories`),
+                axios.get(`${API}/sub-sub-categories`) // ✅ NEW: Fetch sub-sub-categories
+            ]);
+            setCategories(categoriesRes.data);
+            setSubCategories(subCategoriesRes.data);
+            setSubSubCategories(subSubCategoriesRes.data); // ✅ NEW: Set sub-sub-categories
+        } catch (err) {
+            console.error("Error fetching categories:", err);
+        } finally {
+            setCategoriesLoading(false);
+        }
+    };
 
     // ✅ Load products
     const fetchProducts = async () => {
@@ -45,15 +62,40 @@ export default function ManageProducts() {
             const uniqueBrands = [...new Set(res.data.map(p => p.brand))].filter(Boolean);
             setBrands(uniqueBrands);
         } catch (err) {
-            console.error("Error fetching:", err);
+            console.error("Error fetching products:", err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        fetchCategories();
         fetchProducts();
     }, []);
+
+    // ✅ Get filtered sub-categories based on selected category
+    const filteredSubCategories = useMemo(() => {
+        if (!filterCategory) return [];
+        return subCategories.filter(subCat => subCat.category_id == filterCategory);
+    }, [filterCategory, subCategories]);
+
+    // ✅ Get filtered sub-sub-categories based on selected sub-category
+    const filteredSubSubCategories = useMemo(() => {
+        if (!filterSubCategory) return [];
+        return subSubCategories.filter(subSubCat => subSubCat.sub_category_id == filterSubCategory);
+    }, [filterSubCategory, subSubCategories]);
+
+    // ✅ Get sub-categories for edit form based on selected category
+    const editFormSubCategories = useMemo(() => {
+        if (!editForm.category_id) return [];
+        return subCategories.filter(subCat => subCat.category_id == editForm.category_id);
+    }, [editForm.category_id, subCategories]);
+
+    // ✅ Get sub-sub-categories for edit form based on selected sub-category
+    const editFormSubSubCategories = useMemo(() => {
+        if (!editForm.sub_category_id) return [];
+        return subSubCategories.filter(subSubCat => subSubCat.sub_category_id == editForm.sub_category_id);
+    }, [editForm.sub_category_id, subSubCategories]);
 
     // ✅ Delete product
     const deleteProduct = async (id) => {
@@ -61,8 +103,53 @@ export default function ManageProducts() {
         try {
             await axios.delete(`${API}/${id}`);
             setProducts(products.filter((p) => p.id !== id));
+            setSelectedProducts(selectedProducts.filter(productId => productId !== id));
+            alert("✅ Product deleted successfully!");
         } catch (err) {
             console.error("Delete error:", err);
+            alert("❌ Error deleting product: " + (err.response?.data?.error || err.message));
+        }
+    };
+
+    // ✅ Bulk delete products
+    const bulkDeleteProducts = async () => {
+        if (!selectedProducts.length) {
+            alert("Please select products to delete");
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to delete ${selectedProducts.length} products?`)) return;
+
+        try {
+            const deletePromises = selectedProducts.map(id =>
+                axios.delete(`${API}/${id}`)
+            );
+            await Promise.all(deletePromises);
+
+            setProducts(products.filter(p => !selectedProducts.includes(p.id)));
+            setSelectedProducts([]);
+            alert(`✅ ${selectedProducts.length} products deleted successfully!`);
+        } catch (err) {
+            console.error("Bulk delete error:", err);
+            alert("❌ Error deleting products: " + (err.response?.data?.error || err.message));
+        }
+    };
+
+    // ✅ Toggle product selection
+    const toggleProductSelection = (id) => {
+        setSelectedProducts(prev =>
+            prev.includes(id)
+                ? prev.filter(productId => productId !== id)
+                : [...prev, id]
+        );
+    };
+
+    // ✅ Select all products
+    const selectAllProducts = () => {
+        if (selectedProducts.length === filteredAndSortedProducts.length) {
+            setSelectedProducts([]);
+        } else {
+            setSelectedProducts(filteredAndSortedProducts.map(p => p.id));
         }
     };
 
@@ -74,7 +161,26 @@ export default function ManageProducts() {
             sizes: Array.isArray(product.sizes) ? product.sizes : [],
             colors: Array.isArray(product.colors) ? product.colors : [],
             features: Array.isArray(product.features) ? product.features : [],
-            tags: Array.isArray(product.tags) ? product.tags : []
+            tags: Array.isArray(product.tags) ? product.tags : [],
+            category_id: product.category_id || "",
+            sub_category_id: product.sub_category_id || "",
+            sub_sub_category_id: product.sub_sub_category_id || "", // ✅ NEW: Sub-sub-category ID
+            short_description: product.short_description || "",
+            weight: product.weight || "",
+            dimensions: product.dimensions || "",
+            warranty: product.warranty || "",
+            return_policy: product.return_policy || "",
+            slug: product.slug || "",
+            min_order_quantity: product.min_order_quantity || 1,
+            max_order_quantity: product.max_order_quantity || "",
+            low_stock_threshold: product.low_stock_threshold || 10,
+            is_virtual: product.is_virtual || false,
+            is_downloadable: product.is_downloadable || false,
+            download_link: product.download_link || "",
+            shipping_class: product.shipping_class || "",
+            tax_class: product.tax_class || "",
+            shipping_cost: product.shipping_cost || 0,
+            free_shipping: product.free_shipping || false
         });
         setNewImages([]);
         setNewVideo(null);
@@ -86,16 +192,18 @@ export default function ManageProducts() {
         setEditForm({});
         setNewImages([]);
         setNewVideo(null);
+        setSaving(false);
     };
 
-    // ✅ Save edit (with all new fields)
+    // ✅ Save edit (with sub-sub-category support)
     const saveEdit = async () => {
         try {
+            setSaving(true);
             const formData = new FormData();
 
             // Append all form fields
             Object.keys(editForm).forEach((key) => {
-                if (key !== "images" && key !== "video") {
+                if (key !== "images" && key !== "video" && key !== "category_name" && key !== "sub_category_name" && key !== "sub_sub_category_name") {
                     if (Array.isArray(editForm[key])) {
                         // Append array fields as multiple entries
                         editForm[key].forEach(item => formData.append(key, item));
@@ -127,10 +235,12 @@ export default function ManageProducts() {
 
             fetchProducts();
             closeEditModal();
-            alert("Product updated successfully!");
+            alert("✅ Product updated successfully!");
         } catch (err) {
             console.error("Update error:", err);
-            alert("Error updating product: " + (err.response?.data?.error || err.message));
+            alert("❌ Error updating product: " + (err.response?.data?.error || err.message));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -187,6 +297,25 @@ export default function ManageProducts() {
         });
     };
 
+    // ✅ Handle category change in edit form
+    const handleCategoryChange = (categoryId) => {
+        setEditForm({
+            ...editForm,
+            category_id: categoryId,
+            sub_category_id: "", // Reset sub-category when category changes
+            sub_sub_category_id: "" // ✅ NEW: Reset sub-sub-category
+        });
+    };
+
+    // ✅ Handle sub-category change in edit form
+    const handleSubCategoryChange = (subCategoryId) => {
+        setEditForm({
+            ...editForm,
+            sub_category_id: subCategoryId,
+            sub_sub_category_id: "" // ✅ NEW: Reset sub-sub-category when sub-category changes
+        });
+    };
+
     // ✅ Handle sort
     const handleSort = (field) => {
         if (sortBy === field) {
@@ -194,6 +323,25 @@ export default function ManageProducts() {
         } else {
             setSortBy(field);
             setSortOrder("asc");
+        }
+    };
+
+    // ✅ Quick status update
+    const quickUpdateStatus = async (productId, newStatus) => {
+        try {
+            await axios.put(`${API}/${productId}`, {
+                status: newStatus
+            });
+
+            // Update local state
+            setProducts(products.map(p =>
+                p.id === productId ? { ...p, status: newStatus } : p
+            ));
+
+            alert(`✅ Status updated to ${newStatus}`);
+        } catch (err) {
+            console.error("Quick update error:", err);
+            alert("❌ Error updating status");
         }
     };
 
@@ -207,6 +355,8 @@ export default function ManageProducts() {
                 String(p.category_id).includes(search);
 
             const matchesCategory = filterCategory ? p.category_id == filterCategory : true;
+            const matchesSubCategory = filterSubCategory ? p.sub_category_id == filterSubCategory : true;
+            const matchesSubSubCategory = filterSubSubCategory ? p.sub_sub_category_id == filterSubSubCategory : true; // ✅ NEW: Sub-sub-category filter
             const matchesBrand = filterBrand ? p.brand === filterBrand : true;
             const matchesStatus = filterStatus === "all" ? true : p.status === filterStatus;
 
@@ -226,7 +376,7 @@ export default function ManageProducts() {
             const matchesBestseller = filterBestseller === "all" ? true :
                 filterBestseller === "yes" ? p.is_bestseller : !p.is_bestseller;
 
-            return matchesSearch && matchesCategory && matchesBrand &&
+            return matchesSearch && matchesCategory && matchesSubCategory && matchesSubSubCategory && matchesBrand &&
                 matchesStatus && matchesStock && matchesRating &&
                 matchesFeatured && matchesTrending && matchesBestseller;
         });
@@ -237,16 +387,22 @@ export default function ManageProducts() {
             let bValue = b[sortBy];
 
             // Handle numeric values
-            if (sortBy === "price" || sortBy === "stock" || sortBy === "rating" || sortBy === "discount") {
+            if (sortBy === "price" || sortBy === "stock" || sortBy === "rating" || sortBy === "discount" || sortBy === "id") {
                 aValue = Number(aValue);
                 bValue = Number(bValue);
+            }
+
+            // Handle date fields
+            if (sortBy === "created_at" || sortBy === "updated_at") {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
             }
 
             if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
             if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
             return 0;
         });
-    }, [products, search, filterCategory, filterBrand, filterStatus, filterStock,
+    }, [products, search, filterCategory, filterSubCategory, filterSubSubCategory, filterBrand, filterStatus, filterStock,
         filterRating, filterFeatured, filterTrending, filterBestseller, sortBy, sortOrder]);
 
     // ✅ Export products to CSV
@@ -256,12 +412,15 @@ export default function ManageProducts() {
             SKU: p.sku,
             Name: p.name,
             Description: p.description,
+            'Short Description': p.short_description || '',
             Price: p.price,
             Discount: p.discount,
             Rating: p.rating,
             Stock: p.stock,
             Brand: p.brand,
-            Category: CATEGORIES.find(c => c.id === p.category_id)?.name || p.category_id,
+            Category: p.category_name || `Category ${p.category_id}`,
+            'Sub Category': p.sub_category_name || (p.sub_category_id ? `Sub-category ${p.sub_category_id}` : 'Not Set'),
+            'Sub-Sub Category': p.sub_sub_category_name || (p.sub_sub_category_id ? `Sub-sub-category ${p.sub_sub_category_id}` : 'Not Set'), // ✅ NEW: Sub-sub-category in export
             Status: p.status,
             'Is Featured': p.is_featured ? 'Yes' : 'No',
             'Is Trending': p.is_trending ? 'Yes' : 'No',
@@ -270,14 +429,21 @@ export default function ManageProducts() {
             Colors: Array.isArray(p.colors) ? p.colors.join(', ') : p.colors,
             Material: p.material,
             Features: Array.isArray(p.features) ? p.features.join(', ') : p.features,
-            Tags: Array.isArray(p.tags) ? p.tags.join(', ') : p.tags
+            Tags: Array.isArray(p.tags) ? p.tags.join(', ') : p.tags,
+            'Min Order Qty': p.min_order_quantity || 1,
+            'Max Order Qty': p.max_order_quantity || '',
+            'Low Stock Threshold': p.low_stock_threshold || 10,
+            'Virtual Product': p.is_virtual ? 'Yes' : 'No',
+            'Downloadable': p.is_downloadable ? 'Yes' : 'No',
+            'Free Shipping': p.free_shipping ? 'Yes' : 'No',
+            'Shipping Cost': p.shipping_cost || 0
         }));
 
         const csv = Papa.unparse(csvData);
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", "products_export.csv");
+        link.setAttribute("download", `products_export_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -287,6 +453,8 @@ export default function ManageProducts() {
     const clearFilters = () => {
         setSearch("");
         setFilterCategory("");
+        setFilterSubCategory("");
+        setFilterSubSubCategory(""); // ✅ NEW: Clear sub-sub-category filter
         setFilterBrand("");
         setFilterStatus("all");
         setFilterStock("all");
@@ -294,6 +462,7 @@ export default function ManageProducts() {
         setFilterFeatured("all");
         setFilterTrending("all");
         setFilterBestseller("all");
+        setSelectedProducts([]);
     };
 
     // Available options for sizes, colors, features
@@ -304,13 +473,33 @@ export default function ManageProducts() {
     return (
         <div className="manage-products-container">
             <div className="header-bar">
-                <h2>Manage Products</h2>
+                <h2>Manage Products ({products.length})</h2>
                 <div className="actions">
                     <button onClick={exportToCSV} className="btn btn-export">
-                        <span className="icon">⬇</span> Export CSV
+                        <span className="icon">📥</span> Export CSV
                     </button>
+                    {selectedProducts.length > 0 && (
+                        <button onClick={bulkDeleteProducts} className="btn btn-danger">
+                            <span className="icon">🗑</span> Delete Selected ({selectedProducts.length})
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* Bulk Actions */}
+            {selectedProducts.length > 0 && (
+                <div className="bulk-actions-bar">
+                    <span>{selectedProducts.length} product(s) selected</span>
+                    <div className="bulk-actions">
+                        <button onClick={bulkDeleteProducts} className="btn btn-sm btn-danger">
+                            Delete Selected
+                        </button>
+                        <button onClick={() => setSelectedProducts([])} className="btn btn-sm btn-clear">
+                            Clear Selection
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Filters Section */}
             <div className="filters-panel">
@@ -326,12 +515,55 @@ export default function ManageProducts() {
 
                 <div className="filter-group">
                     <label>Category</label>
-                    <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+                    <select value={filterCategory} onChange={(e) => {
+                        setFilterCategory(e.target.value);
+                        setFilterSubCategory(""); // Reset sub-category when category changes
+                        setFilterSubSubCategory(""); // ✅ NEW: Reset sub-sub-category
+                    }}>
                         <option value="">All Categories</option>
-                        {CATEGORIES.map(cat => (
+                        {categories.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                     </select>
+                </div>
+
+                {/* Sub-category filter */}
+                <div className="filter-group">
+                    <label>Sub Category</label>
+                    <select
+                        value={filterSubCategory}
+                        onChange={(e) => {
+                            setFilterSubCategory(e.target.value);
+                            setFilterSubSubCategory(""); // ✅ NEW: Reset sub-sub-category when sub-category changes
+                        }}
+                        disabled={!filterCategory}
+                    >
+                        <option value="">All Sub-categories</option>
+                        {filteredSubCategories.map(subCat => (
+                            <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                        ))}
+                    </select>
+                    {!filterCategory && (
+                        <div className="filter-help-text">Select category first</div>
+                    )}
+                </div>
+
+                {/* ✅ NEW: Sub-sub-category filter */}
+                <div className="filter-group">
+                    <label>Sub-Sub Category</label>
+                    <select
+                        value={filterSubSubCategory}
+                        onChange={(e) => setFilterSubSubCategory(e.target.value)}
+                        disabled={!filterSubCategory}
+                    >
+                        <option value="">All Sub-Sub-categories</option>
+                        {filteredSubSubCategories.map(subSubCat => (
+                            <option key={subSubCat.id} value={subSubCat.id}>{subSubCat.name}</option>
+                        ))}
+                    </select>
+                    {!filterSubCategory && (
+                        <div className="filter-help-text">Select sub-category first</div>
+                    )}
                 </div>
 
                 <div className="filter-group">
@@ -348,7 +580,7 @@ export default function ManageProducts() {
                     <label>Status</label>
                     <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                         <option value="all">All Status</option>
-                        <option value="Active">Active</option>
+                        <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="draft">Draft</option>
                     </select>
@@ -409,15 +641,30 @@ export default function ManageProducts() {
             {/* Results Count */}
             <div className="results-info">
                 <span>Showing {filteredAndSortedProducts.length} of {products.length} products</span>
+                {(filterCategory || filterSubCategory || filterSubSubCategory) && (
+                    <span className="filter-info">
+                        {filterCategory && ` • Category: ${categories.find(c => c.id == filterCategory)?.name}`}
+                        {filterSubCategory && ` • Sub-category: ${subCategories.find(sc => sc.id == filterSubCategory)?.name}`}
+                        {filterSubSubCategory && ` • Sub-sub-category: ${subSubCategories.find(ssc => ssc.id == filterSubSubCategory)?.name}`}
+                    </span>
+                )}
             </div>
 
             {loading ? (
-                <div className="loading">Loading products...</div>
+                <div className="loading">🔄 Loading products...</div>
             ) : (
                 <div className="table-container">
                     <table className="products-table">
                         <thead>
                             <tr>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedProducts.length === filteredAndSortedProducts.length && filteredAndSortedProducts.length > 0}
+                                        onChange={selectAllProducts}
+                                        disabled={filteredAndSortedProducts.length === 0}
+                                    />
+                                </th>
                                 <th onClick={() => handleSort("id")}>
                                     ID {sortBy === "id" && (sortOrder === "asc" ? "↑" : "↓")}
                                 </th>
@@ -436,6 +683,8 @@ export default function ManageProducts() {
                                     Stock {sortBy === "stock" && (sortOrder === "asc" ? "↑" : "↓")}
                                 </th>
                                 <th>Category</th>
+                                <th>Sub Category</th>
+                                <th>Sub-Sub Category</th> {/* ✅ NEW: Sub-sub-category column */}
                                 <th>Brand</th>
                                 <th>Status</th>
                                 <th onClick={() => handleSort("rating")}>
@@ -451,6 +700,13 @@ export default function ManageProducts() {
                             {filteredAndSortedProducts.length > 0 ? (
                                 filteredAndSortedProducts.map((p) => (
                                     <tr key={p.id} className={p.stock === 0 ? "out-of-stock" : p.stock < 10 ? "low-stock" : ""}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProducts.includes(p.id)}
+                                                onChange={() => toggleProductSelection(p.id)}
+                                            />
+                                        </td>
                                         <td>{p.id}</td>
                                         <td className="sku-cell">{p.sku}</td>
                                         <td>
@@ -461,10 +717,16 @@ export default function ManageProducts() {
                                                         src={img}
                                                         alt={p.name}
                                                         className="product-thumb"
+                                                        onError={(e) => {
+                                                            e.target.src = '/placeholder-image.jpg';
+                                                        }}
                                                     />
                                                 ))}
                                                 {p.images?.length > 3 && (
                                                     <span className="more-images">+{p.images.length - 3} more</span>
+                                                )}
+                                                {(!p.images || p.images.length === 0) && (
+                                                    <span className="no-images">📷</span>
                                                 )}
                                             </div>
                                         </td>
@@ -474,10 +736,41 @@ export default function ManageProducts() {
                                         <td className={p.stock === 0 ? "stock-out" : p.stock < 10 ? "stock-low" : ""}>
                                             {p.stock}
                                         </td>
-                                        <td>{CATEGORIES.find(c => c.id === p.category_id)?.name || p.category_id}</td>
-                                        <td>{p.brand}</td>
-                                        <td className={`status-${p.status?.toLowerCase()}`}>
-                                            {p.status}
+                                        <td>
+                                            <span className="category-badge">
+                                                {p.category_name || `Category ${p.category_id}`}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {p.sub_category_name ? (
+                                                <span className="sub-category-badge">
+                                                    {p.sub_category_name}
+                                                </span>
+                                            ) : (
+                                                <span className="no-sub-category">-</span>
+                                            )}
+                                        </td>
+                                        {/* ✅ NEW: Sub-sub-category display */}
+                                        <td>
+                                            {p.sub_sub_category_name ? (
+                                                <span className="sub-sub-category-badge">
+                                                    {p.sub_sub_category_name}
+                                                </span>
+                                            ) : (
+                                                <span className="no-sub-sub-category">-</span>
+                                            )}
+                                        </td>
+                                        <td>{p.brand || '-'}</td>
+                                        <td>
+                                            <select
+                                                value={p.status}
+                                                onChange={(e) => quickUpdateStatus(p.id, e.target.value)}
+                                                className={`status-select status-${p.status}`}
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                                <option value="draft">Draft</option>
+                                            </select>
                                         </td>
                                         <td>
                                             <div className="rating-display">
@@ -509,9 +802,9 @@ export default function ManageProducts() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="15" className="no-results">
+                                    <td colSpan="18" className="no-results"> {/* ✅ UPDATED: colSpan from 17 to 18 */}
                                         <div className="no-results-content">
-                                            <p>No products found matching your criteria</p>
+                                            <p>📭 No products found matching your criteria</p>
                                             <button onClick={clearFilters} className="btn btn-clear">
                                                 Clear Filters
                                             </button>
@@ -534,6 +827,7 @@ export default function ManageProducts() {
                         </div>
 
                         <div className="modal-body">
+                            {/* Basic Information Section */}
                             <div className="form-section">
                                 <h4>Basic Information</h4>
                                 <div className="form-row">
@@ -571,25 +865,70 @@ export default function ManageProducts() {
                                         <label>Category *</label>
                                         <select
                                             value={editForm.category_id || ""}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    category_id: e.target.value,
-                                                })
-                                            }
+                                            onChange={(e) => handleCategoryChange(e.target.value)}
                                         >
                                             <option value="">Select Category</option>
-                                            {CATEGORIES.map(cat => (
+                                            {categories.map(cat => (
                                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                                             ))}
                                         </select>
                                     </div>
+                                    <div className="form-group">
+                                        <label>Sub Category</label>
+                                        <select
+                                            value={editForm.sub_category_id || ""}
+                                            onChange={(e) => handleSubCategoryChange(e.target.value)}
+                                            disabled={!editForm.category_id}
+                                        >
+                                            <option value="">Select Sub-category</option>
+                                            {editFormSubCategories.map(subCat => (
+                                                <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                                            ))}
+                                        </select>
+                                        {!editForm.category_id && (
+                                            <div className="form-help-text">Select a category first</div>
+                                        )}
+                                    </div>
+                                    {/* ✅ NEW: Sub-sub-category field */}
+                                    <div className="form-group">
+                                        <label>Sub-Sub Category</label>
+                                        <select
+                                            value={editForm.sub_sub_category_id || ""}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    sub_sub_category_id: e.target.value,
+                                                })
+                                            }
+                                            disabled={!editForm.sub_category_id}
+                                        >
+                                            <option value="">Select Sub-sub-category</option>
+                                            {editFormSubSubCategories.map(subSubCat => (
+                                                <option key={subSubCat.id} value={subSubCat.id}>{subSubCat.name}</option>
+                                            ))}
+                                        </select>
+                                        {!editForm.sub_category_id && (
+                                            <div className="form-help-text">Select a sub-category first</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Short Description</label>
+                                    <textarea
+                                        rows="2"
+                                        value={editForm.short_description || ""}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, short_description: e.target.value })
+                                        }
+                                        placeholder="Brief description for product listings"
+                                    />
                                 </div>
 
                                 <div className="form-group">
                                     <label>Description</label>
                                     <textarea
-                                        rows="3"
+                                        rows="4"
                                         value={editForm.description || ""}
                                         onChange={(e) =>
                                             setEditForm({
@@ -601,6 +940,7 @@ export default function ManageProducts() {
                                 </div>
                             </div>
 
+                            {/* Pricing & Inventory Section */}
                             <div className="form-section">
                                 <h4>Pricing & Inventory</h4>
                                 <div className="form-row">
@@ -638,6 +978,43 @@ export default function ManageProducts() {
 
                                 <div className="form-row">
                                     <div className="form-group">
+                                        <label>Min Order Quantity</label>
+                                        <input
+                                            type="number"
+                                            value={editForm.min_order_quantity || 1}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, min_order_quantity: e.target.value })
+                                            }
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Max Order Quantity</label>
+                                        <input
+                                            type="number"
+                                            value={editForm.max_order_quantity || ""}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, max_order_quantity: e.target.value })
+                                            }
+                                            placeholder="No limit"
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Low Stock Alert</label>
+                                        <input
+                                            type="number"
+                                            value={editForm.low_stock_threshold || 10}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, low_stock_threshold: e.target.value })
+                                            }
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
                                         <label>Rating</label>
                                         <select
                                             value={editForm.rating || "0"}
@@ -662,7 +1039,7 @@ export default function ManageProducts() {
                                     <div className="form-group">
                                         <label>Status</label>
                                         <select
-                                            value={editForm.status || "Active"}
+                                            value={editForm.status || "active"}
                                             onChange={(e) =>
                                                 setEditForm({
                                                     ...editForm,
@@ -670,7 +1047,7 @@ export default function ManageProducts() {
                                                 })
                                             }
                                         >
-                                            <option value="Active">Active</option>
+                                            <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>
                                             <option value="draft">Draft</option>
                                         </select>
@@ -678,6 +1055,7 @@ export default function ManageProducts() {
                                 </div>
                             </div>
 
+                            {/* Product Variants Section */}
                             <div className="form-section">
                                 <h4>Product Variants</h4>
                                 <div className="form-row">
@@ -714,6 +1092,7 @@ export default function ManageProducts() {
                                 </div>
                             </div>
 
+                            {/* Specifications Section */}
                             <div className="form-section">
                                 <h4>Specifications</h4>
                                 <div className="form-row">
@@ -754,6 +1133,17 @@ export default function ManageProducts() {
                                             onChange={(e) =>
                                                 setEditForm({ ...editForm, warranty: e.target.value })
                                             }
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Return Policy</label>
+                                        <textarea
+                                            rows="2"
+                                            value={editForm.return_policy || ""}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, return_policy: e.target.value })
+                                            }
+                                            placeholder="Return policy details"
                                         />
                                     </div>
                                 </div>
@@ -799,6 +1189,98 @@ export default function ManageProducts() {
                                 </div>
                             </div>
 
+                            {/* Shipping & Digital Settings */}
+                            <div className="form-section">
+                                <h4>Shipping & Digital Settings</h4>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="checkbox-label-large">
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.is_virtual || false}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, is_virtual: e.target.checked })
+                                                }
+                                            />
+                                            <span>Virtual Product (No shipping)</span>
+                                        </label>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="checkbox-label-large">
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.is_downloadable || false}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, is_downloadable: e.target.checked })
+                                                }
+                                            />
+                                            <span>Downloadable Product</span>
+                                        </label>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="checkbox-label-large">
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.free_shipping || false}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, free_shipping: e.target.checked })
+                                                }
+                                            />
+                                            <span>Free Shipping</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {editForm.is_downloadable && (
+                                    <div className="form-group">
+                                        <label>Download Link</label>
+                                        <input
+                                            value={editForm.download_link || ""}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, download_link: e.target.value })
+                                            }
+                                            placeholder="https://example.com/download/file.zip"
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Shipping Class</label>
+                                        <input
+                                            value={editForm.shipping_class || ""}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, shipping_class: e.target.value })
+                                            }
+                                            placeholder="Standard, Express, etc."
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Tax Class</label>
+                                        <input
+                                            value={editForm.tax_class || ""}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, tax_class: e.target.value })
+                                            }
+                                            placeholder="Standard, Reduced, Zero"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Shipping Cost (₹)</label>
+                                        <input
+                                            type="number"
+                                            value={editForm.shipping_cost || 0}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, shipping_cost: e.target.value })
+                                            }
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Marketing Section */}
                             <div className="form-section">
                                 <h4>Marketing</h4>
                                 <div className="form-row">
@@ -841,6 +1323,7 @@ export default function ManageProducts() {
                                 </div>
                             </div>
 
+                            {/* Media Section */}
                             <div className="form-section">
                                 <h4>Media</h4>
                                 <div className="form-group">
@@ -858,6 +1341,9 @@ export default function ManageProducts() {
                                                 </button>
                                             </div>
                                         ))}
+                                        {(!editForm.images || editForm.images.length === 0) && (
+                                            <div className="no-images-message">No images uploaded</div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -869,6 +1355,11 @@ export default function ManageProducts() {
                                         accept="image/*"
                                         onChange={(e) => setNewImages([...e.target.files])}
                                     />
+                                    {newImages.length > 0 && (
+                                        <div className="new-images-info">
+                                            {newImages.length} new image(s) selected
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="form-group">
@@ -893,11 +1384,27 @@ export default function ManageProducts() {
                                         accept="video/*"
                                         onChange={(e) => setNewVideo(e.target.files[0])}
                                     />
+                                    {newVideo && (
+                                        <div className="new-video-info">
+                                            New video selected: {newVideo.name}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
+                            {/* SEO Section */}
                             <div className="form-section">
                                 <h4>SEO</h4>
+                                <div className="form-group">
+                                    <label>URL Slug</label>
+                                    <input
+                                        value={editForm.slug || ""}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, slug: e.target.value })
+                                        }
+                                        placeholder="product-url-slug"
+                                    />
+                                </div>
                                 <div className="form-group">
                                     <label>SEO Title</label>
                                     <input
@@ -930,8 +1437,12 @@ export default function ManageProducts() {
                         </div>
 
                         <div className="modal-footer">
-                            <button className="btn btn-cancel" onClick={closeEditModal}>Cancel</button>
-                            <button className="btn btn-save" onClick={saveEdit}>Save Changes</button>
+                            <button className="btn btn-cancel" onClick={closeEditModal} disabled={saving}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-save" onClick={saveEdit} disabled={saving}>
+                                {saving ? "🔄 Saving..." : "💾 Save Changes"}
+                            </button>
                         </div>
                     </div>
                 </div>

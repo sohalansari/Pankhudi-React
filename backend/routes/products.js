@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-// ------------------ Helper: Parse Product ------------------
+// ------------------ Helper: Parse Product with Sub-Category Support ------------------
+// ------------------ Helper: Parse Product with Sub-Category Support ------------------
 const parseProduct = (r, req) => {
     let imgs = [];
     try {
@@ -28,9 +29,18 @@ const parseProduct = (r, req) => {
         }
     }
 
-    const discountPrice = r.discount && r.discount > 0
-        ? Math.round(r.price * (1 - r.discount / 100))
-        : null;
+    // ✅ FIXED: Correct discount price calculation
+    const originalPrice = parseFloat(r.price) || 0;
+    const discountPercentage = parseFloat(r.discount) || 0;
+
+    let discountPrice = null;
+    if (discountPercentage > 0 && discountPercentage <= 100) {
+        discountPrice = Math.round(originalPrice * (1 - discountPercentage / 100));
+        // Ensure discount price is not higher than original price
+        if (discountPrice >= originalPrice) {
+            discountPrice = null;
+        }
+    }
 
     const createdAt = new Date(r.created_at);
     const now = new Date();
@@ -86,7 +96,7 @@ const parseProduct = (r, req) => {
         }
     }
 
-    // Category handling
+    // Category and Sub-category handling
     let categoryName = 'Uncategorized';
     if (r.category_name) {
         categoryName = r.category_name;
@@ -96,19 +106,28 @@ const parseProduct = (r, req) => {
         categoryName = `Category ${r.category_id}`;
     }
 
+    let subCategoryName = null;
+    if (r.sub_category_name) {
+        subCategoryName = r.sub_category_name;
+    } else if (r.sub_category_id) {
+        subCategoryName = `Sub-category ${r.sub_category_id}`;
+    }
+
     return {
         id: r.id,
         name: r.name,
         sku: r.sku,
         description: r.description,
         short_description: r.short_description,
-        price: parseFloat(r.price) || 0,
-        discount: parseFloat(r.discount) || 0,
-        discountPrice,
+        price: originalPrice, // ✅ Original price
+        discount: discountPercentage, // ✅ Discount percentage
+        discountPrice: discountPrice, // ✅ Correct discounted price
         rating: parseFloat(r.rating) || 0,
         stock: parseInt(r.stock) || 0,
         category_id: r.category_id,
         category: categoryName,
+        sub_category_id: r.sub_category_id,
+        sub_category_name: subCategoryName,
         brand: r.brand || 'Unknown Brand',
 
         // Product specifications
@@ -184,8 +203,7 @@ const parseProduct = (r, req) => {
         updated_at: r.updated_at
     };
 };
-
-// ------------------ Get All Products ------------------
+// ------------------ Get All Products with Sub-Category Support ------------------
 router.get("/", (req, res) => {
     const db = req.db;
 
@@ -196,15 +214,91 @@ router.get("/", (req, res) => {
         });
     }
 
-    const sql = `
-        SELECT p.*, c.name as category_name 
+    const {
+        category_id,
+        sub_category_id,
+        featured,
+        trending,
+        bestseller,
+        search,
+        min_price,
+        max_price,
+        brand,
+        limit = 20,
+        page = 1
+    } = req.query;
+
+    let sql = `
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
-        WHERE p.status = 'Active' 
-        ORDER BY p.created_at DESC
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+        WHERE p.status = 'Active'
     `;
 
-    db.query(sql, (err, results) => {
+    const params = [];
+    const conditions = [];
+
+    // Add search condition
+    if (search) {
+        conditions.push("(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ? OR p.tags LIKE ?)");
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Add category filter
+    if (category_id) {
+        conditions.push("p.category_id = ?");
+        params.push(category_id);
+    }
+
+    // Add sub-category filter
+    if (sub_category_id) {
+        conditions.push("p.sub_category_id = ?");
+        params.push(sub_category_id);
+    }
+
+    // Add brand filter
+    if (brand) {
+        conditions.push("p.brand = ?");
+        params.push(brand);
+    }
+
+    // Add price range filter
+    if (min_price) {
+        conditions.push("p.price >= ?");
+        params.push(min_price);
+    }
+    if (max_price) {
+        conditions.push("p.price <= ?");
+        params.push(max_price);
+    }
+
+    // Add featured/trending/bestseller filters
+    if (featured === 'true') {
+        conditions.push("p.is_featured = 1");
+    }
+    if (trending === 'true') {
+        conditions.push("p.is_trending = 1");
+    }
+    if (bestseller === 'true') {
+        conditions.push("p.is_bestseller = 1");
+    }
+
+    // Combine all conditions
+    if (conditions.length > 0) {
+        sql += " AND " + conditions.join(" AND ");
+    }
+
+    // Add sorting and pagination
+    sql += " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
+    const offset = (page - 1) * limit;
+    params.push(parseInt(limit), offset);
+
+    db.query(sql, params, (err, results) => {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).json({
@@ -218,7 +312,7 @@ router.get("/", (req, res) => {
     });
 });
 
-// ------------------ Get Single Product ------------------
+// ------------------ Get Single Product with Sub-Category Support ------------------
 router.get("/:id", (req, res) => {
     const db = req.db;
 
@@ -232,9 +326,13 @@ router.get("/:id", (req, res) => {
     const productId = req.params.id;
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.id = ?
     `;
 
@@ -259,7 +357,7 @@ router.get("/:id", (req, res) => {
     });
 });
 
-// ------------------ Search Products ------------------
+// ------------------ Search Products with Sub-Category Support ------------------
 router.get("/search", (req, res) => {
     const db = req.db;
 
@@ -273,9 +371,13 @@ router.get("/search", (req, res) => {
     const search = req.query.search || "";
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ? OR p.description LIKE ?) 
         AND p.status = 'Active' 
         LIMIT 10
@@ -295,7 +397,7 @@ router.get("/search", (req, res) => {
     });
 });
 
-// ------------------ Trending Products ------------------
+// ------------------ Trending Products with Sub-Category Support ------------------
 router.get("/trending", (req, res) => {
     const db = req.db;
 
@@ -307,9 +409,13 @@ router.get("/trending", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.is_trending = 1 AND p.status = 'Active' 
         ORDER BY p.created_at DESC 
         LIMIT 5
@@ -329,7 +435,7 @@ router.get("/trending", (req, res) => {
     });
 });
 
-// ------------------ Featured Products ------------------
+// ------------------ Featured Products with Sub-Category Support ------------------
 router.get("/featured", (req, res) => {
     const db = req.db;
 
@@ -341,9 +447,13 @@ router.get("/featured", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.is_featured = 1 AND p.status = 'Active' 
         ORDER BY p.created_at DESC 
         LIMIT 8
@@ -363,7 +473,7 @@ router.get("/featured", (req, res) => {
     });
 });
 
-// ------------------ Bestseller Products ------------------
+// ------------------ Bestseller Products with Sub-Category Support ------------------
 router.get("/bestsellers", (req, res) => {
     const db = req.db;
 
@@ -375,9 +485,13 @@ router.get("/bestsellers", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.is_bestseller = 1 AND p.status = 'Active' 
         ORDER BY p.rating DESC, p.created_at DESC 
         LIMIT 8
@@ -397,7 +511,7 @@ router.get("/bestsellers", (req, res) => {
     });
 });
 
-// ------------------ Sale Products ------------------
+// ------------------ Sale Products with Sub-Category Support ------------------
 router.get("/sale", (req, res) => {
     const db = req.db;
 
@@ -409,9 +523,13 @@ router.get("/sale", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE (p.discount > 0 OR p.is_on_sale = 1) AND p.status = 'Active' 
         ORDER BY p.discount DESC 
         LIMIT 8
@@ -431,7 +549,7 @@ router.get("/sale", (req, res) => {
     });
 });
 
-// ------------------ Related Products ------------------
+// ------------------ Related Products with Sub-Category Support ------------------
 router.get("/related/:category", (req, res) => {
     const db = req.db;
 
@@ -447,9 +565,13 @@ router.get("/related/:category", (req, res) => {
     const excludeId = req.query.exclude || 0;
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.category_id = ? AND p.id != ? AND p.status = 'Active'
         ORDER BY p.rating DESC, p.created_at DESC 
         LIMIT ?
@@ -469,7 +591,7 @@ router.get("/related/:category", (req, res) => {
     });
 });
 
-// ------------------ Get Category-wise Products ------------------
+// ------------------ Get Category-wise Products with Sub-Category Support ------------------
 router.get("/category/:id", (req, res) => {
     const db = req.db;
 
@@ -481,16 +603,30 @@ router.get("/category/:id", (req, res) => {
     }
 
     const categoryId = req.params.id;
+    const { sub_category_id } = req.query;
 
-    const sql = `
-        SELECT p.*, c.name as category_name 
+    let sql = `
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
-        WHERE p.category_id = ? AND p.status = 'Active' 
-        ORDER BY p.created_at DESC
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+        WHERE p.category_id = ? AND p.status = 'Active'
     `;
 
-    db.query(sql, [categoryId], (err, results) => {
+    const params = [categoryId];
+
+    // Add sub-category filter if provided
+    if (sub_category_id) {
+        sql += " AND p.sub_category_id = ?";
+        params.push(sub_category_id);
+    }
+
+    sql += " ORDER BY p.created_at DESC";
+
+    db.query(sql, params, (err, results) => {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).json({
@@ -511,7 +647,7 @@ router.get("/category/:id", (req, res) => {
     });
 });
 
-// ------------------ Get Products by Slug ------------------
+// ------------------ Get Products by Slug with Sub-Category Support ------------------
 router.get("/slug/:slug", (req, res) => {
     const db = req.db;
 
@@ -525,9 +661,13 @@ router.get("/slug/:slug", (req, res) => {
     const slug = req.params.slug;
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.slug = ? AND p.status = 'Active'
     `;
 
@@ -552,7 +692,7 @@ router.get("/slug/:slug", (req, res) => {
     });
 });
 
-// ------------------ Filter Products ------------------
+// ------------------ Filter Products with Sub-Category Support ------------------
 router.get("/filter/products", (req, res) => {
     const db = req.db;
 
@@ -565,6 +705,7 @@ router.get("/filter/products", (req, res) => {
 
     const {
         category,
+        sub_category,
         brand,
         minPrice,
         maxPrice,
@@ -580,9 +721,13 @@ router.get("/filter/products", (req, res) => {
     } = req.query;
 
     let sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.status = 'Active'
     `;
     const params = [];
@@ -591,6 +736,10 @@ router.get("/filter/products", (req, res) => {
     if (category) {
         sql += " AND p.category_id = ?";
         params.push(category);
+    }
+    if (sub_category) {
+        sql += " AND p.sub_category_id = ?";
+        params.push(sub_category);
     }
     if (brand) {
         sql += " AND p.brand = ?";
@@ -641,12 +790,20 @@ router.get("/filter/products", (req, res) => {
         }
 
         // Get total count for pagination
-        let countSql = "SELECT COUNT(*) as total FROM products p WHERE p.status = 'Active'";
+        let countSql = `
+            SELECT COUNT(*) as total 
+            FROM products p 
+            WHERE p.status = 'Active'
+        `;
         const countParams = [];
 
         if (category) {
             countSql += " AND p.category_id = ?";
             countParams.push(category);
+        }
+        if (sub_category) {
+            countSql += " AND p.sub_category_id = ?";
+            countParams.push(sub_category);
         }
         if (brand) {
             countSql += " AND p.brand = ?";
@@ -689,7 +846,7 @@ router.get("/filter/products", (req, res) => {
     });
 });
 
-// ------------------ Get Low Stock Products ------------------
+// ------------------ Get Low Stock Products with Sub-Category Support ------------------
 router.get("/inventory/low-stock", (req, res) => {
     const db = req.db;
 
@@ -701,9 +858,13 @@ router.get("/inventory/low-stock", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.stock <= p.low_stock_threshold AND p.status = 'Active'
         ORDER BY p.stock ASC
     `;
@@ -722,7 +883,7 @@ router.get("/inventory/low-stock", (req, res) => {
     });
 });
 
-// ------------------ Get Products by Brand ------------------
+// ------------------ Get Products by Brand with Sub-Category Support ------------------
 router.get("/brand/:brand", (req, res) => {
     const db = req.db;
 
@@ -736,9 +897,13 @@ router.get("/brand/:brand", (req, res) => {
     const brand = req.params.brand;
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.brand = ? AND p.status = 'Active' 
         ORDER BY p.created_at DESC
     `;
@@ -784,7 +949,7 @@ router.get("/brands/all", (req, res) => {
     });
 });
 
-// ------------------ Get Products with Discount ------------------
+// ------------------ Get Products with Discount with Sub-Category Support ------------------
 router.get("/discount/special", (req, res) => {
     const db = req.db;
 
@@ -796,9 +961,13 @@ router.get("/discount/special", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.discount > 0 AND p.status = 'Active' 
         ORDER BY p.discount DESC 
         LIMIT 8
@@ -818,7 +987,7 @@ router.get("/discount/special", (req, res) => {
     });
 });
 
-// ------------------ Get New Arrivals ------------------
+// ------------------ Get New Arrivals with Sub-Category Support ------------------
 router.get("/new-arrivals", (req, res) => {
     const db = req.db;
 
@@ -830,9 +999,13 @@ router.get("/new-arrivals", (req, res) => {
     }
 
     const sql = `
-        SELECT p.*, c.name as category_name 
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
         WHERE p.status = 'Active' 
         ORDER BY p.created_at DESC 
         LIMIT 8
@@ -844,6 +1017,154 @@ router.get("/new-arrivals", (req, res) => {
             return res.status(500).json({
                 success: false,
                 message: "Database query failed: " + err.message
+            });
+        }
+
+        const products = results.map(r => parseProduct(r, req));
+        res.json(products);
+    });
+});
+
+// ------------------ NEW: Get Categories with Sub-Categories ------------------
+router.get("/categories/with-subcategories", (req, res) => {
+    const db = req.db;
+
+    if (!db) {
+        return res.status(500).json({
+            success: false,
+            message: "Database connection not available"
+        });
+    }
+
+    const sql = `
+        SELECT 
+            c.*,
+            (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id AND p.status = 'Active') as product_count
+        FROM categories c 
+        WHERE c.status = 'active' 
+        ORDER BY c.name
+    `;
+
+    db.query(sql, (err, categories) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Database query failed: " + err.message
+            });
+        }
+
+        // Get sub-categories for each category
+        const getSubCategories = (categoryId) => {
+            return new Promise((resolve) => {
+                const subSql = `
+                    SELECT 
+                        sc.*,
+                        (SELECT COUNT(*) FROM products p WHERE p.sub_category_id = sc.id AND p.status = 'Active') as product_count
+                    FROM sub_categories sc 
+                    WHERE sc.category_id = ? AND sc.status = 'active' 
+                    ORDER BY sc.name
+                `;
+                db.query(subSql, [categoryId], (err, subCategories) => {
+                    if (err) {
+                        console.error("Sub-categories error:", err);
+                        resolve([]);
+                    } else {
+                        resolve(subCategories);
+                    }
+                });
+            });
+        };
+
+        // Fetch sub-categories for all categories
+        Promise.all(categories.map(cat => getSubCategories(cat.id)))
+            .then(subCategoriesArray => {
+                const categoriesWithSubs = categories.map((cat, index) => ({
+                    ...cat,
+                    sub_categories: subCategoriesArray[index]
+                }));
+                res.json(categoriesWithSubs);
+            })
+            .catch(error => {
+                console.error("Error fetching sub-categories:", error);
+                res.json(categories); // Return categories without sub-categories if error
+            });
+    });
+});
+
+// ------------------ NEW: Get Sub-Categories by Category ------------------
+router.get("/categories/:categoryId/sub-categories", (req, res) => {
+    const db = req.db;
+
+    if (!db) {
+        return res.status(500).json({
+            success: false,
+            message: "Database connection not available"
+        });
+    }
+
+    const categoryId = req.params.categoryId;
+
+    const sql = `
+        SELECT 
+            sc.*,
+            (SELECT COUNT(*) FROM products p WHERE p.sub_category_id = sc.id AND p.status = 'Active') as product_count
+        FROM sub_categories sc 
+        WHERE sc.category_id = ? AND sc.status = 'active' 
+        ORDER BY sc.name
+    `;
+
+    db.query(sql, [categoryId], (err, results) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Database query failed: " + err.message
+            });
+        }
+
+        res.json(results);
+    });
+});
+
+// ------------------ NEW: Get Products by Sub-Category ------------------
+router.get("/sub-category/:subCategoryId", (req, res) => {
+    const db = req.db;
+
+    if (!db) {
+        return res.status(500).json({
+            success: false,
+            message: "Database connection not available"
+        });
+    }
+
+    const subCategoryId = req.params.subCategoryId;
+
+    const sql = `
+        SELECT 
+            p.*, 
+            c.name as category_name,
+            sc.name as sub_category_name
+        FROM products p 
+        LEFT JOIN categories c ON p.category_id = c.id 
+        LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+        WHERE p.sub_category_id = ? AND p.status = 'Active' 
+        ORDER BY p.created_at DESC
+    `;
+
+    db.query(sql, [subCategoryId], (err, results) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Database query failed: " + err.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No products found in this sub-category."
             });
         }
 

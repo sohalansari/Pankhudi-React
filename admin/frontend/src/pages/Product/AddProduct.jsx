@@ -1,5 +1,5 @@
-// AddProduct.js - UPDATED WITH CUSTOM FEATURES, COLORS AND SIZES
-import React, { useState } from "react";
+// AddProduct.js - UPDATED WITH PROPER FORM RESET
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import MDEditor from '@uiw/react-md-editor';
 import "./AddProduct.css";
@@ -7,14 +7,18 @@ import "./AddProduct.css";
 const API = "http://localhost:5001";
 
 export default function AddProduct() {
-    const [form, setForm] = useState({
+    // ✅ ENHANCED: Initial form state as a constant for easy reset
+    const initialFormState = {
         name: "",
         description: "",
+        short_description: "",
         price: "",
         discount: "",
         rating: "0",
         stock: "",
         category_id: "",
+        sub_category_id: "",
+        sub_sub_category_id: "",
         brand: "",
         status: "active",
         sizes: [],
@@ -31,22 +35,33 @@ export default function AddProduct() {
         is_bestseller: false,
         seo_title: "",
         seo_description: "",
-        meta_keywords: ""
-    });
+        meta_keywords: "",
+        return_policy: "",
+        slug: "",
+        min_order_quantity: "1",
+        max_order_quantity: "",
+        low_stock_threshold: "10",
+        is_virtual: false,
+        is_downloadable: false,
+        download_link: "",
+        shipping_class: "",
+        tax_class: "",
+        shipping_cost: "0",
+        free_shipping: false
+    };
 
+    const [form, setForm] = useState(initialFormState);
     const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
     const [videoFile, setVideoFile] = useState(null);
     const [videoPreview, setVideoPreview] = useState(null);
-    const [categories, setCategories] = useState([
-        { id: 1, name: "Men's Clothing", description: "Clothing for men" },
-        { id: 2, name: "Women's Clothing", description: "Clothing for women" },
-        { id: 3, name: "Kids' Clothing", description: "Clothing for children" },
-        { id: 4, name: "Accessories", description: "Fashion accessories" },
-        { id: 5, name: "Footwear", description: "Shoes and footwear" }
-    ]);
 
-    // Customizable options that admin can add to
+    // Categories state
+    const [categories, setCategories] = useState([]);
+    const [filteredSubCategories, setFilteredSubCategories] = useState([]);
+    const [filteredSubSubCategories, setFilteredSubSubCategories] = useState([]);
+
+    // Customizable options
     const [availableSizes, setAvailableSizes] = useState(["XS", "S", "M", "L", "XL", "XXL", "XXXL", "28", "30", "32", "34", "36", "38", "40"]);
     const [availableColors, setAvailableColors] = useState(["Red", "Blue", "Green", "Black", "White", "Yellow", "Pink", "Purple", "Orange", "Gray", "Brown", "Multi-color"]);
     const [availableFeatures, setAvailableFeatures] = useState(["Waterproof", "Eco-friendly", "Machine Washable", "Fast Drying", "Wrinkle Resistant", "Stain Resistant", "Breathable", "UV Protection"]);
@@ -56,17 +71,158 @@ export default function AddProduct() {
 
     // Modals state
     const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+    const [showSubSubCategoryModal, setShowSubSubCategoryModal] = useState(false);
     const [showSizeModal, setShowSizeModal] = useState(false);
     const [showColorModal, setShowColorModal] = useState(false);
     const [showFeatureModal, setShowFeatureModal] = useState(false);
 
     const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+    const [newSubCategory, setNewSubCategory] = useState({ name: "", description: "", category_id: "" });
+    const [newSubSubCategory, setNewSubSubCategory] = useState({ name: "", description: "", sub_category_id: "" });
     const [newSize, setNewSize] = useState("");
     const [newColor, setNewColor] = useState("");
     const [newFeature, setNewFeature] = useState("");
 
     const [categoryErrors, setCategoryErrors] = useState({});
+    const [subCategoryErrors, setSubCategoryErrors] = useState({});
+    const [subSubCategoryErrors, setSubSubCategoryErrors] = useState({});
     const [categoryLoading, setCategoryLoading] = useState(false);
+    const [subCategoryLoading, setSubCategoryLoading] = useState(false);
+    const [subSubCategoryLoading, setSubSubCategoryLoading] = useState(false);
+
+    // ✅ NEW: Success state to show confirmation
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    // Fetch categories from database on component mount
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    // Fetch sub-categories when category changes
+    useEffect(() => {
+        if (form.category_id) {
+            fetchSubCategories(form.category_id);
+        } else {
+            setFilteredSubCategories([]);
+            setFilteredSubSubCategories([]);
+            setForm(prev => ({
+                ...prev,
+                sub_category_id: "",
+                sub_sub_category_id: ""
+            }));
+        }
+    }, [form.category_id]);
+
+    // Fetch sub-sub-categories when sub-category changes
+    useEffect(() => {
+        if (form.sub_category_id) {
+            fetchSubSubCategories(form.sub_category_id);
+        } else {
+            setFilteredSubSubCategories([]);
+            setForm(prev => ({ ...prev, sub_sub_category_id: "" }));
+        }
+    }, [form.sub_category_id]);
+
+    // Auto-generate slug from product name
+    useEffect(() => {
+        if (form.name && !form.slug) {
+            const generatedSlug = form.name
+                .toLowerCase()
+                .replace(/[^a-z0-9 -]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim();
+            setForm(prev => ({ ...prev, slug: generatedSlug }));
+        }
+    }, [form.name]);
+
+    // Fetch categories from backend
+    const fetchCategories = async () => {
+        try {
+            console.log('🔄 Fetching categories...');
+            const response = await axios.get(`${API}/api/categories`);
+
+            if (response.data.success) {
+                setCategories(response.data.data);
+                console.log(`✅ Loaded ${response.data.data.length} categories`);
+            } else {
+                console.error('❌ Failed to fetch categories:', response.data.message);
+                setCategories([]);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching categories:', error);
+            setCategories([]);
+        }
+    };
+
+    // Fetch sub-categories from backend
+    const fetchSubCategories = async (categoryId) => {
+        try {
+            console.log(`🔄 Fetching sub-categories for category: ${categoryId}`);
+            const response = await axios.get(`${API}/api/subcategories/${categoryId}`);
+
+            if (response.data.success) {
+                setFilteredSubCategories(response.data.data);
+                setForm(prev => ({
+                    ...prev,
+                    sub_category_id: "",
+                    sub_sub_category_id: ""
+                }));
+                console.log(`✅ Loaded ${response.data.data.length} sub-categories`);
+            } else {
+                console.error('❌ Failed to fetch sub-categories:', response.data.message);
+                setFilteredSubCategories([]);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching sub-categories:', error);
+            setFilteredSubCategories([]);
+        }
+    };
+
+    // Fetch sub-sub-categories from backend
+    const fetchSubSubCategories = async (subCategoryId) => {
+        try {
+            console.log(`🔄 Fetching sub-sub-categories for sub-category: ${subCategoryId}`);
+            const response = await axios.get(`${API}/api/subsubcategories/${subCategoryId}`);
+
+            if (response.data.success) {
+                setFilteredSubSubCategories(response.data.data);
+                setForm(prev => ({ ...prev, sub_sub_category_id: "" }));
+                console.log(`✅ Loaded ${response.data.data.length} sub-sub-categories`);
+            } else {
+                console.error('❌ Failed to fetch sub-sub-categories:', response.data.message);
+                setFilteredSubSubCategories([]);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching sub-sub-categories:', error);
+            setFilteredSubSubCategories([]);
+        }
+    };
+
+    // ✅ ENHANCED: Complete form reset function
+    const resetForm = () => {
+        setForm(initialFormState);
+        setFiles([]);
+
+        // Clean up all preview URLs to prevent memory leaks
+        previews.forEach(url => URL.revokeObjectURL(url));
+        setPreviews([]);
+
+        if (videoPreview) {
+            URL.revokeObjectURL(videoPreview);
+        }
+        setVideoFile(null);
+        setVideoPreview(null);
+
+        setErrors({});
+
+        // Reset file inputs
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.value = '';
+        });
+    };
 
     const validateForm = () => {
         const newErrors = {};
@@ -79,6 +235,11 @@ export default function AddProduct() {
         if (!form.category_id) newErrors.category_id = "Category is required";
         if (files.length === 0) newErrors.images = "At least one image is required";
         if (!form.sku.trim()) newErrors.sku = "SKU is required";
+        if (form.min_order_quantity < 1) newErrors.min_order_quantity = "Minimum order quantity must be at least 1";
+        if (form.max_order_quantity && form.max_order_quantity < form.min_order_quantity) {
+            newErrors.max_order_quantity = "Maximum order quantity must be greater than minimum";
+        }
+        if (form.low_stock_threshold < 0) newErrors.low_stock_threshold = "Low stock threshold cannot be negative";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -88,6 +249,22 @@ export default function AddProduct() {
         const newErrors = {};
         if (!newCategory.name.trim()) newErrors.name = "Category name is required";
         setCategoryErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validateSubCategoryForm = () => {
+        const newErrors = {};
+        if (!newSubCategory.name.trim()) newErrors.name = "Sub-category name is required";
+        if (!newSubCategory.category_id) newErrors.category_id = "Please select a category";
+        setSubCategoryErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validateSubSubCategoryForm = () => {
+        const newErrors = {};
+        if (!newSubSubCategory.name.trim()) newErrors.name = "Sub-sub-category name is required";
+        if (!newSubSubCategory.sub_category_id) newErrors.sub_category_id = "Please select a sub-category";
+        setSubSubCategoryErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
@@ -106,17 +283,43 @@ export default function AddProduct() {
         if (categoryErrors[name]) setCategoryErrors({ ...categoryErrors, [name]: "" });
     };
 
+    const onSubCategoryChange = e => {
+        const { name, value } = e.target;
+        setNewSubCategory({ ...newSubCategory, [name]: value });
+        if (subCategoryErrors[name]) setSubCategoryErrors({ ...subCategoryErrors, [name]: "" });
+    };
+
+    const onSubSubCategoryChange = e => {
+        const { name, value } = e.target;
+        setNewSubSubCategory({ ...newSubSubCategory, [name]: value });
+        if (subSubCategoryErrors[name]) setSubSubCategoryErrors({ ...subSubCategoryErrors, [name]: "" });
+    };
+
     // Markdown editor change handler
     const handleDescriptionChange = (value) => {
         setForm({ ...form, description: value });
         if (errors.description) setErrors({ ...errors, description: "" });
     };
 
-    // Image files handler
+    // ✅ ENHANCED: Image files handler - Admin can select multiple images at once
     const onFiles = e => {
-        const list = Array.from(e.target.files).slice(0, 4);
-        setFiles(list);
-        setPreviews(list.map(f => URL.createObjectURL(f)));
+        const selectedFiles = Array.from(e.target.files);
+
+        // Check if adding new files would exceed the limit
+        const totalFiles = files.length + selectedFiles.length;
+        if (totalFiles > 10) {
+            alert("Maximum 10 images allowed. You can select up to " + (10 - files.length) + " more images.");
+            return;
+        }
+
+        // Combine existing files with new ones
+        const updatedFiles = [...files, ...selectedFiles.slice(0, 10 - files.length)];
+        setFiles(updatedFiles);
+
+        // Create previews for all files
+        const updatedPreviews = updatedFiles.map(f => URL.createObjectURL(f));
+        setPreviews(updatedPreviews);
+
         if (errors.images) setErrors({ ...errors, images: "" });
     };
 
@@ -142,6 +345,10 @@ export default function AddProduct() {
     const removeImage = index => {
         const newFiles = [...files];
         const newPreviews = [...previews];
+
+        // Revoke object URL to prevent memory leaks
+        URL.revokeObjectURL(newPreviews[index]);
+
         newFiles.splice(index, 1);
         newPreviews.splice(index, 1);
         setFiles(newFiles);
@@ -149,11 +356,11 @@ export default function AddProduct() {
     };
 
     const removeVideo = () => {
-        setVideoFile(null);
         if (videoPreview) {
             URL.revokeObjectURL(videoPreview);
-            setVideoPreview(null);
         }
+        setVideoFile(null);
+        setVideoPreview(null);
     };
 
     // Handle multiple selections (sizes, colors, features)
@@ -233,11 +440,97 @@ export default function AddProduct() {
         }
     };
 
+    // Add new category with database
+    const addCategory = async e => {
+        e.preventDefault();
+        if (!validateCategoryForm()) return;
+
+        setCategoryLoading(true);
+        try {
+            const response = await axios.post(`${API}/api/categories`, newCategory);
+
+            if (response.data.success) {
+                // Refresh categories list
+                await fetchCategories();
+                // Set the new category as selected
+                setForm({ ...form, category_id: response.data.data.id });
+
+                alert("✅ Category added successfully!");
+                setShowCategoryModal(false);
+                setNewCategory({ name: "", description: "" });
+            } else {
+                alert("❌ " + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error adding category:', error);
+            alert("❌ Error adding category!");
+        } finally {
+            setCategoryLoading(false);
+        }
+    };
+
+    // Add new sub-category with database
+    const addNewSubCategory = async e => {
+        e.preventDefault();
+        if (!validateSubCategoryForm()) return;
+
+        setSubCategoryLoading(true);
+        try {
+            const response = await axios.post(`${API}/api/subcategories`, newSubCategory);
+
+            if (response.data.success) {
+                // Refresh sub-categories list
+                await fetchSubCategories(form.category_id);
+                // Set the new sub-category as selected
+                setForm(prev => ({ ...prev, sub_category_id: response.data.data.id }));
+
+                alert("✅ Sub-category added successfully!");
+                setShowSubCategoryModal(false);
+                setNewSubCategory({ name: "", description: "", category_id: "" });
+            } else {
+                alert("❌ " + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error adding sub-category:', error);
+            alert("❌ Error adding sub-category!");
+        } finally {
+            setSubCategoryLoading(false);
+        }
+    };
+
+    // Add new sub-sub-category with database
+    const addNewSubSubCategory = async e => {
+        e.preventDefault();
+        if (!validateSubSubCategoryForm()) return;
+
+        setSubSubCategoryLoading(true);
+        try {
+            const response = await axios.post(`${API}/api/subsubcategories`, newSubSubCategory);
+
+            if (response.data.success) {
+                // Refresh sub-sub-categories list
+                await fetchSubSubCategories(form.sub_category_id);
+                // Set the new sub-sub-category as selected
+                setForm(prev => ({ ...prev, sub_sub_category_id: response.data.data.id }));
+
+                alert("✅ Sub-sub-category added successfully!");
+                setShowSubSubCategoryModal(false);
+                setNewSubSubCategory({ name: "", description: "", sub_category_id: "" });
+            } else {
+                alert("❌ " + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error adding sub-sub-category:', error);
+            alert("❌ Error adding sub-sub-category!");
+        } finally {
+            setSubSubCategoryLoading(false);
+        }
+    };
+
     // Remove size from available sizes
     const removeSize = (sizeToRemove) => {
         if (window.confirm(`Are you sure you want to remove "${sizeToRemove}"?`)) {
             setAvailableSizes(availableSizes.filter(size => size !== sizeToRemove));
-            // Also remove from selected sizes in form
             setForm({
                 ...form,
                 sizes: form.sizes.filter(size => size !== sizeToRemove)
@@ -249,7 +542,6 @@ export default function AddProduct() {
     const removeColor = (colorToRemove) => {
         if (window.confirm(`Are you sure you want to remove "${colorToRemove}"?`)) {
             setAvailableColors(availableColors.filter(color => color !== colorToRemove));
-            // Also remove from selected colors in form
             setForm({
                 ...form,
                 colors: form.colors.filter(color => color !== colorToRemove)
@@ -261,7 +553,6 @@ export default function AddProduct() {
     const removeFeature = (featureToRemove) => {
         if (window.confirm(`Are you sure you want to remove "${featureToRemove}"?`)) {
             setAvailableFeatures(availableFeatures.filter(feature => feature !== featureToRemove));
-            // Also remove from selected features in form
             setForm({
                 ...form,
                 features: form.features.filter(feature => feature !== featureToRemove)
@@ -269,6 +560,7 @@ export default function AddProduct() {
         }
     };
 
+    // ✅ ENHANCED: Submit function with proper form reset
     const submit = async e => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -276,7 +568,7 @@ export default function AddProduct() {
         setLoading(true);
         const fd = new FormData();
 
-        // Append all form fields
+        // ✅ FIXED: Append all form fields including sub_sub_category_id
         Object.entries(form).forEach(([key, val]) => {
             if (Array.isArray(val)) {
                 val.forEach(item => fd.append(key, item));
@@ -285,7 +577,7 @@ export default function AddProduct() {
             }
         });
 
-        // Append image files
+        // ✅ ENHANCED: Append multiple image files - Admin can upload multiple images
         files.forEach(f => fd.append("images", f));
 
         // Append video file if exists
@@ -299,43 +591,22 @@ export default function AddProduct() {
                     "Content-Type": "multipart/form-data"
                 }
             });
-            alert("✅ Product added successfully!");
-            // Reset form
-            setForm({
-                name: "",
-                description: "",
-                price: "",
-                discount: "",
-                rating: "0",
-                stock: "",
-                category_id: "",
-                brand: "",
-                status: "active",
-                sizes: [],
-                colors: [],
-                material: "",
-                weight: "",
-                dimensions: "",
-                warranty: "",
-                features: [],
-                tags: [],
-                sku: "",
-                is_featured: false,
-                is_trending: false,
-                is_bestseller: false,
-                seo_title: "",
-                seo_description: "",
-                meta_keywords: ""
-            });
-            setFiles([]);
-            setPreviews([]);
-            setVideoFile(null);
-            if (videoPreview) {
-                URL.revokeObjectURL(videoPreview);
-                setVideoPreview(null);
+
+            if (res.data.success) {
+                // ✅ ENHANCED: Show success message and reset form
+                setShowSuccess(true);
+
+                // Reset the entire form
+                resetForm();
+
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 3000);
+
+            } else {
+                alert("❌ " + res.data.message);
             }
-            setErrors({});
-            console.log(res.data);
         } catch (err) {
             console.error("Error:", err.response?.data || err.message);
             alert("❌ Upload failed! " + (err.response?.data?.message || "Please check your connection."));
@@ -344,30 +615,44 @@ export default function AddProduct() {
         }
     };
 
-    const addCategory = e => {
-        e.preventDefault();
-        if (!validateCategoryForm()) return;
-
-        setCategoryLoading(true);
-        setTimeout(() => {
-            const newCat = {
-                id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
-                name: newCategory.name,
-                description: newCategory.description
-            };
-
-            setCategories([...categories, newCat]);
-            setForm({ ...form, category_id: newCat.id });
-            alert("✅ Category added successfully!");
-
-            setShowCategoryModal(false);
-            setNewCategory({ name: "", description: "" });
-            setCategoryLoading(false);
-        }, 800);
+    // ✅ NEW: Function to add another product (reset form without success message)
+    const addAnotherProduct = () => {
+        resetForm();
+        setShowSuccess(false);
     };
 
     return (
         <div className="premium-container">
+            {/* ✅ ENHANCED: Success Message */}
+            {showSuccess && (
+                <div className="success-overlay">
+                    <div className="success-message">
+                        <div className="success-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <h3 className="success-title">Product Added Successfully!</h3>
+                        <p className="success-subtitle">Your product has been added to the catalog.</p>
+                        <div className="success-actions">
+                            <button
+                                className="success-btn primary"
+                                onClick={addAnotherProduct}
+                            >
+                                Add Another Product
+                            </button>
+                            <button
+                                className="success-btn secondary"
+                                onClick={() => window.location.href = '/products'}
+                            >
+                                View All Products
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="premium-card">
                 <h2 className="premium-title">Add New Product</h2>
                 <p className="premium-subtitle">Fill in the details below to add a new product to your catalog</p>
@@ -416,6 +701,20 @@ export default function AddProduct() {
                             </div>
                         </div>
 
+                        {/* Short Description Field */}
+                        <div className="form-group">
+                            <label htmlFor="short_description" className="form-label">Short Description</label>
+                            <textarea
+                                id="short_description"
+                                name="short_description"
+                                placeholder="Brief description of the product (optional)"
+                                value={form.short_description}
+                                onChange={onChange}
+                                rows="3"
+                                className="form-textarea"
+                            />
+                        </div>
+
                         <div className="form-group">
                             <label htmlFor="description" className="form-label">
                                 Description *
@@ -428,12 +727,17 @@ export default function AddProduct() {
                                     height={200}
                                     preview="edit"
                                     className="md-editor"
+                                    style={{
+                                        color: 'black',
+                                        backgroundColor: 'white'
+                                    }}
                                 />
                             </div>
                             {errors.description && <span className="error-text">{errors.description}</span>}
                         </div>
                     </div>
 
+                    {/* Rest of your form sections remain exactly the same */}
                     {/* Pricing & Inventory Section */}
                     <div className="form-section">
                         <h3 className="section-title">Pricing & Inventory</h3>
@@ -506,6 +810,162 @@ export default function AddProduct() {
                                         ))}
                                 </select>
                                 {errors.rating && <span className="error-text">{errors.rating}</span>}
+                            </div>
+                        </div>
+
+                        {/* Inventory Management Fields */}
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label htmlFor="min_order_quantity" className="form-label">Min Order Quantity</label>
+                                <input
+                                    id="min_order_quantity"
+                                    name="min_order_quantity"
+                                    type="number"
+                                    placeholder="1"
+                                    value={form.min_order_quantity}
+                                    onChange={onChange}
+                                    min="1"
+                                    className={`form-input ${errors.min_order_quantity ? "input-error" : ""}`}
+                                />
+                                {errors.min_order_quantity && <span className="error-text">{errors.min_order_quantity}</span>}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="max_order_quantity" className="form-label">Max Order Quantity</label>
+                                <input
+                                    id="max_order_quantity"
+                                    name="max_order_quantity"
+                                    type="number"
+                                    placeholder="No limit"
+                                    value={form.max_order_quantity}
+                                    onChange={onChange}
+                                    min="1"
+                                    className={`form-input ${errors.max_order_quantity ? "input-error" : ""}`}
+                                />
+                                {errors.max_order_quantity && <span className="error-text">{errors.max_order_quantity}</span>}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="low_stock_threshold" className="form-label">Low Stock Alert</label>
+                                <input
+                                    id="low_stock_threshold"
+                                    name="low_stock_threshold"
+                                    type="number"
+                                    placeholder="10"
+                                    value={form.low_stock_threshold}
+                                    onChange={onChange}
+                                    min="0"
+                                    className={`form-input ${errors.low_stock_threshold ? "input-error" : ""}`}
+                                />
+                                {errors.low_stock_threshold && <span className="error-text">{errors.low_stock_threshold}</span>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Categorization Section */}
+                    <div className="form-section">
+                        <h3 className="section-title">Categorization</h3>
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <div className="category-header">
+                                    <label htmlFor="category_id" className="form-label">Category *</label>
+                                    <button
+                                        type="button"
+                                        className="add-category-btn"
+                                        onClick={() => setShowCategoryModal(true)}
+                                    >
+                                        + Add New
+                                    </button>
+                                </div>
+                                <select
+                                    id="category_id"
+                                    name="category_id"
+                                    value={form.category_id}
+                                    onChange={onChange}
+                                    className={`form-select ${errors.category_id ? "input-error" : ""}`}
+                                >
+                                    <option value="">Select a category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                                {errors.category_id && <span className="error-text">{errors.category_id}</span>}
+                            </div>
+
+                            <div className="form-group">
+                                <div className="category-header">
+                                    <label htmlFor="sub_category_id" className="form-label">Sub Category</label>
+                                    <button
+                                        type="button"
+                                        className="add-category-btn"
+                                        onClick={() => setShowSubCategoryModal(true)}
+                                        disabled={!form.category_id}
+                                    >
+                                        + Add New
+                                    </button>
+                                </div>
+                                <select
+                                    id="sub_category_id"
+                                    name="sub_category_id"
+                                    value={form.sub_category_id}
+                                    onChange={onChange}
+                                    className={`form-select ${errors.sub_category_id ? "input-error" : ""}`}
+                                    disabled={!form.category_id}
+                                >
+                                    <option value="">Select a sub-category</option>
+                                    {filteredSubCategories.map(subCat => (
+                                        <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                                    ))}
+                                </select>
+                                {!form.category_id && (
+                                    <span className="help-text">Please select a category first</span>
+                                )}
+                                {errors.sub_category_id && <span className="error-text">{errors.sub_category_id}</span>}
+                            </div>
+
+                            <div className="form-group">
+                                <div className="category-header">
+                                    <label htmlFor="sub_sub_category_id" className="form-label">Sub-Sub Category</label>
+                                    <button
+                                        type="button"
+                                        className="add-category-btn"
+                                        onClick={() => setShowSubSubCategoryModal(true)}
+                                        disabled={!form.sub_category_id}
+                                    >
+                                        + Add New
+                                    </button>
+                                </div>
+                                <select
+                                    id="sub_sub_category_id"
+                                    name="sub_sub_category_id"
+                                    value={form.sub_sub_category_id}
+                                    onChange={onChange}
+                                    className="form-select"
+                                    disabled={!form.sub_category_id}
+                                >
+                                    <option value="">Select a sub-sub-category</option>
+                                    {filteredSubSubCategories.map(subSubCat => (
+                                        <option key={subSubCat.id} value={subSubCat.id}>{subSubCat.name}</option>
+                                    ))}
+                                </select>
+                                {!form.sub_category_id && (
+                                    <span className="help-text">Please select a sub-category first</span>
+                                )}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="status" className="form-label">Status</label>
+                                <select
+                                    id="status"
+                                    name="status"
+                                    value={form.status}
+                                    onChange={onChange}
+                                    className="form-select"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="draft">Draft</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -708,6 +1168,127 @@ export default function AddProduct() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Return Policy Field */}
+                        <div className="form-group">
+                            <label htmlFor="return_policy" className="form-label">Return Policy</label>
+                            <textarea
+                                id="return_policy"
+                                name="return_policy"
+                                placeholder="Return policy details (optional)"
+                                value={form.return_policy}
+                                onChange={onChange}
+                                rows="3"
+                                className="form-textarea"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Digital Product Section */}
+                    <div className="form-section">
+                        <h3 className="section-title">Digital Product Settings</h3>
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label className="checkbox-label-large">
+                                    <input
+                                        type="checkbox"
+                                        name="is_virtual"
+                                        checked={form.is_virtual}
+                                        onChange={onChange}
+                                        className="checkbox-input"
+                                    />
+                                    <span className="checkbox-text">Virtual Product (No shipping required)</span>
+                                </label>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="checkbox-label-large">
+                                    <input
+                                        type="checkbox"
+                                        name="is_downloadable"
+                                        checked={form.is_downloadable}
+                                        onChange={onChange}
+                                        className="checkbox-input"
+                                    />
+                                    <span className="checkbox-text">Downloadable Product</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {form.is_downloadable && (
+                            <div className="form-group">
+                                <label htmlFor="download_link" className="form-label">Download Link</label>
+                                <input
+                                    id="download_link"
+                                    name="download_link"
+                                    placeholder="https://example.com/download/file.zip"
+                                    value={form.download_link}
+                                    onChange={onChange}
+                                    className="form-input"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Shipping & Tax Section */}
+                    <div className="form-section">
+                        <h3 className="section-title">Shipping & Tax</h3>
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label htmlFor="shipping_class" className="form-label">Shipping Class</label>
+                                <input
+                                    id="shipping_class"
+                                    name="shipping_class"
+                                    placeholder="e.g., Standard, Express, Free"
+                                    value={form.shipping_class}
+                                    onChange={onChange}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="tax_class" className="form-label">Tax Class</label>
+                                <input
+                                    id="tax_class"
+                                    name="tax_class"
+                                    placeholder="e.g., Standard, Reduced, Zero"
+                                    value={form.tax_class}
+                                    onChange={onChange}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="shipping_cost" className="form-label">Shipping Cost (₹)</label>
+                                <div className="input-with-icon">
+                                    <span className="input-icon">₹</span>
+                                    <input
+                                        id="shipping_cost"
+                                        name="shipping_cost"
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={form.shipping_cost}
+                                        onChange={onChange}
+                                        min="0"
+                                        step="0.01"
+                                        className="form-input"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="checkbox-label-large">
+                                    <input
+                                        type="checkbox"
+                                        name="free_shipping"
+                                        checked={form.free_shipping}
+                                        onChange={onChange}
+                                        className="checkbox-input"
+                                    />
+                                    <span className="checkbox-text">Free Shipping</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Marketing & SEO Section */}
@@ -752,6 +1333,20 @@ export default function AddProduct() {
                                     <span className="checkbox-text">Best Seller</span>
                                 </label>
                             </div>
+                        </div>
+
+                        {/* Slug Field */}
+                        <div className="form-group">
+                            <label htmlFor="slug" className="form-label">URL Slug</label>
+                            <input
+                                id="slug"
+                                name="slug"
+                                placeholder="product-url-slug"
+                                value={form.slug}
+                                onChange={onChange}
+                                className="form-input"
+                            />
+                            <span className="help-text">SEO-friendly URL (auto-generated from product name)</span>
                         </div>
 
                         {/* Video Upload Section */}
@@ -841,58 +1436,14 @@ export default function AddProduct() {
                         </div>
                     </div>
 
-                    {/* Categorization Section */}
-                    <div className="form-section">
-                        <h3 className="section-title">Categorization</h3>
-                        <div className="form-grid">
-                            <div className="form-group">
-                                <div className="category-header">
-                                    <label htmlFor="category_id" className="form-label">Category *</label>
-                                    <button
-                                        type="button"
-                                        className="add-category-btn"
-                                        onClick={() => setShowCategoryModal(true)}
-                                    >
-                                        + Add New
-                                    </button>
-                                </div>
-                                <select
-                                    id="category_id"
-                                    name="category_id"
-                                    value={form.category_id}
-                                    onChange={onChange}
-                                    className={`form-select ${errors.category_id ? "input-error" : ""}`}
-                                >
-                                    <option value="">Select a category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                                {errors.category_id && <span className="error-text">{errors.category_id}</span>}
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="status" className="form-label">Status</label>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    value={form.status}
-                                    onChange={onChange}
-                                    className="form-select"
-                                >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="draft">Draft</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Product Images Section */}
+                    {/* ✅ ENHANCED: Product Images Section - Multiple Image Upload */}
                     <div className="form-section">
                         <h3 className="section-title">Product Images</h3>
                         <div className="form-group">
-                            <label htmlFor="images" className="form-label">Upload Images *</label>
+                            <label htmlFor="images" className="form-label">
+                                Upload Images *
+                                <span className="help-text">(You can select multiple images at once - up to 10 images)</span>
+                            </label>
                             <div className="file-upload-area">
                                 <input
                                     id="images"
@@ -911,7 +1462,7 @@ export default function AddProduct() {
                                         </svg>
                                     </div>
                                     <p className="file-upload-text">Drag & drop images here or click to browse</p>
-                                    <p className="file-upload-subtext">Up to 4 images (JPEG, PNG, WEBP)</p>
+                                    <p className="file-upload-subtext">Up to 10 images (JPEG, PNG, WEBP) - {files.length}/10 selected</p>
                                 </div>
                             </div>
                             {errors.images && <span className="error-text">{errors.images}</span>}
@@ -919,7 +1470,7 @@ export default function AddProduct() {
 
                         {previews.length > 0 && (
                             <div className="image-previews">
-                                <p className="preview-title">Selected Images:</p>
+                                <p className="preview-title">Selected Images ({previews.length}/10):</p>
                                 <div className="preview-grid">
                                     {previews.map((src, i) => (
                                         <div key={i} className="preview-item">
@@ -958,6 +1509,7 @@ export default function AddProduct() {
                 </form>
             </div>
 
+            {/* All your modals remain exactly the same */}
             {/* Category Modal */}
             {showCategoryModal && (
                 <SimpleModal
@@ -1017,6 +1569,170 @@ export default function AddProduct() {
                                     </>
                                 ) : (
                                     "Add Category"
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </SimpleModal>
+            )}
+
+            {/* Sub-Category Modal */}
+            {showSubCategoryModal && (
+                <SimpleModal
+                    title="Add New Sub-Category"
+                    onClose={() => {
+                        setShowSubCategoryModal(false);
+                        setNewSubCategory({ name: "", description: "", category_id: "" });
+                        setSubCategoryErrors({});
+                    }}
+                >
+                    <form className="modal-form" onSubmit={addNewSubCategory}>
+                        <div className="form-group">
+                            <label htmlFor="subCategoryName" className="form-label">Sub-Category Name *</label>
+                            <input
+                                id="subCategoryName"
+                                name="name"
+                                placeholder="Enter sub-category name"
+                                value={newSubCategory.name}
+                                onChange={onSubCategoryChange}
+                                className={`form-input ${subCategoryErrors.name ? "input-error" : ""}`}
+                            />
+                            {subCategoryErrors.name && <span className="error-text">{subCategoryErrors.name}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="subCategoryParent" className="form-label">Parent Category *</label>
+                            <select
+                                id="subCategoryParent"
+                                name="category_id"
+                                value={newSubCategory.category_id}
+                                onChange={onSubCategoryChange}
+                                className={`form-select ${subCategoryErrors.category_id ? "input-error" : ""}`}
+                            >
+                                <option value="">Select a category</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                            {subCategoryErrors.category_id && <span className="error-text">{subCategoryErrors.category_id}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="subCategoryDescription" className="form-label">Description</label>
+                            <textarea
+                                id="subCategoryDescription"
+                                name="description"
+                                placeholder="Sub-category description (optional)"
+                                value={newSubCategory.description}
+                                onChange={onSubCategoryChange}
+                                rows="3"
+                                className="form-textarea"
+                            />
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="cancel-btn"
+                                onClick={() => {
+                                    setShowSubCategoryModal(false);
+                                    setNewSubCategory({ name: "", description: "", category_id: "" });
+                                    setSubCategoryErrors({});
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className={`submit-btn ${subCategoryLoading ? "loading" : ""}`}
+                                disabled={subCategoryLoading}
+                            >
+                                {subCategoryLoading ? (
+                                    <>
+                                        <span className="spinner"></span>
+                                        Adding...
+                                    </>
+                                ) : (
+                                    "Add Sub-Category"
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </SimpleModal>
+            )}
+
+            {/* Sub-Sub-Category Modal */}
+            {showSubSubCategoryModal && (
+                <SimpleModal
+                    title="Add New Sub-Sub-Category"
+                    onClose={() => {
+                        setShowSubSubCategoryModal(false);
+                        setNewSubSubCategory({ name: "", description: "", sub_category_id: "" });
+                        setSubSubCategoryErrors({});
+                    }}
+                >
+                    <form className="modal-form" onSubmit={addNewSubSubCategory}>
+                        <div className="form-group">
+                            <label htmlFor="subSubCategoryName" className="form-label">Sub-Sub-Category Name *</label>
+                            <input
+                                id="subSubCategoryName"
+                                name="name"
+                                placeholder="Enter sub-sub-category name"
+                                value={newSubSubCategory.name}
+                                onChange={onSubSubCategoryChange}
+                                className={`form-input ${subSubCategoryErrors.name ? "input-error" : ""}`}
+                            />
+                            {subSubCategoryErrors.name && <span className="error-text">{subSubCategoryErrors.name}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="subSubCategoryParent" className="form-label">Parent Sub-Category *</label>
+                            <select
+                                id="subSubCategoryParent"
+                                name="sub_category_id"
+                                value={newSubSubCategory.sub_category_id}
+                                onChange={onSubSubCategoryChange}
+                                className={`form-select ${subSubCategoryErrors.sub_category_id ? "input-error" : ""}`}
+                            >
+                                <option value="">Select a sub-category</option>
+                                {filteredSubCategories.map(subCat => (
+                                    <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                                ))}
+                            </select>
+                            {subSubCategoryErrors.sub_category_id && <span className="error-text">{subSubCategoryErrors.sub_category_id}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="subSubCategoryDescription" className="form-label">Description</label>
+                            <textarea
+                                id="subSubCategoryDescription"
+                                name="description"
+                                placeholder="Sub-sub-category description (optional)"
+                                value={newSubSubCategory.description}
+                                onChange={onSubSubCategoryChange}
+                                rows="3"
+                                className="form-textarea"
+                            />
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="cancel-btn"
+                                onClick={() => {
+                                    setShowSubSubCategoryModal(false);
+                                    setNewSubSubCategory({ name: "", description: "", sub_category_id: "" });
+                                    setSubSubCategoryErrors({});
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className={`submit-btn ${subSubCategoryLoading ? "loading" : ""}`}
+                                disabled={subSubCategoryLoading}
+                            >
+                                {subSubCategoryLoading ? (
+                                    <>
+                                        <span className="spinner"></span>
+                                        Adding...
+                                    </>
+                                ) : (
+                                    "Add Sub-Sub-Category"
                                 )}
                             </button>
                         </div>

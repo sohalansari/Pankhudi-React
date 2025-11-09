@@ -13,7 +13,6 @@ const cartRoutes = require("./routes/cart");
 const reviewRoutes = require("./routes/reviews");
 const searchRoutes = require("./routes/searchRoutes");
 const categoryRoutes = require("./routes/categories");
-
 const app = express();
 
 // body & cors
