@@ -7,13 +7,13 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
 
     const menuItems = [
         { path: "/dashboard", name: "Dashboard", icon: "📊" },
-        { path: "/users", name: "Users", icon: "👥" },
-        { path: "/add-product", name: "Add Product", icon: "➕" },
-        { path: "/products", name: "Manage Products", icon: "🛒" },
         { path: "/reports", name: "Reports", icon: "📄" },
-        { path: "/settings", name: "Settings", icon: "⚙️" },
+        { path: "/users", name: "Users", icon: "👥" },
         { path: "/cart", name: "User  Cart", icon: "📈" },
-        { path: "/content", name: "Content", icon: "📝" },
+        { path: "/products", name: "Manage Products", icon: "🛒" },
+        { path: "/add-product", name: "Add Product", icon: "➕" },
+        { path: "/settings", name: "Settings", icon: "⚙️" },
+        { path: "/categories", name: "Manage Category", icon: "📝" },
         { path: "/help", name: "Help & Support", icon: "❓" },
 
 

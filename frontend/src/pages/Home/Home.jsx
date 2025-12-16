@@ -1,5 +1,3 @@
-//------------Home.jsx ---------------
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
@@ -8,8 +6,18 @@ import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
 import './Home.css';
 
+// Category ID mapping ke liye variable
+let categoryIdMap = {
+    'Women': null,
+    'Men': null,
+    'Kids': null,
+    'Ethnic Wear': null,
+    'Western Wear': null,
+    'Accessories': null
+};
+
 // Enhanced Women's Fashion Categories with better images
-const getCategoryImage = (category) => {
+const getCategoryImage = (categoryName) => {
     const images = {
         sarees: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=600&auto=format&fit=crop&q=80',
         dresses: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80',
@@ -29,107 +37,60 @@ const getCategoryImage = (category) => {
         plussize: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&auto=format&fit=crop&q=80',
         general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&auto=format&fit=crop&q=80'
     };
-    return images[category?.toLowerCase()] || images.general;
-};
 
-// Category name to ID map
-const getCategoryId = (category) => {
-    const map = {
-        sarees: 1,
-        dresses: 2,
-        kurtas: 3,
-        lehengas: 4,
-        suits: 5,
-        ethnicwear: 6,
-        westernwear: 7,
-        winterwear: 8,
-        accessories: 9,
-        jewelry: 10,
-        handbags: 11,
-        footwear: 12,
-        lingerie: 13,
-        activewear: 14,
-        maternity: 15,
-        plussize: 16
-    };
-    return map[category?.toLowerCase()] || 0;
+    // Check if category name exists in images, otherwise use general
+    const lowerCaseName = categoryName?.toLowerCase() || '';
+    for (const [key, value] of Object.entries(images)) {
+        if (lowerCaseName.includes(key) || key.includes(lowerCaseName)) {
+            return value;
+        }
+    }
+    return images.general;
 };
 
 const getFallbackProductImage = getCategoryImage;
 
-// Enhanced Slider Items with Category Integration
+// Enhanced Slider Items
 const sliderItems = [
     {
         id: 1,
         image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&auto=format&fit=crop&q=80',
         title: 'Summer Collection 2024',
         subtitle: 'Fresh styles for the modern woman',
-        link: '/category/dresses',
+        link: '/category/all',
         buttonText: 'Shop Now',
         theme: 'summer',
-        discount: '40% OFF',
-        category: 'dresses'
+        discount: '40% OFF'
     },
     {
         id: 2,
         image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=80',
         title: 'Ethnic Elegance',
         subtitle: 'Traditional wear for special occasions',
-        link: '/category/ethnicwear',
+        link: '/category/ethnic',
         buttonText: 'Explore',
         theme: 'ethnic',
-        discount: '35% OFF',
-        category: 'ethnicwear'
+        discount: '35% OFF'
     },
     {
         id: 3,
         image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=1200&auto=format&fit=crop&q=80',
         title: 'Winter Fashion',
         subtitle: 'Stay warm and stylish',
-        link: '/category/winterwear',
+        link: '/category/winter',
         buttonText: 'Discover',
         theme: 'winter',
-        discount: '30% OFF',
-        category: 'winterwear'
+        discount: '30% OFF'
     },
     {
         id: 4,
         image: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=1200&auto=format&fit=crop&q=80',
         title: 'Festive Special',
         subtitle: 'Sparkle this festive season',
-        link: '/category/sarees',
+        link: '/category/festive',
         buttonText: 'View Collection',
         theme: 'festive',
-        discount: '25% OFF',
-        category: 'sarees'
-    }
-];
-
-// Category-wise product sections
-const featuredCategories = [
-    {
-        name: 'sarees',
-        title: 'Traditional Sarees',
-        description: 'Elegant sarees for every occasion',
-        viewAllLink: '/category/sarees'
-    },
-    {
-        name: 'dresses',
-        title: 'Western Dresses',
-        description: 'Trendy dresses for modern women',
-        viewAllLink: '/category/dresses'
-    },
-    {
-        name: 'kurtas',
-        title: 'Designer Kurtas',
-        description: 'Comfortable and stylish kurtas',
-        viewAllLink: '/category/kurtas'
-    },
-    {
-        name: 'lehengas',
-        title: 'Bridal Lehengas',
-        description: 'Stunning lehengas for special events',
-        viewAllLink: '/category/lehengas'
+        discount: '25% OFF'
     }
 ];
 
@@ -142,17 +103,12 @@ const priceRanges = [
     { value: '5000+', label: 'Over ₹5000' }
 ];
 
-const predefinedCategories = [
-    'sarees', 'dresses', 'kurtas', 'lehengas', 'suits',
-    'ethnicwear', 'westernwear', 'winterwear', 'accessories',
-    'jewelry', 'handbags', 'footwear', 'lingerie', 'activewear',
-    'maternity', 'plussize'
-];
-
 const Home = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [autoPlay, setAutoPlay] = useState(true);
-    const [categories, setCategories] = useState(predefinedCategories);
+    const [mainCategories, setMainCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
+    const [subSubCategories, setSubSubCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [progress, setProgress] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -166,7 +122,8 @@ const Home = () => {
     const [cart, setCart] = useState([]);
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [showQuickView, setShowQuickView] = useState(false);
-    const [activeCategory, setActiveCategory] = useState('all');
+    const [activeCategory, setActiveCategory] = useState({ type: 'all', id: null });
+    const [displayLimit, setDisplayLimit] = useState(20);
 
     // Scroll functionality states
     const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -180,6 +137,100 @@ const Home = () => {
     const navigate = useNavigate();
     const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                setIsLoading(true);
+
+                // Fetch main categories
+                const mainCatResponse = await axios.get(`${API}/api/categories`);
+                if (Array.isArray(mainCatResponse.data)) {
+                    // Database se aaye categories ko store karo
+                    const categoriesFromDB = mainCatResponse.data;
+                    setMainCategories(categoriesFromDB);
+
+                    // Category ID map ko update karo
+                    categoriesFromDB.forEach(cat => {
+                        const categoryName = cat.name || '';
+                        if (categoryName.toLowerCase().includes('women')) {
+                            categoryIdMap['Women'] = cat.id;
+                        } else if (categoryName.toLowerCase().includes('men')) {
+                            categoryIdMap['Men'] = cat.id;
+                        } else if (categoryName.toLowerCase().includes('kid')) {
+                            categoryIdMap['Kids'] = cat.id;
+                        } else if (categoryName.toLowerCase().includes('ethnic')) {
+                            categoryIdMap['Ethnic Wear'] = cat.id;
+                        } else if (categoryName.toLowerCase().includes('western')) {
+                            categoryIdMap['Western Wear'] = cat.id;
+                        } else if (categoryName.toLowerCase().includes('accessor')) {
+                            categoryIdMap['Accessories'] = cat.id;
+                        }
+                    });
+
+                    console.log('✅ Category ID Mapping:', categoryIdMap);
+                }
+
+                // Fetch sub categories
+                const subCatResponse = await axios.get(`${API}/api/subcategories`);
+                if (Array.isArray(subCatResponse.data)) {
+                    setSubCategories(subCatResponse.data);
+                }
+
+                // Fetch sub-sub categories
+                const subSubCatResponse = await axios.get(`${API}/api/subsubcategories`);
+                if (Array.isArray(subSubCatResponse.data)) {
+                    setSubSubCategories(subSubCatResponse.data);
+                }
+
+            } catch (err) {
+                console.error('❌ Error fetching categories:', err);
+
+                // Fallback demo categories - database style
+                const demoMainCategories = [
+                    { id: 1, name: 'Men', slug: 'men', image: getCategoryImage('men') },
+                    { id: 2, name: 'Women', slug: 'women', image: getCategoryImage('women') },
+                    { id: 3, name: 'Kids', slug: 'kids', image: getCategoryImage('kids') },
+                    { id: 4, name: 'Ethnic Wear', slug: 'ethnic-wear', image: getCategoryImage('ethnicwear') },
+                    { id: 5, name: 'Western Wear', slug: 'western-wear', image: getCategoryImage('westernwear') },
+                    { id: 6, name: 'Accessories', slug: 'accessories', image: getCategoryImage('accessories') }
+                ];
+
+                const demoSubCategories = [
+                    { id: 1, name: 'Sarees', category_id: 2, slug: 'sarees' }, // Women (ID:2)
+                    { id: 2, name: 'Kurtas', category_id: 2, slug: 'kurtas' }, // Women (ID:2)
+                    { id: 3, name: 'Lehengas', category_id: 2, slug: 'lehengas' }, // Women (ID:2)
+                    { id: 4, name: 'Shirts', category_id: 1, slug: 'shirts' }, // Men (ID:1)
+                    { id: 5, name: 'T-Shirts', category_id: 1, slug: 't-shirts' }, // Men (ID:1)
+                    { id: 6, name: 'Jeans', category_id: 1, slug: 'jeans' } // Men (ID:1)
+                ];
+
+                // Demo data ke liye bhi mapping set karo
+                demoMainCategories.forEach(cat => {
+                    const categoryName = cat.name || '';
+                    if (categoryName.toLowerCase().includes('women')) {
+                        categoryIdMap['Women'] = cat.id;
+                    } else if (categoryName.toLowerCase().includes('men')) {
+                        categoryIdMap['Men'] = cat.id;
+                    } else if (categoryName.toLowerCase().includes('kid')) {
+                        categoryIdMap['Kids'] = cat.id;
+                    } else if (categoryName.toLowerCase().includes('ethnic')) {
+                        categoryIdMap['Ethnic Wear'] = cat.id;
+                    } else if (categoryName.toLowerCase().includes('western')) {
+                        categoryIdMap['Western Wear'] = cat.id;
+                    } else if (categoryName.toLowerCase().includes('accessor')) {
+                        categoryIdMap['Accessories'] = cat.id;
+                    }
+                });
+
+                setMainCategories(demoMainCategories);
+                setSubCategories(demoSubCategories);
+            }
+        };
+
+        fetchCategories();
+    }, [API]);
+
+    // ✅ Fetch Products
     const getProductImage = useCallback((product) => {
         if (product.images && product.images.length > 0) {
             const firstImage = product.images[0];
@@ -195,50 +246,25 @@ const Home = () => {
         return getFallbackProductImage(product.category);
     }, [API]);
 
-    // ✅ FIXED: Correct Discount Calculation with Decimal Support
+    // ✅ Discount Calculation
     const calculateDiscountPercentage = useCallback((product) => {
         const originalPrice = Number(product.price) || 0;
-
-        // ✅ CORRECT: Backend me 'discountPrice' field hai, 'discount_price' nahi
         const discountPrice = Number(product.discountPrice) || 0;
 
-        console.log(`🔍 Discount Check - ${product.name}:`, {
-            originalPrice,
-            discountPrice,
-            hasValidDiscount: discountPrice > 0 && discountPrice < originalPrice
-        });
-
-        // Only calculate discount if discountPrice is valid and less than original price
         if (discountPrice > 0 && discountPrice < originalPrice) {
-            // ✅ FIXED: Use toFixed(1) for one decimal place instead of Math.round()
             const percentage = ((originalPrice - discountPrice) / originalPrice) * 100;
-            const roundedPercentage = parseFloat(percentage.toFixed(1)); // 33.33% instead of 33%
-
-            console.log(`✅ Valid discount: ${roundedPercentage}% for ${product.name}`);
+            const roundedPercentage = parseFloat(percentage.toFixed(1));
             return roundedPercentage;
         }
-
-        console.log(`❌ No valid discount for ${product.name}`);
         return 0;
     }, []);
 
-    // ✅ FIXED: Get Display Price with Correct Backend Field Names
+    // ✅ Get Display Price
     const getDisplayPrice = useCallback((product) => {
         const originalPrice = Number(product.price) || 0;
-
-        // ✅ CORRECT: Backend me 'discountPrice' field hai
         const discountPrice = Number(product.discountPrice) || 0;
         const discountPercentage = calculateDiscountPercentage(product);
-
         const hasValidDiscount = discountPercentage > 0;
-
-        console.log(`💰 ${product.name}:`, {
-            originalPrice,
-            discountPrice,
-            discountPercentage,
-            hasValidDiscount,
-            finalPrice: hasValidDiscount ? discountPrice : originalPrice
-        });
 
         return {
             originalPrice,
@@ -248,32 +274,55 @@ const Home = () => {
         };
     }, [calculateDiscountPercentage]);
 
-    // ✅ FIXED: Product Data Sanitization with Correct Backend Fields
+    // ✅ Product Data Sanitization - DYNAMIC CATEGORY MAPPING
     const sanitizeProductData = useCallback((products) => {
         return products.map((product, index) => {
             const originalPrice = Number(product.price) || 0;
-
-            // ✅ CORRECT: Backend me 'discountPrice' field hai
             const discountPrice = Number(product.discountPrice) || 0;
-
-            // Use only database discount, don't add automatic discounts
             const discountPercentage = calculateDiscountPercentage(product);
 
-            console.log(`🔄 Sanitizing ${product.name}:`, {
-                dbPrice: originalPrice,
-                dbDiscountPrice: discountPrice,
-                calculatedDiscount: discountPercentage
-            });
+            // Extract category information
+            let categoryId = product.category_id || product.categoryId;
+
+            // Agar category_id nahi hai ya product category name se match karo
+            if (!categoryId || isNaN(categoryId)) {
+                const categoryName = (product.category || "").toLowerCase();
+
+                // Category name se ID map karo
+                if (categoryName.includes('women')) {
+                    categoryId = categoryIdMap['Women'];
+                } else if (categoryName.includes('men')) {
+                    categoryId = categoryIdMap['Men'];
+                } else if (categoryName.includes('kid')) {
+                    categoryId = categoryIdMap['Kids'];
+                } else if (categoryName.includes('ethnic')) {
+                    categoryId = categoryIdMap['Ethnic Wear'];
+                } else if (categoryName.includes('western')) {
+                    categoryId = categoryIdMap['Western Wear'];
+                } else if (categoryName.includes('accessor')) {
+                    categoryId = categoryIdMap['Accessories'];
+                } else {
+                    categoryId = null;
+                }
+            }
+
+            // Convert to number
+            categoryId = Number(categoryId) || null;
 
             return {
                 id: product.id || product._id || `api-${index}`,
                 name: product.name || "No Name",
                 stock: Number(product.stock) || 0,
                 price: originalPrice,
-                discountPrice: discountPrice, // ✅ Keep original discountPrice from database
+                discountPrice: discountPrice,
                 category: (product.category || "general").toLowerCase(),
+                sub_category: product.sub_category || '',
+                sub_sub_category: product.sub_sub_category || '',
+                category_id: categoryId,
+                sub_category_id: Number(product.sub_category_id) || null,
+                sub_sub_category_id: Number(product.sub_sub_category_id) || null,
                 rating: product.rating || 0,
-                discount: discountPercentage, // Only calculated percentage for display
+                discount: discountPercentage,
                 image: getProductImage(product),
                 images: product.images || [],
                 createdAt: product.created_at || product.createdAt || new Date().toISOString(),
@@ -282,37 +331,26 @@ const Home = () => {
                 description: product.description || 'No description available',
                 sizes: product.sizes || ['S', 'M', 'L', 'XL'],
                 colors: product.colors || ['Black', 'White', 'Red', 'Blue'],
-                hasDiscount: discountPercentage > 0 // Only true if valid discount from database
+                hasDiscount: discountPercentage > 0
             };
         });
     }, [calculateDiscountPercentage, getProductImage]);
 
-    // ✅ FIXED: Fetch Products with Proper Discount Handling
+    // ✅ Fetch Products
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setIsLoading(true);
-                console.log('🔄 Fetching products from:', `${API}/api/products`);
-
                 const response = await axios.get(`${API}/api/products`);
-                console.log('📦 API Response received:', response.data);
-
                 if (Array.isArray(response.data)) {
-                    // Sanitize product data without adding automatic discounts
                     const sanitized = sanitizeProductData(response.data);
-
-                    console.log('🎯 Final Products with Discounts:', sanitized.map(p => ({
+                    console.log('✅ Products loaded with category mapping:', sanitized.map(p => ({
                         name: p.name,
-                        price: p.price,
-                        discountPrice: p.discountPrice,
-                        discount: p.discount,
-                        hasDiscount: p.hasDiscount
+                        category: p.category,
+                        category_id: p.category_id,
+                        mapped_to: mainCategories.find(c => c.id === p.category_id)?.name || 'Unknown'
                     })));
-
                     setProducts(sanitized);
-
-                    const productCategories = [...new Set(sanitized.map(p => p.category))];
-                    setCategories([...new Set([...predefinedCategories, ...productCategories])]);
                 } else {
                     console.error('❌ API response is not an array:', response.data);
                     throw new Error('Invalid API response format');
@@ -320,280 +358,146 @@ const Home = () => {
             } catch (err) {
                 console.error('❌ Error fetching products:', err);
 
-                // Fallback demo products with proper discount structure matching backend fields
+                // Fallback demo products with dynamic category mapping
                 const demoProducts = [
                     {
                         id: 'demo-1',
                         name: 'Floral Print Maxi Dress',
                         stock: 10,
                         price: 1999,
-                        discountPrice: 1499, // ✅ CORRECT: discountPrice field
-                        category: 'dresses',
+                        discountPrice: 1499,
+                        category: 'Women',
+                        sub_category: 'Dresses',
                         rating: 4.5,
                         image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop&q=80',
                         isNew: true
                     },
                     {
                         id: 'demo-2',
+                        name: 'Men\'s Casual T-Shirt',
+                        stock: 15,
+                        price: 999,
+                        discountPrice: 799,
+                        category: 'Men',
+                        sub_category: 'Tops',
+                        rating: 4.3,
+                        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=80',
+                        isNew: false
+                    },
+                    {
+                        id: 'demo-3',
                         name: 'Silk Banarasi Saree',
                         stock: 5,
                         price: 3500,
-                        discountPrice: 3500, // No discount (same as price)
-                        category: 'sarees',
+                        discountPrice: 3500,
+                        category: 'Women',
+                        sub_category: 'Sarees',
                         rating: 4.8,
                         image: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=500&auto=format&fit=crop&q=80'
                     },
                     {
-                        id: 'demo-3',
+                        id: 'demo-4',
                         name: 'Designer Anarkali Kurta',
                         stock: 15,
                         price: 1200,
-                        discountPrice: 999, // ✅ Valid discount
-                        category: 'kurtas',
+                        discountPrice: 999,
+                        category: 'Women',
+                        sub_category: 'Kurtas',
                         rating: 4.2,
                         image: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=500&auto=format&fit=crop&q=80'
                     },
                     {
-                        id: 'demo-4',
-                        name: 'Bridal Lehenga Set',
-                        stock: 3,
-                        price: 8999,
-                        discountPrice: 6999, // ✅ Valid discount
-                        category: 'lehengas',
-                        rating: 4.9,
-                        image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&auto=format&fit=crop&q=80'
-                    },
-                    {
                         id: 'demo-5',
-                        name: 'Designer Suit Set',
-                        stock: 8,
-                        price: 2500,
-                        discountPrice: 2500, // No discount
-                        category: 'suits',
-                        rating: 4.3,
-                        image: 'https://images.unsplash.com/photo-1583496661160-fb5886a13c43?w=500&auto=format&fit=crop&q=80'
+                        name: 'Men\'s Formal Shirt',
+                        stock: 20,
+                        price: 1499,
+                        discountPrice: 1299,
+                        category: 'Men',
+                        sub_category: 'Shirts',
+                        rating: 4.4,
+                        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop&q=80'
                     },
                     {
                         id: 'demo-6',
-                        name: 'Winter Jacket',
-                        stock: 12,
-                        price: 3500,
-                        discountPrice: 2999, // ✅ Valid discount
-                        category: 'winterwear',
-                        rating: 4.4,
-                        image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop&q=80'
+                        name: 'Bridal Lehenga Set',
+                        stock: 3,
+                        price: 8999,
+                        discountPrice: 6999,
+                        category: 'Women',
+                        sub_category: 'Lehengas',
+                        rating: 4.9,
+                        image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&auto=format&fit=crop&q=80'
                     }
                 ];
 
                 const sanitizedDemo = sanitizeProductData(demoProducts);
-                console.log('🔄 Using demo products:', sanitizedDemo);
-
                 setProducts(sanitizedDemo);
-                setCategories(predefinedCategories);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchProducts();
-    }, [API, sanitizeProductData]);
+    }, [API, sanitizeProductData, mainCategories]);
 
-    // Scroll Functions
-    const scrollCategories = (direction) => {
-        if (categoriesScrollRef.current) {
-            const container = categoriesScrollRef.current;
-            const scrollAmount = 400;
-
-            if (direction === 'left') {
-                container.scrollLeft -= scrollAmount;
-            } else {
-                container.scrollLeft += scrollAmount;
-            }
-        }
-    };
-
-    const scrollTrending = (direction) => {
-        if (trendingScrollRef.current) {
-            const container = trendingScrollRef.current;
-            const scrollAmount = 400;
-
-            if (direction === 'left') {
-                container.scrollLeft -= scrollAmount;
-            } else {
-                container.scrollLeft += scrollAmount;
-            }
-        }
-    };
-
-    const scrollQuickCategories = (direction) => {
-        if (quickCategoriesScrollRef.current) {
-            const container = quickCategoriesScrollRef.current;
-            const scrollAmount = 200;
-
-            if (direction === 'left') {
-                container.scrollLeft -= scrollAmount;
-            } else {
-                container.scrollLeft += scrollAmount;
-            }
-        }
-    };
-
-    // Check scroll position
-    const checkScrollPosition = (containerRef, setLeftVisible, setRightVisible) => {
-        if (containerRef.current) {
-            const container = containerRef.current;
-            setLeftVisible(container.scrollLeft > 0);
-            setRightVisible(container.scrollLeft < (container.scrollWidth - container.clientWidth));
-        }
-    };
-
-    // Add scroll event listeners
-    useEffect(() => {
-        const categoriesContainer = categoriesScrollRef.current;
-        const trendingContainer = trendingScrollRef.current;
-        const quickCategoriesContainer = quickCategoriesScrollRef.current;
-
-        const handleCategoriesScroll = () => {
-            checkScrollPosition(categoriesScrollRef, setShowLeftScroll, setShowRightScroll);
-        };
-
-        if (categoriesContainer) {
-            categoriesContainer.addEventListener('scroll', handleCategoriesScroll);
+    // ✅ Get Products by Category - IMPROVED VERSION
+    const getProductsByCategory = (categoryType, categoryId, limit = 4) => {
+        if (!categoryId || categoryType === 'all') {
+            return products.slice(0, limit);
         }
 
-        return () => {
-            if (categoriesContainer) {
-                categoriesContainer.removeEventListener('scroll', handleCategoriesScroll);
-            }
-        };
-    }, []);
+        // Convert categoryId to number for comparison
+        const searchId = Number(categoryId);
 
-    useEffect(() => {
-        const totalImages = products.length + sliderItems.length + categories.length;
-        if (!totalImages) return;
-        let loaded = 0;
-        const onLoad = () => {
-            loaded++;
-            setProgress(Math.round((loaded / totalImages) * 100));
-            if (loaded >= totalImages) setImagesLoaded(true);
-        };
-
-        categories.forEach(cat => {
-            const img = new Image();
-            img.src = getCategoryImage(cat);
-            img.onload = onLoad;
-            img.onerror = onLoad;
-        });
-
-        products.forEach(prod => {
-            const img = new Image();
-            img.src = getProductImage(prod);
-            img.onload = onLoad;
-            img.onerror = () => {
-                img.src = getFallbackProductImage(prod.category);
-                onLoad();
-            };
-        });
-
-        sliderItems.forEach(item => {
-            const img = new Image();
-            img.src = item.image;
-            img.onload = onLoad;
-            img.onerror = onLoad;
-        });
-    }, [products, categories, getProductImage]);
-
-    useEffect(() => {
-        if (!imagesLoaded) return;
-        const timer = setTimeout(() => setIsLoading(false), 1000);
-        return () => clearTimeout(timer);
-    }, [imagesLoaded]);
-
-    useEffect(() => {
-        if (!autoPlay || isLoading) return;
-        const interval = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % sliderItems.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [autoPlay, isLoading]);
-
-    const nextSlide = () => setCurrentSlide(prev => (prev + 1) % sliderItems.length);
-    const prevSlide = () => setCurrentSlide(prev => (prev - 1 + sliderItems.length) % sliderItems.length);
-    const goToSlide = (index) => setCurrentSlide(index);
-    const toggleAutoPlay = () => setAutoPlay(prev => !prev);
-    const navigateTo = (path) => navigate(path);
-
-    // ✅ FIXED: Handle Add to Cart with Proper Price Logic
-    const handleAddToCart = async (product) => {
-        if (product.stock <= 0) {
-            alert("This product is out of stock!");
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Please login first");
-                navigate('/login');
-                return;
-            }
-
-            // Use the display price logic to get correct final price
-            const priceInfo = getDisplayPrice(product);
-            const finalPrice = priceInfo.hasDiscount ? priceInfo.discountPrice : priceInfo.originalPrice;
-
-            console.log('🛒 Adding to cart:', {
-                product: product.name,
-                finalPrice,
-                hasDiscount: priceInfo.hasDiscount
+        if (categoryType === 'main') {
+            const filtered = products.filter(product => {
+                // Convert product category_id to number for comparison
+                const productCatId = Number(product.category_id);
+                return productCatId === searchId;
             });
 
-            const payload = {
-                product_id: product.id,
-                quantity: 1,
-                price: finalPrice
-            };
-
-            const response = await axios.post(`${API}/api/cart/add`, payload, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
+            console.log(`🛍️ Getting products for category:`, {
+                categoryId: searchId,
+                categoryName: mainCategories.find(c => c.id === searchId)?.name || 'Unknown',
+                totalProducts: products.length,
+                filteredCount: filtered.length,
+                filteredProducts: filtered.map(p => p.name)
             });
 
-            alert('Product added to cart successfully!');
-            setCart(prev => [...prev, product]);
-        } catch (error) {
-            console.error('❌ Cart error:', error);
-            alert(error.response?.data?.message || "Something went wrong");
+            return filtered.slice(0, limit);
+
+        } else if (categoryType === 'sub') {
+            const filtered = products.filter(product => {
+                const productSubCatId = Number(product.sub_category_id);
+                return productSubCatId === searchId;
+            });
+            return filtered.slice(0, limit);
+
+        } else if (categoryType === 'subsub') {
+            const filtered = products.filter(product => {
+                const productSubSubCatId = Number(product.sub_sub_category_id);
+                return productSubSubCatId === searchId;
+            });
+            return filtered.slice(0, limit);
         }
+
+        return products.slice(0, limit);
     };
 
-    const openQuickView = (product) => {
-        setQuickViewProduct(product);
-        setShowQuickView(true);
-    };
-
-    const closeQuickView = () => {
-        setShowQuickView(false);
-        setQuickViewProduct(null);
-    };
-
-    const filterByPrice = (priceRange) => setActivePriceFilter(priceRange);
-    const sortProducts = (option) => setSortOption(option);
-    const filterByCategory = (category) => setActiveCategory(category);
-
-    // ✅ FIXED: Filter Products with Proper Discount Sorting
+    // ✅ Get Filtered Products
     const getFilteredProducts = () => {
         let filtered = [...products];
 
         // Category filter
-        if (activeCategory !== 'all') {
-            filtered = filtered.filter(p => p.category === activeCategory);
-        }
+        if (activeCategory.type !== 'all' && activeCategory.id) {
+            const searchId = Number(activeCategory.id);
 
-        // Pattern filter
-        if (activeFilter !== 'all') {
-            filtered = filtered.filter(p => p.pattern === activeFilter);
+            if (activeCategory.type === 'main') {
+                filtered = filtered.filter(p => Number(p.category_id) === searchId);
+            } else if (activeCategory.type === 'sub') {
+                filtered = filtered.filter(p => Number(p.sub_category_id) === searchId);
+            } else if (activeCategory.type === 'subsub') {
+                filtered = filtered.filter(p => Number(p.sub_sub_category_id) === searchId);
+            }
         }
 
         // Price filter
@@ -633,14 +537,152 @@ const Home = () => {
         return filtered;
     };
 
-    const getProductsByCategory = (category, limit = 4) => {
-        return products
-            .filter(product => product.category === category)
-            .slice(0, limit);
+    // ✅ Get Sub Categories for Main Category
+    const getSubCategoriesForMain = (mainCategoryId) => {
+        return subCategories.filter(sub => Number(sub.category_id) === Number(mainCategoryId));
     };
 
+    // ✅ Scroll Functions
+    const scrollCategories = (direction) => {
+        if (categoriesScrollRef.current) {
+            const container = categoriesScrollRef.current;
+            const scrollAmount = 400;
+            if (direction === 'left') {
+                container.scrollLeft -= scrollAmount;
+            } else {
+                container.scrollLeft += scrollAmount;
+            }
+        }
+    };
+
+    const scrollTrending = (direction) => {
+        if (trendingScrollRef.current) {
+            const container = trendingScrollRef.current;
+            const scrollAmount = 400;
+            if (direction === 'left') {
+                container.scrollLeft -= scrollAmount;
+            } else {
+                container.scrollLeft += scrollAmount;
+            }
+        }
+    };
+
+    // ✅ Navigation Functions
+    const nextSlide = () => setCurrentSlide(prev => (prev + 1) % sliderItems.length);
+    const prevSlide = () => setCurrentSlide(prev => (prev - 1 + sliderItems.length) % sliderItems.length);
+    const goToSlide = (index) => setCurrentSlide(index);
+    const toggleAutoPlay = () => setAutoPlay(prev => !prev);
+    const navigateTo = (path) => navigate(path);
+
+    // ✅ Handle Add to Cart
+    const handleAddToCart = async (product) => {
+        if (product.stock <= 0) {
+            alert("This product is out of stock!");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login first");
+                navigate('/login');
+                return;
+            }
+
+            const priceInfo = getDisplayPrice(product);
+            const finalPrice = priceInfo.hasDiscount ? priceInfo.discountPrice : priceInfo.originalPrice;
+
+            const payload = {
+                product_id: product.id,
+                quantity: 1,
+                price: finalPrice
+            };
+
+            const response = await axios.post(`${API}/api/cart/add`, payload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            alert('Product added to cart successfully!');
+            setCart(prev => [...prev, product]);
+        } catch (error) {
+            console.error('❌ Cart error:', error);
+            alert(error.response?.data?.message || "Something went wrong");
+        }
+    };
+
+    // ✅ Quick View Functions
+    const openQuickView = (product) => {
+        setQuickViewProduct(product);
+        setShowQuickView(true);
+    };
+
+    const closeQuickView = () => {
+        setShowQuickView(false);
+        setQuickViewProduct(null);
+    };
+
+    // ✅ Filter Functions
+    const filterByPrice = (priceRange) => setActivePriceFilter(priceRange);
+    const sortProducts = (option) => setSortOption(option);
+    const filterByCategory = (type, id = null) => {
+        console.log(`🎯 Filtering by category:`, {
+            type,
+            id,
+            categoryName: mainCategories.find(c => c.id === id)?.name || 'Unknown'
+        });
+        setActiveCategory({ type, id });
+    };
     const toggleFilters = () => setShowFilters(!showFilters);
-    const showMoreCategories = () => setVisibleCategories(categories.length);
+    const showMoreCategories = () => setVisibleCategories(mainCategories.length);
+    const loadMoreProducts = () => setDisplayLimit(prev => prev + 20);
+
+    // ✅ Image Loading
+    useEffect(() => {
+        const totalImages = products.length + sliderItems.length + mainCategories.length;
+        if (!totalImages) return;
+        let loaded = 0;
+        const onLoad = () => {
+            loaded++;
+            setProgress(Math.round((loaded / totalImages) * 100));
+            if (loaded >= totalImages) setImagesLoaded(true);
+        };
+
+        mainCategories.forEach(cat => {
+            const img = new Image();
+            img.src = cat.image || getCategoryImage(cat.name);
+            img.onload = onLoad;
+            img.onerror = onLoad;
+        });
+
+        products.forEach(prod => {
+            const img = new Image();
+            img.src = getProductImage(prod);
+            img.onload = onLoad;
+            img.onerror = () => {
+                img.src = getFallbackProductImage(prod.category);
+                onLoad();
+            };
+        });
+
+        sliderItems.forEach(item => {
+            const img = new Image();
+            img.src = item.image;
+            img.onload = onLoad;
+            img.onerror = onLoad;
+        });
+    }, [products, mainCategories, getProductImage]);
+
+    // ✅ Auto Slide
+    useEffect(() => {
+        if (!autoPlay || isLoading) return;
+        const interval = setInterval(() => {
+            setCurrentSlide(prev => (prev + 1) % sliderItems.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [autoPlay, isLoading]);
 
     if (isLoading) return (
         <div className="loading-screen">
@@ -655,6 +697,10 @@ const Home = () => {
             </div>
         </div>
     );
+
+    // Debug info for category mapping
+    console.log('🔍 Current Category Mapping:', categoryIdMap);
+    console.log('📊 Main Categories:', mainCategories.map(c => ({ id: c.id, name: c.name })));
 
     return (
         <>
@@ -727,48 +773,11 @@ const Home = () => {
                     </button>
                 </section>
 
-                {/* Scrollable Quick Categories */}
-                <section className="quick-categories">
-                    <button
-                        className={`scroll-btn left ${!showLeftScroll ? 'hidden' : ''}`}
-                        onClick={() => scrollQuickCategories('left')}
-                        aria-label="Scroll left"
-                    >
-                        ‹
-                    </button>
-
-                    <div
-                        className="quick-categories-container"
-                        ref={quickCategoriesScrollRef}
-                    >
-                        {categories.slice(0, 8).map((category, index) => (
-                            <div
-                                key={index}
-                                className="quick-category-item"
-                                onClick={() => navigate(`/category/${getCategoryId(category)}`)}
-                            >
-                                <div className="quick-category-icon">
-                                    <img src={getCategoryImage(category)} alt={category} />
-                                </div>
-                                <span>{category.charAt(0).toUpperCase() + category.slice(1)}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <button
-                        className="scroll-btn right"
-                        onClick={() => scrollQuickCategories('right')}
-                        aria-label="Scroll right"
-                    >
-                        ›
-                    </button>
-                </section>
-
-                {/* Scrollable Categories Section */}
+                {/* Main Categories Section */}
                 <section className="categories-section">
                     <div className="section-header">
                         <h2>Shop by Category</h2>
-                        <p>Discover our exclusive women's fashion collections</p>
+                        <p>Discover our exclusive fashion collections</p>
                     </div>
 
                     <div className="categories-container">
@@ -785,16 +794,19 @@ const Home = () => {
                             ref={categoriesScrollRef}
                         >
                             <div className="categories-grid">
-                                {categories.slice(0, visibleCategories).map((category, index) => (
+                                {mainCategories.slice(0, visibleCategories).map((category) => (
                                     <div
-                                        key={index}
+                                        key={category.id}
                                         className="category-card"
-                                        onClick={() => navigate(`/category/${getCategoryId(category)}`)}
+                                        onClick={() => {
+                                            filterByCategory('main', category.id);
+                                            navigate(`/category/${category.slug || category.id}`);
+                                        }}
                                     >
                                         <div className="category-image-container">
                                             <img
-                                                src={getCategoryImage(category)}
-                                                alt={category}
+                                                src={category.image || getCategoryImage(category.name)}
+                                                alt={category.name}
                                                 loading="lazy"
                                                 className="category-image"
                                                 onError={(e) => {
@@ -806,8 +818,11 @@ const Home = () => {
                                             </div>
                                         </div>
                                         <h3 className="category-title">
-                                            {category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}
+                                            {category.name}
                                         </h3>
+                                        <p className="category-count">
+                                            {getProductsByCategory('main', category.id).length} products
+                                        </p>
                                     </div>
                                 ))}
                             </div>
@@ -822,7 +837,7 @@ const Home = () => {
                         </button>
                     </div>
 
-                    {visibleCategories < categories.length && (
+                    {visibleCategories < mainCategories.length && (
                         <div className="show-more-container">
                             <button className="show-more-btn" onClick={showMoreCategories}>
                                 Show All Categories
@@ -832,32 +847,67 @@ const Home = () => {
                 </section>
 
                 {/* Category-wise Product Sections */}
-                {featuredCategories.map(featuredCategory => {
-                    const categoryProducts = getProductsByCategory(featuredCategory.name, 4);
-                    if (categoryProducts.length === 0) return null;
+                {mainCategories.slice(0, 4).map(mainCategory => {
+                    const categoryProducts = getProductsByCategory('main', mainCategory.id, 4);
+
+                    // Debug log for each category
+                    console.log(`📊 Category Section: ${mainCategory.name} (ID: ${mainCategory.id})`, {
+                        productCount: categoryProducts.length,
+                        products: categoryProducts.map(p => ({
+                            name: p.name,
+                            category_id: p.category_id,
+                            category: p.category
+                        }))
+                    });
+
+                    if (categoryProducts.length === 0) {
+                        console.log(`⚠️ No products found for ${mainCategory.name} (ID: ${mainCategory.id})`);
+                        return null;
+                    }
+
+                    const subCats = getSubCategoriesForMain(mainCategory.id);
 
                     return (
-                        <section key={featuredCategory.name} className="category-section">
+                        <section key={mainCategory.id} className="category-section">
                             <div className="section-header">
                                 <div className="category-header-info">
-                                    <h2>{featuredCategory.title}</h2>
-                                    <p>{featuredCategory.description}</p>
+                                    <h2>{mainCategory.name}</h2>
+                                    <p>Explore our exclusive {mainCategory.name.toLowerCase()} collection</p>
+                                    {subCats.length > 0 && (
+                                        <div className="sub-categories">
+                                            {subCats.slice(0, 5).map(subCat => (
+                                                <button
+                                                    key={subCat.id}
+                                                    className="sub-category-btn"
+                                                    onClick={() => {
+                                                        filterByCategory('sub', subCat.id);
+                                                        navigate(`/category/${mainCategory.slug}/${subCat.slug || subCat.id}`);
+                                                    }}
+                                                >
+                                                    {subCat.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <button
                                     className="view-all square-btn"
-                                    onClick={() => navigateTo(featuredCategory.viewAllLink)}
+                                    onClick={() => {
+                                        filterByCategory('main', mainCategory.id);
+                                        navigate(`/category/${mainCategory.slug || mainCategory.id}`);
+                                    }}
                                 >
                                     View All
                                 </button>
                             </div>
                             <div className="category-products-grid">
-                                {categoryProducts.map((product, index) => {
+                                {categoryProducts.map((product) => {
                                     const priceInfo = getDisplayPrice(product);
                                     const isOutOfStock = product.stock <= 0;
 
                                     return (
                                         <div
-                                            key={`${product.id}-${index}`}
+                                            key={product.id}
                                             className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
                                         >
                                             {product.isNew && <span className="new-badge">NEW</span>}
@@ -891,7 +941,7 @@ const Home = () => {
                                             </div>
 
                                             <div className="product-info">
-                                                <h3>{product.name}</h3>
+                                                <h3 className="product-name">{product.name}</h3>
                                                 <div className="price-container">
                                                     {priceInfo.hasDiscount ? (
                                                         <>
@@ -932,7 +982,7 @@ const Home = () => {
                     );
                 })}
 
-                {/* Scrollable Trending Products */}
+                {/* Trending Products */}
                 <section className="trending-section">
                     <div className="section-header">
                         <h2>Trending Now 🔥</h2>
@@ -961,10 +1011,10 @@ const Home = () => {
                                 {products
                                     .filter(p => p.rating >= 4)
                                     .slice(0, 8)
-                                    .map((product, index) => {
+                                    .map((product) => {
                                         const priceInfo = getDisplayPrice(product);
                                         return (
-                                            <div key={index} className="trending-card">
+                                            <div key={product.id} className="trending-card">
                                                 <div className="trending-image">
                                                     <img
                                                         src={getProductImage(product)}
@@ -986,7 +1036,7 @@ const Home = () => {
                                                     )}
                                                 </div>
                                                 <div className="trending-info">
-                                                    <h3>{product.name}</h3>
+                                                    <h3 className="product-name">{product.name}</h3>
                                                     <div className="trending-price">
                                                         {priceInfo.hasDiscount ? (
                                                             <>
@@ -1035,19 +1085,24 @@ const Home = () => {
                         <p>Use code: <strong>PANKHUDI30</strong></p>
                         <button
                             className="offer-button square-btn"
-                            onClick={() => navigateTo('/ethnic-wear')}
+                            onClick={() => {
+                                // Ethnic Wear ka ID dynamically find karo
+                                const ethnicWearId = categoryIdMap['Ethnic Wear'] || 4;
+                                filterByCategory('main', ethnicWearId);
+                                navigateTo('/category/ethnic-wear');
+                            }}
                         >
                             Shop Now
                         </button>
                     </div>
                 </section>
 
-                {/* All Products Section */}
+                {/* All Products Section with Filters */}
                 <section className="featured-section">
                     <div className="section-header">
                         <h2>All Products</h2>
                         <div className="results-info">
-                            <span>Showing {getFilteredProducts().length} of {products.length} products</span>
+                            <span>Showing {Math.min(displayLimit, getFilteredProducts().length)} of {getFilteredProducts().length} products</span>
                             <button className="view-all square-btn" onClick={() => navigateTo("/products")}>
                                 View All
                             </button>
@@ -1065,21 +1120,21 @@ const Home = () => {
 
                         <div className={`filters-container ${showFilters ? 'show' : ''}`}>
                             <div className="filter-group">
-                                <h4>Categories</h4>
+                                <h4>Main Categories</h4>
                                 <div className="category-filters">
                                     <button
-                                        className={`category-filter ${activeCategory === 'all' ? 'active' : ''}`}
+                                        className={`category-filter ${activeCategory.type === 'all' ? 'active' : ''}`}
                                         onClick={() => filterByCategory('all')}
                                     >
                                         All Categories
                                     </button>
-                                    {categories.slice(0, 8).map(category => (
+                                    {mainCategories.slice(0, 6).map(category => (
                                         <button
-                                            key={category}
-                                            className={`category-filter ${activeCategory === category ? 'active' : ''}`}
-                                            onClick={() => filterByCategory(category)}
+                                            key={category.id}
+                                            className={`category-filter ${activeCategory.type === 'main' && activeCategory.id === category.id ? 'active' : ''}`}
+                                            onClick={() => filterByCategory('main', category.id)}
                                         >
-                                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                                            {category.name}
                                         </button>
                                     ))}
                                 </div>
@@ -1120,13 +1175,13 @@ const Home = () => {
 
                     {/* Products Grid */}
                     <div className="products-grid">
-                        {getFilteredProducts().map((product, index) => {
+                        {getFilteredProducts().slice(0, displayLimit).map((product) => {
                             const priceInfo = getDisplayPrice(product);
                             const isOutOfStock = product.stock <= 0;
 
                             return (
                                 <div
-                                    key={`${product.id}-${index}`}
+                                    key={product.id}
                                     className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
                                     onMouseEnter={() => setHoveredProduct(product.id)}
                                     onMouseLeave={() => setHoveredProduct(null)}
@@ -1162,7 +1217,7 @@ const Home = () => {
                                     </div>
 
                                     <div className="product-info">
-                                        <h3>{product.name}</h3>
+                                        <h3 className="product-name">{product.name}</h3>
 
                                         <div className="price-container">
                                             {priceInfo.hasDiscount ? (
@@ -1204,6 +1259,15 @@ const Home = () => {
                         })}
                     </div>
 
+                    {/* Load More Button */}
+                    {getFilteredProducts().length > displayLimit && (
+                        <div className="load-more-container">
+                            <button className="load-more-btn square-btn" onClick={loadMoreProducts}>
+                                Load More Products
+                            </button>
+                        </div>
+                    )}
+
                     {getFilteredProducts().length === 0 && (
                         <div className="no-products">
                             <h3>No products found</h3>
@@ -1211,9 +1275,8 @@ const Home = () => {
                             <button
                                 className="reset-filters square-btn"
                                 onClick={() => {
-                                    setActiveFilter('all');
+                                    filterByCategory('all');
                                     setActivePriceFilter('all');
-                                    setActiveCategory('all');
                                 }}
                             >
                                 Reset Filters

@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
         if (!password || password.length < 8) errors.password = 'Password must be at least 8 characters';
         if (address && address.length < 10) errors.address = 'Address must be at least 10 characters';
 
-        // 🔹 Return structured error response
+        // Return structured error response
         if (Object.keys(errors).length) {
             return res.status(400).json({
                 success: false,
@@ -47,9 +47,22 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // ---------------- Existing Code Below ----------------
+        // Check if phone number already exists in database
+        const phoneCheck = await new Promise((resolve, reject) =>
+            db.query('SELECT id FROM users WHERE phone = ? AND is_active=1 AND is_deleted=0 AND is_verified=1', [phone],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            )
+        );
 
-        // Check if already fully registered (verified user)
+        if (phoneCheck.length) {
+            return res.status(409).json({
+                success: false,
+                message: 'Phone number already registered',
+                field: 'phone'
+            });
+        }
+
+        // Check if email already exists (verified user)
         const existing = await new Promise((resolve, reject) =>
             db.query('SELECT id,is_verified FROM users WHERE email = ? AND is_active=1 AND is_deleted=0', [email],
                 (err, rows) => err ? reject(err) : resolve(rows)
@@ -57,7 +70,11 @@ router.post('/register', async (req, res) => {
         );
 
         if (existing.length && existing[0].is_verified === 1) {
-            return res.status(409).json({ success: false, message: 'Email already registered' });
+            return res.status(409).json({
+                success: false,
+                message: 'Email already registered',
+                field: 'email'
+            });
         }
 
         // Check registration_otps for a used verification record
@@ -76,6 +93,21 @@ router.post('/register', async (req, res) => {
 
         let userId;
         if (existing.length && existing[0].is_verified === 0) {
+            // Check if phone exists for other users before updating
+            const phoneCheckForUpdate = await new Promise((resolve, reject) =>
+                db.query('SELECT id FROM users WHERE phone = ? AND id != ? AND is_active=1 AND is_deleted=0 AND is_verified=1', [phone, existing[0].id],
+                    (err, rows) => err ? reject(err) : resolve(rows)
+                )
+            );
+
+            if (phoneCheckForUpdate.length) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Phone number already registered',
+                    field: 'phone'
+                });
+            }
+
             // update placeholder (if any)
             userId = existing[0].id;
             await new Promise((resolve, reject) =>
@@ -85,7 +117,7 @@ router.post('/register', async (req, res) => {
                 )
             );
         } else {
-            // insert new user
+            // For new user insert, phone check was already done above
             const insertResult = await new Promise((resolve, reject) =>
                 db.query(
                     'INSERT INTO users (name,email,password,phone,address,auth_method,is_verified,is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -111,7 +143,27 @@ router.post('/register', async (req, res) => {
 
     } catch (err) {
         console.error('Register error:', err);
-        if (!res.headersSent) return res.status(500).json({ success: false, message: 'Server error' });
+
+        // Handle duplicate entry error specifically
+        if (err.code === 'ER_DUP_ENTRY') {
+            if (err.sqlMessage.includes('phone')) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Phone number already registered',
+                    field: 'phone'
+                });
+            } else if (err.sqlMessage.includes('email')) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Email already registered',
+                    field: 'email'
+                });
+            }
+        }
+
+        if (!res.headersSent) {
+            return res.status(500).json({ success: false, message: 'Server error' });
+        }
     }
 });
 router.post('/send-registration-otp', async (req, res) => {

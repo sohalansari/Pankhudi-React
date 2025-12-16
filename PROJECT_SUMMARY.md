@@ -105,24 +105,36 @@ src/
 │   ├── auth.js       # Authentication middleware
 │   └── verifyToken.js # Token verification
 ├── routes/           # API endpoints
-│   ├── auth.js       # Authentication routes
+│   ├── auth.js # Shopping cart
+|   ├── cart.js # Authentication routes
+|   |-- categories.js
 │   ├── products.js   # Product management
-│   ├── cart.js       # Shopping cart
+│   |-- relatedProduct.js
+|   |-- reviews.js
+|   |-- searchRoutes.js
 │   ├── chat.js       # AI chat endpoints
 │   └── profile.js    # User profile
+|   
+|
 ├── sql/              # Database schema
 │   ├── users_table.sql
 │   ├── products.sql
 │   ├── orders.sql
+|   |-- order_items.sql
 │   ├── cart_items.sql
 │   └── reviews.sql
 ├── uploads/          # File storage
 │   ├── avatars/      # User profile images
-│   └── products/     # Product images
-└── utils/            # Backend utilities
-    ├── generateJWT.js
-    └── transporter.js
-```
+│    
+|── utils/            # Backend utilities
+|    ├── generateJWT.js
+|    └── transporter.js
+|-- .env
+|-- .gitignore   
+|-- package.json
+|-- server.js
+
+
 
 ### Admin Frontend (`/admin/frontend`)
 ```

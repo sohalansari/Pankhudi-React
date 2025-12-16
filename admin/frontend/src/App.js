@@ -10,6 +10,8 @@ import AddProduct from "./pages/Product/AddProduct";
 import ManageProducts from "./pages/ManageProducts/ManageProducts";
 import AdminReports from "./pages/Reports/Reports";
 import Cart from "./pages/userCart/cart";
+// Import Category Management page
+import CategoryManagement from "./pages/Category/category";
 
 import "./App.css";
 
@@ -32,8 +34,9 @@ function App() {
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/products" element={<ManageProducts />} />
           <Route path="/reports" element={<AdminReports />} />
-          <Route path="/cart" element={<Cart />} />{/* ✅ added */}
-
+          <Route path="/cart" element={<Cart />} />
+          {/* Add Category Management route */}
+          <Route path="/categories" element={<CategoryManagement />} />
         </Routes>
       </div>
     </Layout>

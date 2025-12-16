@@ -1,4 +1,4 @@
-// AddProduct.js - UPDATED WITH PROPER FORM RESET
+// AddProduct.js - UPDATED WITH FIXED CATEGORY ERROR
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import MDEditor from '@uiw/react-md-editor';
@@ -56,7 +56,7 @@ export default function AddProduct() {
     const [videoFile, setVideoFile] = useState(null);
     const [videoPreview, setVideoPreview] = useState(null);
 
-    // Categories state
+    // Categories state - FIXED: Ensure arrays are always initialized
     const [categories, setCategories] = useState([]);
     const [filteredSubCategories, setFilteredSubCategories] = useState([]);
     const [filteredSubSubCategories, setFilteredSubSubCategories] = useState([]);
@@ -137,66 +137,76 @@ export default function AddProduct() {
         }
     }, [form.name]);
 
-    // Fetch categories from backend
+    // Fetch categories from backend - FIXED VERSION
     const fetchCategories = async () => {
         try {
             console.log('🔄 Fetching categories...');
             const response = await axios.get(`${API}/api/categories`);
 
             if (response.data.success) {
-                setCategories(response.data.data);
-                console.log(`✅ Loaded ${response.data.data.length} categories`);
+                setCategories(response.data.data || []); // ✅ Ensure array
+                console.log(`✅ Loaded ${(response.data.data || []).length} categories`);
             } else {
                 console.error('❌ Failed to fetch categories:', response.data.message);
-                setCategories([]);
+                setCategories([]); // ✅ Set empty array on error
             }
         } catch (error) {
             console.error('❌ Error fetching categories:', error);
-            setCategories([]);
+            setCategories([]); // ✅ Set empty array on error
         }
     };
 
-    // Fetch sub-categories from backend
+    // Fetch sub-categories from backend - FIXED VERSION
     const fetchSubCategories = async (categoryId) => {
         try {
             console.log(`🔄 Fetching sub-categories for category: ${categoryId}`);
-            const response = await axios.get(`${API}/api/subcategories/${categoryId}`);
+
+            // ✅ UPDATED: Use correct API endpoint for filtered sub-categories
+            const response = await axios.get(`${API}/api/subcategories?category_id=${categoryId}`);
+
+            console.log('Sub-categories API response:', response.data);
 
             if (response.data.success) {
-                setFilteredSubCategories(response.data.data);
+                setFilteredSubCategories(response.data.data || []); // ✅ Ensure array
                 setForm(prev => ({
                     ...prev,
                     sub_category_id: "",
                     sub_sub_category_id: ""
                 }));
-                console.log(`✅ Loaded ${response.data.data.length} sub-categories`);
+                console.log(`✅ Loaded ${(response.data.data || []).length} sub-categories`);
             } else {
                 console.error('❌ Failed to fetch sub-categories:', response.data.message);
-                setFilteredSubCategories([]);
+                setFilteredSubCategories([]); // ✅ Set empty array on error
             }
         } catch (error) {
             console.error('❌ Error fetching sub-categories:', error);
-            setFilteredSubCategories([]);
+            console.error('Error details:', error.response?.data || error.message);
+            setFilteredSubCategories([]); // ✅ Set empty array on error
         }
     };
 
-    // Fetch sub-sub-categories from backend
+    // Fetch sub-sub-categories from backend - FIXED VERSION
     const fetchSubSubCategories = async (subCategoryId) => {
         try {
             console.log(`🔄 Fetching sub-sub-categories for sub-category: ${subCategoryId}`);
-            const response = await axios.get(`${API}/api/subsubcategories/${subCategoryId}`);
+
+            // ✅ UPDATED: Use correct API endpoint
+            const response = await axios.get(`${API}/api/subsubcategories?sub_category_id=${subCategoryId}`);
+
+            console.log('Sub-sub-categories API response:', response.data);
 
             if (response.data.success) {
-                setFilteredSubSubCategories(response.data.data);
+                setFilteredSubSubCategories(response.data.data || []); // ✅ Ensure array
                 setForm(prev => ({ ...prev, sub_sub_category_id: "" }));
-                console.log(`✅ Loaded ${response.data.data.length} sub-sub-categories`);
+                console.log(`✅ Loaded ${(response.data.data || []).length} sub-sub-categories`);
             } else {
                 console.error('❌ Failed to fetch sub-sub-categories:', response.data.message);
-                setFilteredSubSubCategories([]);
+                setFilteredSubSubCategories([]); // ✅ Set empty array on error
             }
         } catch (error) {
             console.error('❌ Error fetching sub-sub-categories:', error);
-            setFilteredSubSubCategories([]);
+            console.error('Error details:', error.response?.data || error.message);
+            setFilteredSubSubCategories([]); // ✅ Set empty array on error
         }
     };
 
@@ -737,7 +747,6 @@ export default function AddProduct() {
                         </div>
                     </div>
 
-                    {/* Rest of your form sections remain exactly the same */}
                     {/* Pricing & Inventory Section */}
                     <div className="form-section">
                         <h3 className="section-title">Pricing & Inventory</h3>
@@ -862,7 +871,7 @@ export default function AddProduct() {
                         </div>
                     </div>
 
-                    {/* Categorization Section */}
+                    {/* Categorization Section - FIXED: Safe array mapping */}
                     <div className="form-section">
                         <h3 className="section-title">Categorization</h3>
                         <div className="form-grid">
@@ -885,9 +894,13 @@ export default function AddProduct() {
                                     className={`form-select ${errors.category_id ? "input-error" : ""}`}
                                 >
                                     <option value="">Select a category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
+                                    {Array.isArray(categories) && categories.length > 0 ? (
+                                        categories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>No categories available</option>
+                                    )}
                                 </select>
                                 {errors.category_id && <span className="error-text">{errors.category_id}</span>}
                             </div>
@@ -913,9 +926,13 @@ export default function AddProduct() {
                                     disabled={!form.category_id}
                                 >
                                     <option value="">Select a sub-category</option>
-                                    {filteredSubCategories.map(subCat => (
-                                        <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
-                                    ))}
+                                    {Array.isArray(filteredSubCategories) && filteredSubCategories.length > 0 ? (
+                                        filteredSubCategories.map(subCat => (
+                                            <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>No sub-categories available</option>
+                                    )}
                                 </select>
                                 {!form.category_id && (
                                     <span className="help-text">Please select a category first</span>
@@ -944,9 +961,13 @@ export default function AddProduct() {
                                     disabled={!form.sub_category_id}
                                 >
                                     <option value="">Select a sub-sub-category</option>
-                                    {filteredSubSubCategories.map(subSubCat => (
-                                        <option key={subSubCat.id} value={subSubCat.id}>{subSubCat.name}</option>
-                                    ))}
+                                    {Array.isArray(filteredSubSubCategories) && filteredSubSubCategories.length > 0 ? (
+                                        filteredSubSubCategories.map(subSubCat => (
+                                            <option key={subSubCat.id} value={subSubCat.id}>{subSubCat.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>No sub-sub-categories available</option>
+                                    )}
                                 </select>
                                 {!form.sub_category_id && (
                                     <span className="help-text">Please select a sub-category first</span>
@@ -987,7 +1008,7 @@ export default function AddProduct() {
                                 </button>
                             </div>
                             <div className="multi-select-grid with-remove">
-                                {availableSizes.map(size => (
+                                {Array.isArray(availableSizes) && availableSizes.map(size => (
                                     <div key={size} className="checkbox-item-with-remove">
                                         <label className="checkbox-label">
                                             <input
@@ -1024,7 +1045,7 @@ export default function AddProduct() {
                                 </button>
                             </div>
                             <div className="multi-select-grid with-remove">
-                                {availableColors.map(color => (
+                                {Array.isArray(availableColors) && availableColors.map(color => (
                                     <div key={color} className="checkbox-item-with-remove">
                                         <label className="checkbox-label">
                                             <input
@@ -1118,7 +1139,7 @@ export default function AddProduct() {
                                 </button>
                             </div>
                             <div className="multi-select-grid with-remove">
-                                {availableFeatures.map(feature => (
+                                {Array.isArray(availableFeatures) && availableFeatures.map(feature => (
                                     <div key={feature} className="checkbox-item-with-remove">
                                         <label className="checkbox-label">
                                             <input
@@ -1153,7 +1174,7 @@ export default function AddProduct() {
                                     className="form-input"
                                 />
                                 <div className="tags-container">
-                                    {form.tags.map((tag, index) => (
+                                    {Array.isArray(form.tags) && form.tags.map((tag, index) => (
                                         <span key={index} className="tag">
                                             {tag}
                                             <button
@@ -1609,7 +1630,7 @@ export default function AddProduct() {
                                 className={`form-select ${subCategoryErrors.category_id ? "input-error" : ""}`}
                             >
                                 <option value="">Select a category</option>
-                                {categories.map(cat => (
+                                {Array.isArray(categories) && categories.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
@@ -1691,7 +1712,7 @@ export default function AddProduct() {
                                 className={`form-select ${subSubCategoryErrors.sub_category_id ? "input-error" : ""}`}
                             >
                                 <option value="">Select a sub-category</option>
-                                {filteredSubCategories.map(subCat => (
+                                {Array.isArray(filteredSubCategories) && filteredSubCategories.map(subCat => (
                                     <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
                                 ))}
                             </select>

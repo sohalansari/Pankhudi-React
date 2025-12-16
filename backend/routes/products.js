@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
-// ------------------ Helper: Parse Product with Sub-Category Support ------------------
 // ------------------ Helper: Parse Product with Sub-Category Support ------------------
 const parseProduct = (r, req) => {
     let imgs = [];

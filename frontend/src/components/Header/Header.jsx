@@ -20,7 +20,13 @@ import {
     FiChevronUp,
     FiMapPin,
     FiFilter,
-    FiRefreshCw
+    FiRefreshCw,
+    FiTag,
+    FiLayers,
+    FiGrid,
+    FiHash,
+    FiCheck,
+    FiChevronRight
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiChatAiLine } from "react-icons/ri";
@@ -45,11 +51,29 @@ const Header = () => {
     const [trendingRefreshTime, setTrendingRefreshTime] = useState(0);
     const [isRefreshingTrending, setIsRefreshingTrending] = useState(false);
 
+    // NEW: Category-based search states
+    const [allCategories, setAllCategories] = useState([]);
+    const [allSubCategories, setAllSubCategories] = useState([]);
+    const [allSubSubCategories, setAllSubSubCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+    const [selectedSubSubCategory, setSelectedSubSubCategory] = useState(null);
+    const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+    const [categorySearchLoading, setCategorySearchLoading] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState({
+        category: null,
+        sub_category: null,
+        sub_sub_category: null,
+        price_range: null,
+        sort_by: 'relevance'
+    });
+
     const searchInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const searchContainerRef = useRef(null);
     const mobileMenuRef = useRef(null);
     const mobileSearchContainerRef = useRef(null);
+    const categoryFilterRef = useRef(null);
 
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
@@ -57,11 +81,104 @@ const Header = () => {
     const navigate = useNavigate();
     const { token, logout } = useAuth();
 
-    // Popular search suggestions
+    // Popular search suggestions with categories
     const popularSearches = [
-        "Sarees", "Dresses", "Kurtas", "Kurti", "Lehenga",
-        "Bangles", "Wedding Collection", "Summer Dresses"
+        { text: "Sarees", category: "Ethnic Wear" },
+        { text: "Dresses", category: "Western Wear" },
+        { text: "Kurtas", category: "Ethnic Wear" },
+        { text: "Kurti", category: "Ethnic Wear" },
+        { text: "Lehenga", category: "Festive Wear" },
+        { text: "Bangles", category: "Jewelry" },
+        { text: "Wedding Collection", category: "Special Occasion" },
+        { text: "Summer Dresses", category: "Seasonal" }
     ];
+
+    // Price ranges for filtering
+    const priceRanges = [
+        { id: '0-500', label: 'Under ₹500' },
+        { id: '500-1000', label: '₹500 - ₹1000' },
+        { id: '1000-2000', label: '₹1000 - ₹2000' },
+        { id: '2000-5000', label: '₹2000 - ₹5000' },
+        { id: '5000-10000', label: '₹5000 - ₹10000' },
+        { id: '10000+', label: 'Above ₹10000' }
+    ];
+
+    // Sort options
+    const sortOptions = [
+        { id: 'relevance', label: 'Relevance' },
+        { id: 'price_low_high', label: 'Price: Low to High' },
+        { id: 'price_high_low', label: 'Price: High to Low' },
+        { id: 'newest', label: 'Newest First' },
+        { id: 'rating', label: 'Highest Rated' },
+        { id: 'discount', label: 'Best Discount' }
+    ];
+
+    // Fetch categories from API
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                // Fetch main categories
+                const categoriesRes = await fetch('http://localhost:5000/api/categories');
+                const categoriesData = await categoriesRes.json();
+                if (categoriesData.success) {
+                    setAllCategories(categoriesData.data || []);
+                }
+
+                // Fetch sub categories
+                const subCategoriesRes = await fetch('http://localhost:5000/api/subcategories');
+                const subCategoriesData = await subCategoriesRes.json();
+                if (subCategoriesData.success) {
+                    setAllSubCategories(subCategoriesData.data || []);
+                }
+
+                // Fetch sub-sub categories
+                const subSubCategoriesRes = await fetch('http://localhost:5000/api/subsubcategories');
+                const subSubCategoriesData = await subSubCategoriesRes.json();
+                if (subSubCategoriesData.success) {
+                    setAllSubSubCategories(subSubCategoriesData.data || []);
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                // Fallback data
+                setAllCategories([
+                    { id: 1, name: 'Women', slug: 'women' },
+                    { id: 2, name: 'Men', slug: 'men' },
+                    { id: 3, name: 'Kids', slug: 'kids' },
+                    { id: 4, name: 'Ethnic Wear', slug: 'ethnic-wear' }
+                ]);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    // Get sub-categories for selected category
+    const getSubCategoriesForCategory = (categoryId) => {
+        return allSubCategories.filter(sub => sub.category_id === categoryId);
+    };
+
+    // Get sub-sub-categories for selected sub-category
+    const getSubSubCategoriesForSubCategory = (subCategoryId) => {
+        return allSubSubCategories.filter(subSub => subSub.sub_category_id === subCategoryId);
+    };
+
+    // Get category name by ID
+    const getCategoryNameById = (id) => {
+        const category = allCategories.find(cat => cat.id === id);
+        return category ? category.name : '';
+    };
+
+    // Get sub-category name by ID
+    const getSubCategoryNameById = (id) => {
+        const subCategory = allSubCategories.find(sub => sub.id === id);
+        return subCategory ? subCategory.name : '';
+    };
+
+    // Get sub-sub-category name by ID
+    const getSubSubCategoryNameById = (id) => {
+        const subSubCategory = allSubSubCategories.find(subSub => subSub.id === id);
+        return subSubCategory ? subSubCategory.name : '';
+    };
 
     // Fetch user data and recent searches
     const fetchUserData = () => {
@@ -96,14 +213,17 @@ const Header = () => {
 
         const updatedSearches = [
             query,
-            ...recentSearches.filter(search => search.toLowerCase() !== query.toLowerCase())
+            ...recentSearches.filter(search =>
+                typeof search === 'string' &&
+                search.toLowerCase() !== query.toLowerCase()
+            )
         ].slice(0, 5);
 
         setRecentSearches(updatedSearches);
         localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     };
 
-    // Refresh trending products manually
+    // Refresh trending products
     const refreshTrendingProducts = async () => {
         try {
             setIsRefreshingTrending(true);
@@ -129,18 +249,6 @@ const Header = () => {
         return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
-        if (isLoggedIn && userData) {
-            const address = userData.address || localStorage.getItem('userAddress') || 'Add your delivery address';
-            setUserAddress(address);
-            if (userData.address) {
-                localStorage.setItem('userAddress', userData.address);
-            }
-        } else {
-            setUserAddress('');
-        }
-    }, [isLoggedIn, userData]);
-
     // Fetch cart count
     useEffect(() => {
         const fetchCount = async () => {
@@ -158,6 +266,7 @@ const Header = () => {
         return () => clearInterval(interval);
     }, [userData]);
 
+    // Initialize component
     useEffect(() => {
         fetchUserData();
         const handleStorageChange = () => {
@@ -167,6 +276,7 @@ const Header = () => {
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
+    // Handle scroll
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10);
@@ -175,6 +285,7 @@ const Header = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Update counts from localStorage
     useEffect(() => {
         const updateCounts = () => {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -187,12 +298,78 @@ const Header = () => {
         return () => window.removeEventListener('storage', updateCounts);
     }, []);
 
-    // FIXED: Enhanced click outside handler - Mobile menu won't close when clicking search suggestions
+    // NEW: Enhanced search toggle functionality
+    const toggleSearch = () => {
+        if (isSearchExpanded) {
+            closeSearch();
+        } else {
+            openSearch();
+        }
+    };
+
+    // Open search function
+    const openSearch = () => {
+        setIsSearchExpanded(true);
+        setTimeout(() => {
+            searchInputRef.current?.focus();
+        }, 100);
+    };
+
+    // Close search function
+    const closeSearch = () => {
+        setIsSearchExpanded(false);
+        setShowSearchSuggestions(false);
+        setShowCategoryFilter(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        if (searchInputRef.current) {
+            searchInputRef.current.blur();
+        }
+    };
+
+    // NEW: Escape key to close search
+    useEffect(() => {
+        const handleEscapeKey = (event) => {
+            if (event.key === 'Escape') {
+                if (isSearchExpanded) {
+                    closeSearch();
+                }
+                if (showSearchSuggestions) {
+                    setShowSearchSuggestions(false);
+                }
+                if (showCategoryFilter) {
+                    setShowCategoryFilter(false);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleEscapeKey);
+        return () => {
+            document.removeEventListener('keydown', handleEscapeKey);
+        };
+    }, [isSearchExpanded, showSearchSuggestions, showCategoryFilter]);
+
+    // NEW: Enhanced click outside handler with category filter
     useEffect(() => {
         const handleClickOutside = (event) => {
             // Close dropdowns
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setActiveDropdown(null);
+            }
+
+            // Close category filter when clicking outside
+            if (showCategoryFilter &&
+                categoryFilterRef.current &&
+                !categoryFilterRef.current.contains(event.target) &&
+                !event.target.closest('.category-filter-toggle-btn')) {
+                setShowCategoryFilter(false);
+            }
+
+            // Close expanded desktop search when clicking outside
+            if (isSearchExpanded &&
+                searchContainerRef.current &&
+                !searchContainerRef.current.contains(event.target)) {
+                closeSearch();
             }
 
             // Close search suggestions when clicking outside (desktop)
@@ -202,22 +379,22 @@ const Header = () => {
                 setShowSearchSuggestions(false);
             }
 
-            // FIXED: Don't close mobile menu when clicking on search suggestions
+            // Don't close mobile menu when clicking on search suggestions
             if (isMobileMenuOpen &&
                 mobileMenuRef.current &&
                 !mobileMenuRef.current.contains(event.target) &&
                 !event.target.closest('.mobile-menu-toggle-btn')) {
 
-                // Check if click is inside mobile search container or suggestions
                 const isClickInMobileSearch = mobileSearchContainerRef.current?.contains(event.target);
                 const isClickInSearchSuggestions = event.target.closest('.mobile-search-suggestions-dropdown');
                 const isClickInSearchInput = event.target.closest('.mobile-search-input-field');
                 const isClickInSearchButton = event.target.closest('.mobile-search-submit-btn');
                 const isClickInSearchOption = event.target.closest('.mobile-search-option-btn');
+                const isClickInSearchClear = event.target.closest('.mobile-search-clear-btn');
 
-                // Only close menu if click is NOT in search area
                 if (!isClickInMobileSearch && !isClickInSearchSuggestions &&
-                    !isClickInSearchInput && !isClickInSearchButton && !isClickInSearchOption) {
+                    !isClickInSearchInput && !isClickInSearchButton &&
+                    !isClickInSearchOption && !isClickInSearchClear) {
                     closeMobileMenu();
                 }
             }
@@ -227,9 +404,9 @@ const Header = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isMobileMenuOpen]);
+    }, [isMobileMenuOpen, isSearchExpanded, showCategoryFilter]);
 
-    // Live search suggestions
+    // NEW: Enhanced search with category filtering
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -240,7 +417,23 @@ const Header = () => {
         setSearchLoading(true);
         const timer = setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
+                // Build query parameters
+                const params = new URLSearchParams({
+                    q: encodeURIComponent(searchQuery)
+                });
+
+                // Add category filters if selected
+                if (selectedCategory) {
+                    params.append('category_id', selectedCategory);
+                }
+                if (selectedSubCategory) {
+                    params.append('sub_category_id', selectedSubCategory);
+                }
+                if (selectedSubSubCategory) {
+                    params.append('sub_sub_category_id', selectedSubSubCategory);
+                }
+
+                const res = await fetch(`http://localhost:5000/api/search/suggestions?${params}`);
                 if (!res.ok) throw new Error('Suggestions failed');
                 const data = await res.json();
 
@@ -271,7 +464,7 @@ const Header = () => {
         }, 200);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [searchQuery, selectedCategory, selectedSubCategory, selectedSubSubCategory]);
 
     // Trending Products
     useEffect(() => {
@@ -290,29 +483,56 @@ const Header = () => {
         fetchTrending();
     }, [trendingRefreshTime]);
 
-    // Enhanced Search Handler
+    // NEW: Enhanced Search Handler with Category Filtering
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
-        if (searchQuery.trim()) {
+        if (searchQuery.trim() || selectedCategory || selectedSubCategory || selectedSubSubCategory) {
             try {
-                // Analyze search query for natural language processing
                 const analyzedQuery = analyzeSearchQuery(searchQuery);
 
-                const response = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(searchQuery)}`);
+                // Build search query with filters
+                const params = new URLSearchParams();
+                if (searchQuery.trim()) {
+                    params.append('q', encodeURIComponent(searchQuery));
+                }
+                if (selectedCategory) {
+                    params.append('category_id', selectedCategory);
+                }
+                if (selectedSubCategory) {
+                    params.append('sub_category_id', selectedSubCategory);
+                }
+                if (selectedSubSubCategory) {
+                    params.append('sub_sub_category_id', selectedSubSubCategory);
+                }
+                if (appliedFilters.price_range) {
+                    params.append('price_range', appliedFilters.price_range);
+                }
+                if (appliedFilters.sort_by) {
+                    params.append('sort_by', appliedFilters.sort_by);
+                }
+
+                const response = await fetch(`http://localhost:5000/api/search?${params}`);
                 if (!response.ok) throw new Error('Search failed');
                 const data = await response.json();
 
-                saveToRecentSearches(searchQuery);
+                if (searchQuery.trim()) {
+                    saveToRecentSearches(searchQuery);
+                }
 
-                // Navigate to search results page with analyzed data
                 navigate('/search', {
                     state: {
                         searchResults: data.products,
                         searchQuery: searchQuery,
                         analyzedQuery: analyzedQuery,
                         totalResults: data.count,
-                        appliedFilters: data.appliedFilters || {},
-                        message: data.message || `Search results for "${searchQuery}"`
+                        appliedFilters: {
+                            ...appliedFilters,
+                            category: selectedCategory,
+                            sub_category: selectedSubCategory,
+                            sub_sub_category: selectedSubSubCategory
+                        },
+                        filters: data.filters || {},
+                        message: data.message || getSearchMessage(searchQuery, selectedCategory, selectedSubCategory, selectedSubSubCategory)
                     }
                 });
 
@@ -320,14 +540,35 @@ const Header = () => {
                 setSearchResults([]);
                 setShowSearchSuggestions(false);
                 closeMobileMenu();
-                setIsSearchExpanded(false);
+                closeSearch();
 
             } catch (err) {
                 console.error('Search error:', err);
-                // Fallback to simple search
                 navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
             }
         }
+    };
+
+    // Get appropriate search message
+    const getSearchMessage = (query, categoryId, subCategoryId, subSubCategoryId) => {
+        if (query.trim() && categoryId) {
+            return `Search results for "${query}" in ${getCategoryNameById(categoryId)}`;
+        } else if (query.trim()) {
+            return `Search results for "${query}"`;
+        } else if (categoryId) {
+            const categoryName = getCategoryNameById(categoryId);
+            const subCategoryName = subCategoryId ? getSubCategoryNameById(subCategoryId) : '';
+            const subSubCategoryName = subSubCategoryId ? getSubSubCategoryNameById(subSubCategoryId) : '';
+
+            if (subSubCategoryName) {
+                return `Products in ${categoryName} > ${subCategoryName} > ${subSubCategoryName}`;
+            } else if (subCategoryName) {
+                return `Products in ${categoryName} > ${subCategoryName}`;
+            } else {
+                return `Products in ${categoryName}`;
+            }
+        }
+        return 'Search results';
     };
 
     // Analyze search query for natural language processing
@@ -336,7 +577,9 @@ const Header = () => {
             originalQuery: query,
             searchTerms: query,
             filters: {},
-            category: null
+            category: null,
+            sub_category: null,
+            sub_sub_category: null
         };
 
         // Price filters
@@ -358,9 +601,18 @@ const Header = () => {
         });
 
         // Category detection
-        const categories = ['shoes', 'dress', 'saree', 'jewelry', 'kurta', 'lehenga', 'mobile', 'laptop'];
-        categories.forEach(category => {
-            if (analyzed.searchTerms.toLowerCase().includes(category)) {
+        const categories = [
+            { pattern: /saree|sarees|sari/i, category: 'Sarees' },
+            { pattern: /dress|dresses|gown/i, category: 'Dresses' },
+            { pattern: /kurta|kurtas|kurti/i, category: 'Kurtas' },
+            { pattern: /lehenga|lehengas/i, category: 'Lehengas' },
+            { pattern: /jewelry|jewellery|jewellry/i, category: 'Jewelry' },
+            { pattern: /bag|bags|handbag/i, category: 'Bags' },
+            { pattern: /shoes|footwear|sneakers/i, category: 'Footwear' }
+        ];
+
+        categories.forEach(({ pattern, category }) => {
+            if (analyzed.searchTerms.toLowerCase().match(pattern)) {
                 analyzed.category = category;
             }
         });
@@ -373,7 +625,6 @@ const Header = () => {
         setSearchQuery(query);
         saveToRecentSearches(query);
 
-        // Analyze the query before navigation
         const analyzedQuery = analyzeSearchQuery(query);
 
         navigate('/search', {
@@ -385,7 +636,61 @@ const Header = () => {
         setShowSearchSuggestions(false);
         setSearchResults([]);
         closeMobileMenu();
-        setIsSearchExpanded(false);
+        closeSearch();
+    };
+
+    // NEW: Handle category-based search
+    const handleCategorySearch = (categoryId = null, subCategoryId = null, subSubCategoryId = null) => {
+        setSelectedCategory(categoryId);
+        setSelectedSubCategory(subCategoryId);
+        setSelectedSubSubCategory(subSubCategoryId);
+
+        // If category is selected, trigger search automatically
+        if (categoryId || subCategoryId || subSubCategoryId) {
+            const searchParams = new URLSearchParams();
+            if (categoryId) searchParams.append('category_id', categoryId);
+            if (subCategoryId) searchParams.append('sub_category_id', subCategoryId);
+            if (subSubCategoryId) searchParams.append('sub_sub_category_id', subSubCategoryId);
+
+            navigate(`/search?${searchParams.toString()}`, {
+                state: {
+                    appliedFilters: {
+                        category: categoryId,
+                        sub_category: subCategoryId,
+                        sub_sub_category: subSubCategoryId
+                    },
+                    message: getSearchMessage('', categoryId, subCategoryId, subSubCategoryId)
+                }
+            });
+
+            setShowCategoryFilter(false);
+            closeMobileMenu();
+            closeSearch();
+        }
+    };
+
+    // Clear all category filters
+    const clearCategoryFilters = () => {
+        setSelectedCategory(null);
+        setSelectedSubCategory(null);
+        setSelectedSubSubCategory(null);
+        setAppliedFilters({
+            ...appliedFilters,
+            category: null,
+            sub_category: null,
+            sub_sub_category: null
+        });
+    };
+
+    // Toggle category filter
+    const toggleCategoryFilter = () => {
+        setShowCategoryFilter(!showCategoryFilter);
+        if (!showCategoryFilter) {
+            setTimeout(() => {
+                const firstCategoryBtn = document.querySelector('.category-item-btn');
+                if (firstCategoryBtn) firstCategoryBtn.focus();
+            }, 100);
+        }
     };
 
     const handleProductClick = (productId) => {
@@ -454,7 +759,6 @@ const Header = () => {
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                // Implement image search logic here
                 const formData = new FormData();
                 formData.append('image', file);
 
@@ -489,33 +793,28 @@ const Header = () => {
         localStorage.removeItem('recentSearches');
     };
 
-    // FIXED: Enhanced Logout Handlers
+    // Enhanced Logout Handlers
     const handleLogout = () => {
         setShowLogoutConfirm(true);
     };
 
     const confirmLogout = () => {
-        // Clear all user data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userAddress');
 
-        // Update state
         setIsLoggedIn(false);
         setUserData(null);
         setUserAddress('');
         setActiveDropdown(null);
 
-        // Call context logout if available
         if (logout) {
             logout();
         }
 
-        // Show success message
         setShowLogoutConfirm(false);
         setShowLogoutSuccess(true);
 
-        // Close mobile menu if open
         closeMobileMenu();
     };
 
@@ -557,17 +856,6 @@ const Header = () => {
             document.body.style.overflow = '';
         };
     }, []);
-
-    const toggleSearch = () => {
-        setIsSearchExpanded(!isSearchExpanded);
-        if (!isSearchExpanded) {
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 100);
-        } else {
-            setShowSearchSuggestions(false);
-        }
-    };
 
     // User Avatar Functions
     const getUserInitials = () => {
@@ -612,6 +900,142 @@ const Header = () => {
         };
     };
 
+    // NEW: Category Filter Component
+    const renderCategoryFilter = () => {
+        if (!showCategoryFilter) return null;
+
+        const subCategories = selectedCategory ? getSubCategoriesForCategory(selectedCategory) : [];
+        const subSubCategories = selectedSubCategory ? getSubSubCategoriesForSubCategory(selectedSubCategory) : [];
+
+        return (
+            <div
+                className="category-filter-dropdown"
+                ref={categoryFilterRef}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="category-filter-header">
+                    <h4>Filter by Category</h4>
+                    {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                        <button
+                            className="clear-all-filters-btn"
+                            onClick={clearCategoryFilters}
+                        >
+                            Clear All
+                        </button>
+                    )}
+                </div>
+
+                <div className="category-filter-content">
+                    {/* Main Categories */}
+                    <div className="category-filter-section">
+                        <h5>Main Categories</h5>
+                        <div className="category-list">
+                            {allCategories.map(category => (
+                                <button
+                                    key={category.id}
+                                    className={`category-item-btn ${selectedCategory === category.id ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedCategory(category.id);
+                                        setSelectedSubCategory(null);
+                                        setSelectedSubSubCategory(null);
+                                    }}
+                                >
+                                    <span>{category.name}</span>
+                                    {selectedCategory === category.id && <FiCheck size={16} />}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Sub Categories (if main category selected) */}
+                    {selectedCategory && subCategories.length > 0 && (
+                        <div className="category-filter-section">
+                            <h5>
+                                {getCategoryNameById(selectedCategory)} - Sub Categories
+                                <FiChevronRight size={14} />
+                            </h5>
+                            <div className="category-list">
+                                {subCategories.map(subCategory => (
+                                    <button
+                                        key={subCategory.id}
+                                        className={`category-item-btn ${selectedSubCategory === subCategory.id ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setSelectedSubCategory(subCategory.id);
+                                            setSelectedSubSubCategory(null);
+                                        }}
+                                    >
+                                        <span>{subCategory.name}</span>
+                                        {selectedSubCategory === subCategory.id && <FiCheck size={16} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sub-Sub Categories (if sub category selected) */}
+                    {selectedSubCategory && subSubCategories.length > 0 && (
+                        <div className="category-filter-section">
+                            <h5>
+                                {getSubCategoryNameById(selectedSubCategory)} - Sub-Sub Categories
+                                <FiChevronRight size={14} />
+                            </h5>
+                            <div className="category-list">
+                                {subSubCategories.map(subSubCategory => (
+                                    <button
+                                        key={subSubCategory.id}
+                                        className={`category-item-btn ${selectedSubSubCategory === subSubCategory.id ? 'active' : ''}`}
+                                        onClick={() => setSelectedSubSubCategory(subSubCategory.id)}
+                                    >
+                                        <span>{subSubCategory.name}</span>
+                                        {selectedSubSubCategory === subSubCategory.id && <FiCheck size={16} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Selected Filters Display */}
+                    {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                        <div className="selected-filters-section">
+                            <h5>Selected Filters:</h5>
+                            <div className="selected-filters-tags">
+                                {selectedCategory && (
+                                    <span className="selected-filter-tag">
+                                        {getCategoryNameById(selectedCategory)}
+                                        <button onClick={() => setSelectedCategory(null)}>×</button>
+                                    </span>
+                                )}
+                                {selectedSubCategory && (
+                                    <span className="selected-filter-tag">
+                                        {getSubCategoryNameById(selectedSubCategory)}
+                                        <button onClick={() => setSelectedSubCategory(null)}>×</button>
+                                    </span>
+                                )}
+                                {selectedSubSubCategory && (
+                                    <span className="selected-filter-tag">
+                                        {getSubSubCategoryNameById(selectedSubSubCategory)}
+                                        <button onClick={() => setSelectedSubSubCategory(null)}>×</button>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Apply Button */}
+                    <div className="category-filter-actions">
+                        <button
+                            className="apply-filters-btn"
+                            onClick={() => handleCategorySearch(selectedCategory, selectedSubCategory, selectedSubSubCategory)}
+                            disabled={!selectedCategory && !selectedSubCategory && !selectedSubSubCategory}
+                        >
+                            Search in Selected Category
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // Desktop Search Suggestions
     const renderSearchSuggestions = () => {
         const hasSearchResults = Array.isArray(searchResults) && searchResults.length > 0;
@@ -625,6 +1049,33 @@ const Header = () => {
                 className="search-suggestions-dropdown"
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* Active Filters Display */}
+                {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                    <div className="active-filters-section">
+                        <div className="active-filters-header">
+                            <FiFilter size={14} />
+                            <span>Active Filters:</span>
+                        </div>
+                        <div className="active-filters-tags">
+                            {selectedCategory && (
+                                <span className="active-filter-tag">
+                                    {getCategoryNameById(selectedCategory)}
+                                </span>
+                            )}
+                            {selectedSubCategory && (
+                                <span className="active-filter-tag">
+                                    {getSubCategoryNameById(selectedSubCategory)}
+                                </span>
+                            )}
+                            {selectedSubSubCategory && (
+                                <span className="active-filter-tag">
+                                    {getSubSubCategoryNameById(selectedSubSubCategory)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Recent Searches */}
                 {hasRecentSearches && !searchQuery && (
                     <div className="suggestions-section">
@@ -658,7 +1109,7 @@ const Header = () => {
                     </div>
                 )}
 
-                {/* Popular Searches */}
+                {/* Popular Searches with Categories */}
                 {!searchQuery && (
                     <div className="suggestions-section">
                         <div className="suggestions-header">
@@ -672,10 +1123,12 @@ const Header = () => {
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleQuickSearch(search);
+                                        handleQuickSearch(search.text);
                                     }}
+                                    title={`Category: ${search.category}`}
                                 >
-                                    {search}
+                                    {search.text}
+                                    <span className="tag-category">{search.category}</span>
                                 </button>
                             ))}
                         </div>
@@ -712,6 +1165,9 @@ const Header = () => {
                                     />
                                     <div className="suggestion-details">
                                         <p className="suggestion-name">{item.name}</p>
+                                        <p className="suggestion-category">
+                                            {item.category} {item.sub_category ? `› ${item.sub_category}` : ''}
+                                        </p>
                                         <p className="suggestion-description">
                                             {item.description?.split("\n").slice(0, 2).join(" ").substring(0, 60)}...
                                         </p>
@@ -851,6 +1307,39 @@ const Header = () => {
                     e.stopPropagation();
                 }}
             >
+                {/* Active Filters in Mobile */}
+                {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                    <div className="mobile-active-filters">
+                        <div className="mobile-active-filters-header">
+                            <FiFilter size={14} />
+                            <span>Active Filters:</span>
+                            <button
+                                className="mobile-clear-filters-btn"
+                                onClick={clearCategoryFilters}
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div className="mobile-active-filters-tags">
+                            {selectedCategory && (
+                                <span className="mobile-active-filter-tag">
+                                    {getCategoryNameById(selectedCategory)}
+                                </span>
+                            )}
+                            {selectedSubCategory && (
+                                <span className="mobile-active-filter-tag">
+                                    {getSubCategoryNameById(selectedSubCategory)}
+                                </span>
+                            )}
+                            {selectedSubSubCategory && (
+                                <span className="mobile-active-filter-tag">
+                                    {getSubSubCategoryNameById(selectedSubSubCategory)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Recent Searches */}
                 {hasRecentSearches && !searchQuery && (
                     <div className="mobile-suggestions-section">
@@ -898,10 +1387,10 @@ const Header = () => {
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleQuickSearch(search);
+                                        handleQuickSearch(search.text);
                                     }}
                                 >
-                                    {search}
+                                    {search.text}
                                 </button>
                             ))}
                         </div>
@@ -938,6 +1427,9 @@ const Header = () => {
                                     />
                                     <div className="mobile-suggestion-details">
                                         <p className="mobile-suggestion-name">{item.name}</p>
+                                        <p className="mobile-suggestion-category">
+                                            {item.category} {item.sub_category ? `› ${item.sub_category}` : ''}
+                                        </p>
                                         <p className="mobile-suggestion-description">
                                             {item.description?.split("\n").slice(0, 2).join(" ").substring(0, 60)}...
                                         </p>
@@ -1185,12 +1677,27 @@ const Header = () => {
                         </ul>
                     </nav>
 
-                    {/* Enhanced Search Bar */}
+                    {/* Enhanced Search Bar with Category Filter */}
                     <div
                         className={`desktop-search-container ${isSearchExpanded ? 'search-expanded' : ''}`}
                         ref={searchContainerRef}
                     >
                         <form onSubmit={handleSearch} className="desktop-search-form">
+                            {/* Category Filter Toggle Button */}
+                            <motion.button
+                                type="button"
+                                className={`category-filter-toggle-btn ${showCategoryFilter ? 'active' : ''}`}
+                                onClick={toggleCategoryFilter}
+                                aria-label="Filter by category"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                            >
+                                <FiGrid size={16} />
+                                {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                                    <span className="filter-indicator"></span>
+                                )}
+                            </motion.button>
+
                             <motion.div
                                 className="desktop-search-input-group"
                                 initial={false}
@@ -1229,17 +1736,22 @@ const Header = () => {
                                     </motion.button>
                                 </div>
                             </motion.div>
+
+                            {/* Search Toggle Button */}
                             <motion.button
-                                type={isSearchExpanded ? 'submit' : 'button'}
-                                className="desktop-search-submit-btn"
-                                aria-label="Search"
-                                onClick={isSearchExpanded ? null : toggleSearch}
+                                type="button"
+                                className="desktop-search-toggle-btn"
+                                aria-label={isSearchExpanded ? "Close search" : "Open search"}
+                                onClick={toggleSearch}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                             >
-                                <FiSearch size={18} />
+                                {isSearchExpanded ? <FiX size={18} /> : <FiSearch size={18} />}
                             </motion.button>
                         </form>
+
+                        {/* Category Filter Dropdown */}
+                        {renderCategoryFilter()}
 
                         {/* Enhanced Search Suggestions */}
                         {renderSearchSuggestions()}
@@ -1428,7 +1940,7 @@ const Header = () => {
                             {/* Mobile Menu Header with Close Button */}
                             <div className="mobile-menu-header-section">
                                 <div className="mobile-menu-header-top">
-                                    <h3 className="mobile-menu-title">Menu</h3>
+                                    <h3 className="brand-name">Pankhudi</h3>
                                     <motion.button
                                         className="mobile-menu-close-btn"
                                         onClick={closeMobileMenu}
@@ -1488,16 +2000,45 @@ const Header = () => {
                                 )}
                             </div>
 
-                            {/* FIXED: Mobile Search - Won't close menu when interacting */}
+                            {/* Mobile Search with Category Filter */}
                             <div
                                 className="mobile-search-wrapper"
                                 ref={mobileSearchContainerRef}
                                 onClick={(e) => {
-                                    // FIXED: Prevent menu close when clicking anywhere in search area
                                     e.preventDefault();
                                     e.stopPropagation();
                                 }}
                             >
+                                {/* Category Filter Button in Mobile */}
+                                <div className="mobile-category-filter-section">
+                                    <button
+                                        className="mobile-category-filter-btn"
+                                        onClick={() => {
+                                            // Open category filter modal or page
+                                            handleMobileNavigation('/categories');
+                                        }}
+                                    >
+                                        <FiGrid size={16} />
+                                        <span>Filter by Category</span>
+                                    </button>
+
+                                    {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
+                                        <div className="mobile-selected-categories">
+                                            <span className="mobile-category-badge">
+                                                {selectedCategory && getCategoryNameById(selectedCategory)}
+                                                {selectedSubCategory && ` › ${getSubCategoryNameById(selectedSubCategory)}`}
+                                                {selectedSubSubCategory && ` › ${getSubSubCategoryNameById(selectedSubSubCategory)}`}
+                                            </span>
+                                            <button
+                                                className="mobile-clear-category-btn"
+                                                onClick={clearCategoryFilters}
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <form onSubmit={handleSearch} className="mobile-search-form-container">
                                     <div className="mobile-search-input-group">
                                         <input
@@ -1513,6 +2054,27 @@ const Header = () => {
                                                 e.stopPropagation();
                                             }}
                                         />
+                                        {searchQuery && (
+                                            <motion.button
+                                                type="button"
+                                                className="mobile-search-clear-btn"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setSearchQuery('');
+                                                    setShowSearchSuggestions(false);
+                                                    searchInputRef.current?.focus();
+                                                }}
+                                                whileHover={{ scale: 1.1 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <FiX size={16} />
+                                            </motion.button>
+                                        )}
                                         <button
                                             type="submit"
                                             className="mobile-search-submit-btn"
@@ -1556,7 +2118,7 @@ const Header = () => {
                                     </div>
                                 </form>
 
-                                {/* FIXED: Mobile Search Suggestions */}
+                                {/* Mobile Search Suggestions */}
                                 {renderMobileSearchSuggestions()}
                             </div>
 
@@ -1615,6 +2177,34 @@ const Header = () => {
                                             onClick={() => handleMobileNavigation('/about')}
                                         >
                                             <FiHelpCircle size={20} /> About Us
+                                        </button>
+                                    </motion.li>
+
+                                    {/* Category Navigation in Mobile Menu */}
+                                    <li className="mobile-nav-section-title">Browse Categories</li>
+                                    {allCategories.slice(0, 5).map(category => (
+                                        <motion.li
+                                            key={category.id}
+                                            className="mobile-nav-item"
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <button
+                                                className="mobile-nav-link-item"
+                                                onClick={() => handleCategorySearch(category.id)}
+                                            >
+                                                <FiTag size={20} /> {category.name}
+                                            </button>
+                                        </motion.li>
+                                    ))}
+                                    <motion.li
+                                        className="mobile-nav-item"
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        <button
+                                            className="mobile-nav-link-item"
+                                            onClick={() => handleMobileNavigation('/categories')}
+                                        >
+                                            <FiLayers size={20} /> All Categories
                                         </button>
                                     </motion.li>
 
@@ -1694,7 +2284,7 @@ const Header = () => {
                 )}
             </AnimatePresence>
 
-            {/* FIXED: Logout Confirmation Dialog */}
+            {/* Logout Confirmation Dialog */}
             {showLogoutConfirm && (
                 <div className="custom-alert-overlay">
                     <div className="custom-alert-box">
@@ -1720,7 +2310,7 @@ const Header = () => {
                 </div>
             )}
 
-            {/* FIXED: Logout Success Dialog */}
+            {/* Logout Success Dialog */}
             {showLogoutSuccess && (
                 <div className="custom-alert-overlay">
                     <div className="custom-alert-box">
