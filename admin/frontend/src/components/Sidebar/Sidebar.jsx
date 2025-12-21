@@ -1,23 +1,68 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
+import {
+    MdDashboard,
+    MdPeople,
+    MdShoppingCart,
+    MdAddBox,
+    MdCategory,
+    MdSettings,
+    MdHelp,
+    MdAssessment
+} from "react-icons/md";
+
 
 function Sidebar({ isCollapsed, onToggleCollapse }) {
     const location = useLocation();
-
     const menuItems = [
-        { path: "/dashboard", name: "Dashboard", icon: "📊" },
-        { path: "/reports", name: "Reports", icon: "📄" },
-        { path: "/users", name: "Users", icon: "👥" },
-        { path: "/cart", name: "User  Cart", icon: "📈" },
-        { path: "/products", name: "Manage Products", icon: "🛒" },
-        { path: "/add-product", name: "Add Product", icon: "➕" },
-        { path: "/settings", name: "Settings", icon: "⚙️" },
-        { path: "/categories", name: "Manage Category", icon: "📝" },
-        { path: "/help", name: "Help & Support", icon: "❓" },
-
-
+        {
+            path: "/dashboard",
+            name: "Dashboard",
+            icon: <MdDashboard />
+        },
+        {
+            path: "/reports",
+            name: "Reports & Analytics",
+            icon: <MdAssessment />
+        },
+        {
+            path: "/users",
+            name: "Users",
+            icon: <MdPeople />
+        },
+        {
+            path: "/cart",
+            name: "User Carts",
+            icon: <MdShoppingCart />
+        },
+        {
+            path: "/products",
+            name: "Manage Products",
+            icon: <MdShoppingCart />
+        },
+        {
+            path: "/add-product",
+            name: "Add Product",
+            icon: <MdAddBox />
+        },
+        {
+            path: "/categories",
+            name: "Manage Categories",
+            icon: <MdCategory />
+        },
+        {
+            path: "/settings",
+            name: "Settings",
+            icon: <MdSettings />
+        },
+        {
+            path: "/help",
+            name: "Help & Support",
+            icon: <MdHelp />
+        }
     ];
+
 
     return (
         <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>

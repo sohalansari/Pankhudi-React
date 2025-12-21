@@ -3,12 +3,12 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import Footer from "../../components/Footer"
+import Footer from "../../components/Footer";
 import "./ProductDetail.css";
 
 marked.setOptions({
     breaks: true,
-    gfm: true
+    gfm: true,
 });
 
 // Enhanced ReviewItem component
@@ -17,15 +17,15 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
     const [isDeleting, setIsDeleting] = useState(false);
 
     const getUserInitial = (userName) => {
-        if (!userName) return 'U';
+        if (!userName) return "U";
         return userName.charAt(0).toUpperCase();
     };
 
     const getAvatarColor = (userName) => {
-        if (!userName) return '#007bff';
+        if (!userName) return "#007bff";
         const colors = [
-            '#007bff', '#28a745', '#dc3545', '#ffc107',
-            '#6f42c1', '#fd7e14', '#20c997', '#e83e8c'
+            "#007bff", "#28a745", "#dc3545", "#ffc107",
+            "#6f42c1", "#fd7e14", "#20c997", "#e83e8c"
         ];
         const index = userName.charCodeAt(0) % colors.length;
         return colors[index];
@@ -49,15 +49,15 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
     const needsReadMore = review.review && review.review.length > 200;
 
     return (
-        <div className={`pankhudi-review-item ${isDeleting ? 'deleting' : ''}`}>
-            <div className="pankhudi-review-header">
-                <div className="pankhudi-reviewer-info">
-                    <div className="pankhudi-avatar-container">
+        <div className={`review-item ${isDeleting ? 'deleting' : ''}`}>
+            <div className="review-header">
+                <div className="reviewer-info">
+                    <div className="avatar-container">
                         {review.user_image ? (
                             <img
                                 src={review.user_image}
                                 alt={review.user_name}
-                                className="pankhudi-reviewer-avatar"
+                                className="reviewer-avatar"
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'flex';
@@ -65,7 +65,7 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
                             />
                         ) : null}
                         <div
-                            className="pankhudi-avatar-fallback"
+                            className="avatar-fallback"
                             style={{
                                 backgroundColor: avatarColor,
                                 display: review.user_image ? 'none' : 'flex'
@@ -74,16 +74,16 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
                             {userInitial}
                         </div>
                     </div>
-                    <div className="pankhudi-reviewer-details">
-                        <h5 className="pankhudi-reviewer-name">{review.user_name || 'Anonymous User'}</h5>
-                        <div className="pankhudi-review-rating">
+                    <div className="reviewer-details">
+                        <h5 className="reviewer-name">{review.user_name || 'Anonymous User'}</h5>
+                        <div className="review-rating">
                             {'⭐'.repeat(review.rating)}
-                            <span className="pankhudi-rating-text">({review.rating}/5)</span>
+                            <span className="rating-text">({review.rating}/5)</span>
                         </div>
                     </div>
                 </div>
-                <div className="pankhudi-review-meta">
-                    <span className="pankhudi-review-date">
+                <div className="review-meta">
+                    <span className="review-date">
                         {new Date(review.created_at).toLocaleDateString('en-IN', {
                             year: 'numeric',
                             month: 'short',
@@ -92,7 +92,7 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
                     </span>
                     {isReviewAuthor(review) && (
                         <button
-                            className="pankhudi-delete-review-btn"
+                            className="delete-review-btn"
                             onClick={handleDelete}
                             disabled={isDeleting}
                             title="Delete this review"
@@ -102,13 +102,13 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor }) => 
                     )}
                 </div>
             </div>
-            <div className="pankhudi-review-content-wrapper">
-                <p className={`pankhudi-review-content ${isExpanded ? 'expanded' : ''}`}>
+            <div className="review-content-wrapper">
+                <p className={`review-content ${isExpanded ? 'expanded' : ''}`}>
                     {review.review}
                 </p>
                 {needsReadMore && (
                     <button
-                        className="pankhudi-read-more-btn"
+                        className="read-more-btn"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         {isExpanded ? 'Read Less' : 'Read More'}
@@ -152,22 +152,22 @@ const ProductDescription = ({ description, showFullDescription, setShowFullDescr
     };
 
     if (!description) {
-        return <p className="pankhudi-no-description">No description available.</p>;
+        return <p className="no-description">No description available.</p>;
     }
 
     return (
-        <div className="pankhudi-description-section">
-            <div className="pankhudi-section-header">
+        <div className="description-section">
+            <div className="section-header">
                 <h3>Product Description</h3>
             </div>
-            <div className="pankhudi-description-content">
+            <div className="description-content">
                 <div
-                    className={`pankhudi-description-text ${showFullDescription ? 'expanded' : 'collapsed'}`}
+                    className={`description-text ${showFullDescription ? 'expanded' : 'collapsed'}`}
                     dangerouslySetInnerHTML={{ __html: parsedDescription }}
                 />
                 {needsReadMore && (
                     <button
-                        className="pankhudi-read-more-btn"
+                        className="read-more-btn"
                         onClick={handleToggle}
                     >
                         {showFullDescription ? 'Read Less' : 'Read More'}
@@ -178,7 +178,7 @@ const ProductDescription = ({ description, showFullDescription, setShowFullDescr
     );
 };
 
-// FIXED Product Gallery Component - ResizeObserver error completely resolved
+// FIXED Product Gallery Component
 const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoading, setImageLoading, videoUrl }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showThumbnailScroll, setShowThumbnailScroll] = useState(false);
@@ -201,7 +201,6 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
         }
     }, [mainImage, images, allMediaItems]);
 
-    // FIXED: Proper ResizeObserver implementation with debouncing
     const checkThumbnailScroll = useCallback(() => {
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
@@ -211,18 +210,14 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
             if (thumbnailContainerRef.current) {
                 const container = thumbnailContainerRef.current;
                 const hasScroll = container.scrollWidth > container.clientWidth;
-
-                // Only update state if changed to prevent unnecessary re-renders
                 setShowThumbnailScroll(prev => prev !== hasScroll ? hasScroll : prev);
             }
         });
     }, []);
 
     useEffect(() => {
-        // Initial check
         checkThumbnailScroll();
 
-        // Use ResizeObserver with proper error handling
         try {
             resizeObserverRef.current = new ResizeObserver((entries) => {
                 for (let entry of entries) {
@@ -237,7 +232,6 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
             }
         } catch (error) {
             console.warn('ResizeObserver not supported, falling back to resize event');
-            // Fallback for browsers that don't support ResizeObserver
             const handleResize = () => {
                 checkThumbnailScroll();
             };
@@ -318,10 +312,6 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
         }
     };
 
-    const handleThumbnailClick = (item, index) => {
-        handleMediaChange(index);
-    };
-
     const handleVideoClick = () => {
         const videoIndex = allMediaItems.length - 1;
         handleMediaChange(videoIndex);
@@ -337,10 +327,10 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
 
     if (!images || images.length === 0) {
         return (
-            <div className="pankhudi-product-gallery">
-                <div className="pankhudi-main-image">
-                    <div className="pankhudi-no-image">
-                        <div className="pankhudi-no-image-icon">📷</div>
+            <div className="product-gallery">
+                <div className="main-image">
+                    <div className="no-image">
+                        <div className="no-image-icon">📷</div>
                         <p>No Image Available</p>
                     </div>
                 </div>
@@ -349,32 +339,32 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
     }
 
     return (
-        <div className="pankhudi-product-gallery">
-            <div className="pankhudi-main-image-container">
+        <div className="product-gallery">
+            <div className="main-image-container">
                 <div
-                    className="pankhudi-main-image"
+                    className="main-image"
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}
                 >
                     {imageLoading && !showVideo && (
-                        <div className="pankhudi-image-loader">
-                            <div className="pankhudi-loader-spinner"></div>
+                        <div className="image-loader">
+                            <div className="loader-spinner"></div>
                         </div>
                     )}
 
                     {showVideo && videoUrl ? (
-                        <div className="pankhudi-video-container">
+                        <div className="video-container">
                             <video
                                 controls
                                 autoPlay
-                                className="pankhudi-product-video"
+                                className="product-video"
                                 poster={images[0]}
                             >
                                 <source src={videoUrl} type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                             <button
-                                className="pankhudi-close-video"
+                                className="close-video"
                                 onClick={handleCloseVideo}
                             >
                                 ✕
@@ -390,7 +380,7 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
                         />
                     )}
 
-                    <div className="pankhudi-image-counter">
+                    <div className="image-counter">
                         {currentIndex + 1} / {allMediaItems.length}
                         {allMediaItems[currentIndex] === 'VIDEO' && ' (Video)'}
                     </div>
@@ -398,14 +388,14 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
                     {allMediaItems.length > 1 && (
                         <>
                             <button
-                                className="pankhudi-nav-btn pankhudi-prev-btn"
+                                className="nav-btn prev-btn"
                                 onClick={prevImage}
                                 aria-label="Previous media"
                             >
                                 ‹
                             </button>
                             <button
-                                className="pankhudi-nav-btn pankhudi-next-btn"
+                                className="nav-btn next-btn"
                                 onClick={nextImage}
                                 aria-label="Next media"
                             >
@@ -416,11 +406,11 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
                 </div>
 
                 {allMediaItems.length > 1 && (
-                    <div className="pankhudi-image-dots">
+                    <div className="image-dots">
                         {allMediaItems.map((_, index) => (
                             <button
                                 key={index}
-                                className={`pankhudi-dot ${index === currentIndex ? 'active' : ''} ${allMediaItems[index] === 'VIDEO' ? 'video-dot' : ''}`}
+                                className={`dot ${index === currentIndex ? 'active' : ''} ${allMediaItems[index] === 'VIDEO' ? 'video-dot' : ''}`}
                                 onClick={() => handleMediaChange(index)}
                                 aria-label={`Go to ${allMediaItems[index] === 'VIDEO' ? 'video' : `image ${index + 1}`}`}
                             />
@@ -429,53 +419,53 @@ const ProductGallery = ({ images, productName, mainImage, setMainImage, imageLoa
                 )}
             </div>
 
-            <div className="pankhudi-thumbnails-section">
-                <div className="pankhudi-thumbnails-header">
-                    <span className="pankhudi-thumbnails-title">
+            <div className="thumbnails-section">
+                <div className="thumbnails-header">
+                    <span className="thumbnails-title">
                         Product Media ({images.length}
                         {videoUrl && ` + 1 Video`})
                     </span>
                     {showThumbnailScroll && (
-                        <span className="pankhudi-scroll-hint">
+                        <span className="scroll-hint">
                             ← Scroll to view all media →
                         </span>
                     )}
                 </div>
 
                 <div
-                    className="pankhudi-thumbnails"
+                    className="thumbnails"
                     ref={thumbnailContainerRef}
                 >
                     {images.map((img, index) => (
                         <div
                             key={index}
-                            className={`pankhudi-thumbnail-container ${mainImage === img ? "active" : ""}`}
+                            className={`thumbnail-container ${mainImage === img ? "active" : ""}`}
+                            onClick={() => handleMediaChange(index)}
                         >
                             <img
                                 src={img}
                                 alt={`${productName} ${index + 1}`}
-                                onClick={() => handleThumbnailClick(img, index)}
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'flex';
                                 }}
                             />
-                            <div className="pankhudi-thumbnail-fallback">
+                            <div className="thumbnail-fallback">
                                 {index + 1}
                             </div>
-                            <div className="pankhudi-thumbnail-overlay">
-                                <span className="pankhudi-thumbnail-number">{index + 1}</span>
+                            <div className="thumbnail-overlay">
+                                <span className="thumbnail-number">{index + 1}</span>
                             </div>
                         </div>
                     ))}
 
                     {videoUrl && (
                         <div
-                            className={`pankhudi-thumbnail-container video-thumbnail ${showVideo ? "active" : ""}`}
+                            className={`thumbnail-container video-thumbnail ${showVideo ? "active" : ""}`}
                             onClick={handleVideoClick}
                         >
-                            <div className="pankhudi-video-thumbnail">
-                                <span className="pankhudi-play-icon">▶</span>
+                            <div className="video-thumbnail-content">
+                                <span className="play-icon">▶</span>
                                 <span>Video</span>
                             </div>
                         </div>
@@ -508,6 +498,7 @@ const ProductSpecifications = ({ product }) => {
         // Categorization
         { label: "Category", value: product.category_name },
         { label: "Sub Category", value: product.sub_category_name },
+        { label: "Sub Sub Category", value: product.sub_sub_category_name },
         { label: "Status", value: product.status },
 
         // Product Specifications
@@ -546,11 +537,11 @@ const ProductSpecifications = ({ product }) => {
 
     if (specifications.length === 0) {
         return (
-            <div className="pankhudi-specifications-section">
-                <div className="pankhudi-section-header">
+            <div className="specifications-section">
+                <div className="section-header">
                     <h3>Product Specifications</h3>
                 </div>
-                <p className="pankhudi-no-specs">No specifications available.</p>
+                <p className="no-specs">No specifications available.</p>
             </div>
         );
     }
@@ -558,23 +549,23 @@ const ProductSpecifications = ({ product }) => {
     const visibleSpecs = expanded ? specifications : specifications.slice(0, 8);
 
     return (
-        <div className="pankhudi-specifications-section">
-            <div className="pankhudi-section-header">
+        <div className="specifications-section">
+            <div className="section-header">
                 <h3>Product Specifications</h3>
                 {specifications.length > 8 && (
                     <button
-                        className="pankhudi-expand-specs-btn"
+                        className="expand-specs-btn"
                         onClick={() => setExpanded(!expanded)}
                     >
                         {expanded ? 'Show Less' : `Show All (${specifications.length})`}
                     </button>
                 )}
             </div>
-            <div className="pankhudi-spec-grid">
+            <div className="spec-grid">
                 {visibleSpecs.map((spec, index) => (
-                    <div key={index} className="pankhudi-spec-item">
-                        <span className="pankhudi-spec-label">{spec.label}</span>
-                        <span className="pankhudi-spec-value">
+                    <div key={index} className="spec-item">
+                        <span className="spec-label">{spec.label}</span>
+                        <span className="spec-value">
                             {typeof spec.value === 'boolean' ? (spec.value ? 'Yes' : 'No') : spec.value}
                         </span>
                     </div>
@@ -589,15 +580,15 @@ const ProductFeatures = ({ features }) => {
     if (!features || features.length === 0) return null;
 
     return (
-        <div className="pankhudi-features-section">
-            <div className="pankhudi-section-header">
+        <div className="features-section">
+            <div className="section-header">
                 <h3>Product Features</h3>
             </div>
-            <div className="pankhudi-features-list">
+            <div className="features-list">
                 {features.map((feature, index) => (
-                    <div key={index} className="pankhudi-feature-item">
-                        <span className="pankhudi-feature-icon">✓</span>
-                        <span className="pankhudi-feature-text">{feature}</span>
+                    <div key={index} className="feature-item">
+                        <span className="feature-icon">✓</span>
+                        <span className="feature-text">{feature}</span>
                     </div>
                 ))}
             </div>
@@ -662,17 +653,17 @@ const ProductVariants = ({
     };
 
     return (
-        <div className="pankhudi-variants-section">
+        <div className="variants-section">
             <h4>Available Options</h4>
-            <div className="pankhudi-variants-grid">
+            <div className="variants-grid">
                 {sizes && sizes.length > 0 && (
-                    <div className="pankhudi-variant-group">
-                        <label className="pankhudi-variant-label">Size:</label>
-                        <div className="pankhudi-variant-options">
+                    <div className="variant-group">
+                        <label className="variant-label">Size:</label>
+                        <div className="variant-options">
                             {sizes.map((size, index) => (
                                 <button
                                     key={index}
-                                    className={`pankhudi-variant-btn ${selectedSize === size ? 'active' : ''}`}
+                                    className={`variant-btn ${selectedSize === size ? 'active' : ''}`}
                                     onClick={() => setSelectedSize(size)}
                                 >
                                     {size}
@@ -683,17 +674,17 @@ const ProductVariants = ({
                 )}
 
                 {colors && colors.length > 0 && (
-                    <div className="pankhudi-variant-group">
-                        <label className="pankhudi-variant-label">Color:</label>
-                        <div className="pankhudi-variant-options color-options">
+                    <div className="variant-group">
+                        <label className="variant-label">Color:</label>
+                        <div className="variant-options color-options">
                             {colors.map((color, index) => {
                                 const colorName = getColorName(color);
                                 const isValidBgColor = isValidColor(color);
 
                                 return (
-                                    <div key={index} className="pankhudi-color-option">
+                                    <div key={index} className="color-option">
                                         <button
-                                            className={`pankhudi-color-btn ${selectedColor === color ? 'active' : ''}`}
+                                            className={`color-btn ${selectedColor === color ? 'active' : ''}`}
                                             onClick={() => setSelectedColor(color)}
                                             style={{
                                                 backgroundColor: isValidBgColor ? color.toLowerCase() : 'transparent',
@@ -705,13 +696,13 @@ const ProductVariants = ({
                                             title={colorName}
                                         >
                                             {selectedColor === color && (
-                                                <span className="pankhudi-color-checkmark">✓</span>
+                                                <span className="color-checkmark">✓</span>
                                             )}
                                             {!isValidBgColor && (
-                                                <span className="pankhudi-color-pattern">{color.charAt(0)}</span>
+                                                <span className="color-pattern">{color.charAt(0)}</span>
                                             )}
                                         </button>
-                                        <span className="pankhudi-color-name">{colorName}</span>
+                                        <span className="color-name">{colorName}</span>
                                     </div>
                                 );
                             })}
@@ -720,13 +711,13 @@ const ProductVariants = ({
                 )}
 
                 {materials && materials.length > 0 && (
-                    <div className="pankhudi-variant-group">
-                        <label className="pankhudi-variant-label">Material:</label>
-                        <div className="pankhudi-variant-options">
+                    <div className="variant-group">
+                        <label className="variant-label">Material:</label>
+                        <div className="variant-options">
                             {materials.map((material, index) => (
                                 <button
                                     key={index}
-                                    className={`pankhudi-variant-btn ${selectedMaterial === material ? 'active' : ''}`}
+                                    className={`variant-btn ${selectedMaterial === material ? 'active' : ''}`}
                                     onClick={() => setSelectedMaterial(material)}
                                 >
                                     {material}
@@ -753,35 +744,35 @@ const ReviewForm = ({
 }) => {
     if (!currentUser) {
         return (
-            <div className="pankhudi-review-login-prompt">
+            <div className="review-login-prompt">
                 <p>Please <Link to="/login">login</Link> to write a review.</p>
             </div>
         );
     }
 
     return (
-        <form className="pankhudi-review-form" onSubmit={onSubmit}>
+        <form className="review-form" onSubmit={onSubmit}>
             <h4>Write a Review</h4>
 
-            <div className="pankhudi-rating-input">
+            <div className="rating-input">
                 <label>Your Rating:</label>
-                <div className="pankhudi-star-rating">
+                <div className="star-rating">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
                             type="button"
-                            className={`pankhudi-star-btn ${selectedRating >= star ? 'active' : ''}`}
+                            className={`star-btn ${selectedRating >= star ? 'active' : ''}`}
                             onClick={() => setSelectedRating(star)}
                             aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
                         >
                             ⭐
                         </button>
                     ))}
-                    <span className="pankhudi-rating-text">({selectedRating}/5)</span>
+                    <span className="rating-text">({selectedRating}/5)</span>
                 </div>
             </div>
 
-            <div className="pankhudi-review-textarea">
+            <div className="review-textarea">
                 <label htmlFor="review-text">Your Review:</label>
                 <textarea
                     id="review-text"
@@ -791,16 +782,16 @@ const ReviewForm = ({
                     rows="4"
                     maxLength="1000"
                 />
-                <div className="pankhudi-char-count">
+                <div className="char-count">
                     {reviewText.length}/1000 characters
                 </div>
             </div>
 
-            {error && <div className="pankhudi-review-error">{error}</div>}
+            {error && <div className="review-error">{error}</div>}
 
             <button
                 type="submit"
-                className="pankhudi-submit-review-btn"
+                className="submit-review-btn"
                 disabled={loading || !reviewText.trim()}
             >
                 {loading ? 'Submitting...' : 'Submit Review'}
@@ -813,12 +804,12 @@ const ReviewForm = ({
 const RelatedProducts = ({ products, loading, navigate }) => {
     if (loading) {
         return (
-            <div className="pankhudi-related-products">
-                <div className="pankhudi-section-header">
+            <div className="related-products">
+                <div className="section-header">
                     <h3>Related Products</h3>
                 </div>
-                <div className="pankhudi-related-loading">
-                    <div className="pankhudi-loading-spinner"></div>
+                <div className="related-loading">
+                    <div className="loading-spinner"></div>
                     <p>Loading related products...</p>
                 </div>
             </div>
@@ -838,18 +829,18 @@ const RelatedProducts = ({ products, loading, navigate }) => {
     };
 
     return (
-        <div className="pankhudi-related-products">
-            <div className="pankhudi-section-header">
+        <div className="related-products">
+            <div className="section-header">
                 <h3>You May Also Like</h3>
             </div>
-            <div className="pankhudi-related-grid">
+            <div className="related-grid">
                 {products.map((product) => (
                     <div
                         key={product.id}
-                        className="pankhudi-related-card"
+                        className="related-card"
                         onClick={() => navigate(`/ProductDetail/${product.id}`)}
                     >
-                        <div className="pankhudi-related-image">
+                        <div className="related-image">
                             <img
                                 src={product.images?.[0] || '/placeholder-image.jpg'}
                                 alt={product.name}
@@ -858,34 +849,34 @@ const RelatedProducts = ({ products, loading, navigate }) => {
                                 }}
                             />
                             {product.discount > 0 && (
-                                <span className="pankhudi-related-discount">
+                                <span className="related-discount">
                                     {product.discount}% OFF
                                 </span>
                             )}
                         </div>
-                        <div className="pankhudi-related-info">
-                            <h5 className="pankhudi-related-title">{product.name}</h5>
-                            <div className="pankhudi-related-price">
+                        <div className="related-info">
+                            <h5 className="related-title">{product.name}</h5>
+                            <div className="related-price">
                                 {product.discount > 0 ? (
                                     <>
-                                        <span className="pankhudi-related-current">
+                                        <span className="related-current">
                                             {formatPrice(product.discountPrice || product.price)}
                                         </span>
-                                        <span className="pankhudi-related-original">
+                                        <span className="related-original">
                                             {formatPrice(product.price)}
                                         </span>
                                     </>
                                 ) : (
-                                    <span className="pankhudi-related-current">
+                                    <span className="related-current">
                                         {formatPrice(product.price)}
                                     </span>
                                 )}
                             </div>
-                            <div className="pankhudi-related-rating">
+                            <div className="related-rating">
                                 ⭐ {product.rating || 'New'}
                             </div>
                             {product.stock === 0 && (
-                                <div className="pankhudi-related-out-of-stock">Out of Stock</div>
+                                <div className="related-out-of-stock">Out of Stock</div>
                             )}
                         </div>
                     </div>
@@ -900,13 +891,13 @@ const ProductTags = ({ tags }) => {
     if (!tags || tags.length === 0) return null;
 
     return (
-        <div className="pankhudi-tags-section">
-            <div className="pankhudi-section-header">
+        <div className="tags-section">
+            <div className="section-header">
                 <h3>Product Tags</h3>
             </div>
-            <div className="pankhudi-tags-container">
+            <div className="tags-container">
                 {tags.map((tag, index) => (
-                    <span key={index} className="pankhudi-tag">
+                    <span key={index} className="tag">
                         #{tag}
                     </span>
                 ))}
@@ -940,11 +931,11 @@ const ProductBadges = ({ product }) => {
     if (badges.length === 0) return null;
 
     return (
-        <div className="pankhudi-product-badges">
+        <div className="product-badges">
             {badges.map((badge, index) => (
                 <span
                     key={index}
-                    className={`pankhudi-badge pankhudi-badge-${badge.type}`}
+                    className={`badge badge-${badge.type}`}
                     style={{ backgroundColor: badge.color }}
                 >
                     {badge.text}
@@ -1009,15 +1000,15 @@ const ProductPolicies = ({ product }) => {
     if (policies.length === 0) return null;
 
     return (
-        <div className="pankhudi-policies-section">
+        <div className="policies-section">
             <h4>Product Policies & Services</h4>
-            <div className="pankhudi-policies-grid">
+            <div className="policies-grid">
                 {policies.map((policy, index) => (
-                    <div key={index} className="pankhudi-policy-item">
-                        <div className="pankhudi-policy-icon">{policy.icon}</div>
-                        <div className="pankhudi-policy-content">
-                            <h5 className="pankhudi-policy-title">{policy.title}</h5>
-                            <p className="pankhudi-policy-description">{policy.description}</p>
+                    <div key={index} className="policy-item">
+                        <div className="policy-icon">{policy.icon}</div>
+                        <div className="policy-content">
+                            <h5 className="policy-title">{policy.title}</h5>
+                            <p className="policy-description">{policy.description}</p>
                         </div>
                     </div>
                 ))}
@@ -1026,7 +1017,7 @@ const ProductPolicies = ({ product }) => {
     );
 };
 
-// Main ProductDetailsEnhanced Component with ResizeObserver fixes
+// Main ProductDetailsEnhanced Component
 const ProductDetailsEnhanced = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -1294,6 +1285,7 @@ const ProductDetailsEnhanced = () => {
                 product_brand: product.brand,
                 product_category: product.category_name,
                 product_sub_category: product.sub_category_name,
+                product_sub_sub_category: product.sub_sub_category_name,
                 weight: product.weight,
                 shipping_cost: product.shipping_cost,
                 free_shipping: product.free_shipping
@@ -1357,7 +1349,8 @@ const ProductDetailsEnhanced = () => {
                 product_sku: product.sku,
                 product_brand: product.brand,
                 product_category: product.category_name,
-                product_sub_category: product.sub_category_name
+                product_sub_category: product.sub_category_name,
+                product_sub_sub_category: product.sub_sub_category_name
             };
 
             await axios.post(
@@ -1507,17 +1500,17 @@ const ProductDetailsEnhanced = () => {
     };
 
     if (loading) return (
-        <div className="pankhudi-loading">
-            <div className="pankhudi-loading-spinner"></div>
+        <div className="loading">
+            <div className="loading-spinner"></div>
             <p>Loading product details...</p>
         </div>
     );
 
     if (!product) return (
-        <div className="pankhudi-error">
+        <div className="error">
             <h2>Product Not Found</h2>
             <p>The product you're looking for doesn't exist.</p>
-            <Link to="/" className="pankhudi-back-home">Back to Home</Link>
+            <Link to="/" className="back-home">Back to Home</Link>
         </div>
     );
 
@@ -1529,12 +1522,12 @@ const ProductDetailsEnhanced = () => {
     const totalReviews = reviews.length;
 
     return (
-        <div className="pankhudi-product-details">
+        <div className="product-details-container">
             {/* Header */}
-            <header className="pankhudi-product-header">
-                <div className="pankhudi-header-content">
+            <header className="product-header">
+                <div className="header-content">
                     <Link to="/" className="brand-name">Pankhudi</Link>
-                    <nav className="pankhudi-breadcrumb">
+                    <nav className="breadcrumb">
                         <Link to="/">Home</Link> &gt;
                         <Link to={`/category/${product.category_id}`}>
                             {product.category_name || 'Category'}
@@ -1546,23 +1539,69 @@ const ProductDetailsEnhanced = () => {
                                 </Link> &gt;
                             </>
                         )}
-                        <span>{product.name}</span>
+                        {product.sub_sub_category_name && (
+                            <>
+                                <Link to={`/category/${product.category_id}?sub_category=${product.sub_category_id}&sub_sub_category=${product.sub_sub_category_id}`}>
+                                    {product.sub_sub_category_name}
+                                </Link> &gt;
+                            </>
+                        )}
+                        <span className="product-name-breadcrumb">{product.name}</span>
                     </nav>
                 </div>
             </header>
 
             {/* Cart Message */}
             {cartMessage && (
-                <div className={`pankhudi-cart-message ${cartMessageType}`}>
+                <div className={`cart-message ${cartMessageType}`}>
                     {cartMessage}
                 </div>
             )}
 
-            {/* Main Product Section */}
-            <main className="pankhudi-product-main">
-                <div className="pankhudi-product-container">
-                    {/* Product Gallery */}
-                    <div className="pankhudi-gallery-section">
+            {/* Main Product Section - Amazon-like Layout */}
+            <main className="product-main">
+                {/* Mobile View - Stacked Layout */}
+                <div className="mobile-view">
+                    {/* Product Badges */}
+                    <ProductBadges product={product} />
+
+                    {/* Product Title - Mobile */}
+                    <div className="product-title-mobile">
+                        <h1>{product.name}</h1>
+                        {product.sku && (
+                            <div className="product-sku-mobile">
+                                SKU: {product.sku}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Category Info - Mobile */}
+                    <div className="category-info-mobile">
+                        <div className="category-path-mobile">
+                            <span className="category-badge">
+                                {product.category_name}
+                            </span>
+                            {product.sub_category_name && (
+                                <>
+                                    <span className="separator">›</span>
+                                    <span className="sub-category-badge">
+                                        {product.sub_category_name}
+                                    </span>
+                                </>
+                            )}
+                            {product.sub_sub_category_name && (
+                                <>
+                                    <span className="separator">›</span>
+                                    <span className="sub-sub-category-badge">
+                                        {product.sub_sub_category_name}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Gallery - Mobile */}
+                    <div className="gallery-section-mobile">
                         <ProductGallery
                             images={product.images}
                             productName={product.name}
@@ -1574,104 +1613,47 @@ const ProductDetailsEnhanced = () => {
                         />
                     </div>
 
-                    {/* Product Info */}
-                    <div className="pankhudi-info-section">
-                        <ProductBadges product={product} />
-
-                        <div className="pankhudi-product-header-info">
-                            <h1 className="pankhudi-product-title">{product.name}</h1>
-                            {product.sku && (
-                                <div className="pankhudi-product-sku">
-                                    SKU: {product.sku}
-                                </div>
-                            )}
-                            <button
-                                className={`pankhudi-wishlist-btn ${isWishlisted ? 'active' : ''}`}
-                                onClick={handleWishlistToggle}
-                                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                            >
-                                {isWishlisted ? '❤️' : '🤍'}
-                            </button>
-                        </div>
-
-                        {/* Category Info */}
-                        <div className="pankhudi-category-info">
-                            <span className="pankhudi-category-badge">
-                                {product.category_name}
-                            </span>
-                            {product.sub_category_name && (
-                                <span className="pankhudi-sub-category-badge">
-                                    {product.sub_category_name}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Short Description */}
-                        {product.short_description && (
-                            <div className="pankhudi-short-description">
-                                <p>{product.short_description}</p>
-                            </div>
-                        )}
-
-                        {/* Rating Section */}
-                        <div className="pankhudi-rating-section">
-                            <div className="pankhudi-rating-main">
-                                <span className="pankhudi-rating">⭐ {averageRating}</span>
-                                <span className="pankhudi-review-count">({totalReviews} reviews)</span>
-                                {product.is_trending && <span className="pankhudi-trending-badge">TRENDING</span>}
-                                {product.is_featured && <span className="pankhudi-featured-badge">FEATURED</span>}
-                                {product.is_bestseller && <span className="pankhudi-bestseller-badge">BESTSELLER</span>}
-                                {isLiveFetching && <span className="pankhudi-live-badge">LIVE</span>}
-                            </div>
-                            <button
-                                className="pankhudi-view-all-reviews"
-                                onClick={scrollToReviews}
-                            >
+                    {/* Rating - Mobile */}
+                    <div className="rating-section-mobile">
+                        <div className="rating-main-mobile">
+                            <span className="rating">⭐ {averageRating}</span>
+                            <span className="review-count">({totalReviews} reviews)</span>
+                            <button className="view-reviews-btn" onClick={scrollToReviews}>
                                 View all reviews
                             </button>
                         </div>
+                    </div>
 
-                        {/* Price Section */}
-                        <div className="pankhudi-price-section">
+                    {/* Price Section - Mobile */}
+                    <div className="price-section-mobile">
+                        <div className="price-content-mobile">
                             {hasDiscount ? (
                                 <>
-                                    <span className="pankhudi-discounted-price">{formatPrice(discountedPrice)}</span>
-                                    <span className="pankhudi-original-price">{formatPrice(product.price)}</span>
-                                    <span className="pankhudi-discount-badge">{product.discount}% OFF</span>
+                                    <span className="discounted-price">{formatPrice(discountedPrice)}</span>
+                                    <div className="original-price-wrapper">
+                                        <span className="original-price">{formatPrice(product.price)}</span>
+                                        <span className="discount-badge">{product.discount}% OFF</span>
+                                    </div>
                                 </>
                             ) : (
-                                <span className="pankhudi-price">{formatPrice(product.price)}</span>
+                                <span className="price">{formatPrice(product.price)}</span>
                             )}
                             {product.tax_class && (
-                                <span className="pankhudi-tax-info">+ {product.tax_class} tax applicable</span>
+                                <span className="tax-info">+ {product.tax_class} tax applicable</span>
                             )}
                         </div>
+                    </div>
 
-                        {/* Basic Info */}
-                        <div className="pankhudi-basic-info">
-                            {product.brand && (
-                                <div className="pankhudi-info-item">
-                                    <strong>Brand:</strong> {product.brand}
-                                </div>
-                            )}
-                            {product.material && (
-                                <div className="pankhudi-info-item">
-                                    <strong>Material:</strong> {product.material}
-                                </div>
-                            )}
-                            {product.weight && (
-                                <div className="pankhudi-info-item">
-                                    <strong>Weight:</strong> {product.weight} kg
-                                </div>
-                            )}
-                            {product.dimensions && (
-                                <div className="pankhudi-info-item">
-                                    <strong>Dimensions:</strong> {product.dimensions}
-                                </div>
-                            )}
+                    {/* Short Description - Mobile */}
+                    {product.short_description && (
+                        <div className="short-description-mobile">
+                            <h4>About this item</h4>
+                            <p>{product.short_description}</p>
                         </div>
+                    )}
 
-                        {/* Variants */}
+                    {/* Variants - Mobile */}
+                    <div className="variants-section-mobile">
                         <ProductVariants
                             sizes={product.sizes}
                             colors={product.colors}
@@ -1683,232 +1665,448 @@ const ProductDetailsEnhanced = () => {
                             selectedMaterial={selectedMaterial}
                             setSelectedMaterial={setSelectedMaterial}
                         />
+                    </div>
 
-                        {/* Quantity Selector */}
-                        <div className="pankhudi-quantity-section">
-                            <div className="pankhudi-quantity-selector">
-                                <label>Quantity:</label>
-                                <div className="pankhudi-quantity-controls">
-                                    <button
-                                        type="button"
-                                        onClick={decrementQuantity}
-                                        disabled={quantity <= (product.min_order_quantity || 1)}
-                                        aria-label="Decrease quantity"
-                                    >−</button>
-                                    <input
-                                        type="number"
-                                        value={quantity}
-                                        onChange={handleQuantityChange}
-                                        min={product.min_order_quantity || 1}
-                                        max={product.max_order_quantity || product.stock}
-                                        aria-label="Product quantity"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={incrementQuantity}
-                                        disabled={quantity >= (product.max_order_quantity || product.stock || 0)}
-                                        aria-label="Increase quantity"
-                                    >+</button>
-                                </div>
+                    {/* Quantity Section - Mobile */}
+                    <div className="quantity-section-mobile">
+                        <div className="quantity-selector-mobile">
+                            <label>Quantity:</label>
+                            <div className="quantity-controls-mobile">
+                                <button
+                                    type="button"
+                                    onClick={decrementQuantity}
+                                    disabled={quantity <= (product.min_order_quantity || 1)}
+                                    aria-label="Decrease quantity"
+                                >−</button>
+                                <input
+                                    type="number"
+                                    value={quantity}
+                                    onChange={handleQuantityChange}
+                                    min={product.min_order_quantity || 1}
+                                    max={product.max_order_quantity || product.stock}
+                                    aria-label="Product quantity"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={incrementQuantity}
+                                    disabled={quantity >= (product.max_order_quantity || product.stock || 0)}
+                                    aria-label="Increase quantity"
+                                >+</button>
                             </div>
-                            <div className="pankhudi-stock-info">
-                                <span className={`pankhudi-stock ${isLowStock ? 'low-stock' : ''} ${product.stock === 0 ? 'out-of-stock' : ''}`}>
-                                    {product.stock > 10 ? 'In Stock' :
-                                        product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock'}
-                                </span>
-                                {product.low_stock_threshold && product.stock <= product.low_stock_threshold && (
-                                    <span className="pankhudi-low-stock-warning">Low Stock Alert!</span>
-                                )}
-                            </div>
-                            {(product.min_order_quantity > 1 || product.max_order_quantity) && (
-                                <div className="pankhudi-quantity-constraints">
-                                    {product.min_order_quantity > 1 && <span>Min: {product.min_order_quantity}</span>}
-                                    {product.max_order_quantity && <span>Max: {product.max_order_quantity}</span>}
-                                </div>
-                            )}
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="pankhudi-action-buttons">
-                            <button
-                                className="pankhudi-add-to-cart-btn"
-                                onClick={handleAddToCart}
-                                disabled={addingToCart || product.stock === 0}
-                            >
-                                {addingToCart ? 'Adding...' : (product.stock === 0 ? 'Out of Stock' : 'Add to Cart')}
-                            </button>
-                            <button
-                                className="pankhudi-buy-now-btn"
-                                onClick={handleBuyNow}
-                                disabled={addingToCart || product.stock === 0}
-                            >
-                                Buy Now
-                            </button>
+                        <div className="stock-info-mobile">
+                            <span className={`stock ${isLowStock ? 'low-stock' : ''} ${product.stock === 0 ? 'out-of-stock' : ''}`}>
+                                {product.stock > 10 ? 'In Stock' :
+                                    product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock'}
+                            </span>
                         </div>
+                    </div>
 
-                        {/* Policies */}
+                    {/* Action Buttons - Mobile */}
+                    <div className="action-buttons-mobile">
+                        <button
+                            className="wishlist-btn-mobile"
+                            onClick={handleWishlistToggle}
+                            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                        >
+                            {isWishlisted ? '❤️' : '🤍'} Wishlist
+                        </button>
+                        <button
+                            className="add-to-cart-btn-mobile"
+                            onClick={handleAddToCart}
+                            disabled={addingToCart || product.stock === 0}
+                        >
+                            {addingToCart ? 'Adding...' : (product.stock === 0 ? 'Out of Stock' : 'Add to Cart')}
+                        </button>
+                        <button
+                            className="buy-now-btn-mobile"
+                            onClick={handleBuyNow}
+                            disabled={addingToCart || product.stock === 0}
+                        >
+                            Buy Now
+                        </button>
+                    </div>
+
+                    {/* Policies - Mobile */}
+                    <div className="policies-section-mobile">
                         <ProductPolicies product={product} />
-
-                        {/* Tags */}
-                        {product.tags && product.tags.length > 0 && (
-                            <div className="pankhudi-tags-preview">
-                                <strong>Tags: </strong>
-                                {product.tags.map((tag, index) => (
-                                    <span key={index} className="pankhudi-tag">{tag}</span>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
-            </main>
 
-            {/* Product Details Tabs */}
-            <section className="pankhudi-product-tabs">
-                <div className="pankhudi-tabs-container">
-                    <div className="pankhudi-tab-headers">
-                        <button
-                            className={`pankhudi-tab-header ${activeTab === 'description' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('description')}
-                        >
-                            Description
-                        </button>
-                        <button
-                            className={`pankhudi-tab-header ${activeTab === 'specifications' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('specifications')}
-                        >
-                            Specifications
-                        </button>
-                        <button
-                            className={`pankhudi-tab-header ${activeTab === 'features' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('features')}
-                        >
-                            Features
-                        </button>
-                        <button
-                            className={`pankhudi-tab-header ${activeTab === 'reviews' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('reviews')}
-                            id="reviews-section"
-                        >
-                            Reviews ({totalReviews})
-                        </button>
-                    </div>
+                {/* Desktop View - Amazon-like 3-column Layout */}
+                <div className="desktop-view">
+                    <div className="product-container-desktop">
+                        {/* Left Column - Gallery */}
+                        <div className="gallery-column">
+                            <ProductGallery
+                                images={product.images}
+                                productName={product.name}
+                                mainImage={mainImage}
+                                setMainImage={setMainImage}
+                                imageLoading={imageLoading}
+                                setImageLoading={setImageLoading}
+                                videoUrl={product.video}
+                            />
+                        </div>
 
-                    <div className="pankhudi-tab-content">
-                        {activeTab === 'description' && (
-                            <div className="pankhudi-tab-panel">
-                                <ProductDescription
-                                    description={product.description}
-                                    showFullDescription={showFullDescription}
-                                    setShowFullDescription={setShowFullDescription}
-                                />
-                                <ProductTags tags={product.tags} />
-                            </div>
-                        )}
+                        {/* Middle Column - Product Info */}
+                        <div className="info-column">
+                            <ProductBadges product={product} />
 
-                        {activeTab === 'specifications' && (
-                            <div className="pankhudi-tab-panel">
-                                <ProductSpecifications product={product} />
-                            </div>
-                        )}
-
-                        {activeTab === 'features' && (
-                            <div className="pankhudi-tab-panel">
-                                <ProductFeatures features={product.features} />
-                            </div>
-                        )}
-
-                        {activeTab === 'reviews' && (
-                            <div className="pankhudi-tab-panel">
-                                <div className="pankhudi-reviews-header">
-                                    <div className="pankhudi-reviews-summary">
-                                        <div className="pankhudi-average-rating">
-                                            <span className="pankhudi-rating-big">{averageRating}</span>
-                                            <div className="pankhudi-rating-stars">
-                                                {'⭐'.repeat(5)}
-                                            </div>
-                                            <span className="pankhudi-rating-count">{totalReviews} reviews</span>
-                                        </div>
-                                        <div className="pankhudi-rating-breakdown">
-                                            {[5, 4, 3, 2, 1].map((rating) => (
-                                                <div key={rating} className="pankhudi-rating-bar">
-                                                    <span>{rating} ⭐</span>
-                                                    <div className="pankhudi-bar-container">
-                                                        <div
-                                                            className="pankhudi-bar-fill"
-                                                            style={{
-                                                                width: `${totalReviews > 0 ? (ratingDistribution[rating] / totalReviews) * 100 : 0}%`
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                    <span>({ratingDistribution[rating]})</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="pankhudi-reviews-controls">
-                                        <button
-                                            className="pankhudi-refresh-reviews"
-                                            onClick={manuallyRefreshReviews}
-                                            disabled={reviewsLoading}
-                                        >
-                                            {reviewsLoading ? 'Refreshing...' : '🔄 Refresh'}
-                                        </button>
-                                        {isLiveFetching && (
-                                            <span className="pankhudi-live-indicator">
-                                                ● Live Updates
-                                            </span>
-                                        )}
-                                    </div>
+                            <div className="product-header-info-desktop">
+                                <div className="category-path-desktop">
+                                    <Link to={`/category/${product.category_id}`} className="category-link">
+                                        {product.category_name}
+                                    </Link>
+                                    {product.sub_category_name && (
+                                        <>
+                                            <span className="separator">›</span>
+                                            <Link to={`/category/${product.category_id}?sub_category=${product.sub_category_id}`} className="sub-category-link">
+                                                {product.sub_category_name}
+                                            </Link>
+                                        </>
+                                    )}
+                                    {product.sub_sub_category_name && (
+                                        <>
+                                            <span className="separator">›</span>
+                                            <Link to={`/category/${product.category_id}?sub_category=${product.sub_category_id}&sub_sub_category=${product.sub_sub_category_id}`} className="sub-sub-category-link">
+                                                {product.sub_sub_category_name}
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
 
-                                {/* Review Form */}
-                                <ReviewForm
-                                    onSubmit={handleReviewSubmit}
-                                    reviewText={reviewText}
-                                    setReviewText={setReviewText}
-                                    selectedRating={selectedRating}
-                                    setSelectedRating={setSelectedRating}
-                                    loading={reviewLoading}
-                                    error={reviewError}
-                                    currentUser={currentUser}
-                                />
+                                <h1 className="product-title-desktop">{product.name}</h1>
 
-                                {/* Reviews List */}
-                                <div className="pankhudi-reviews-list">
-                                    {reviewsLoading ? (
-                                        <div className="pankhudi-reviews-loading">
-                                            <div className="pankhudi-loading-spinner"></div>
-                                            <p>Loading reviews...</p>
-                                        </div>
-                                    ) : totalReviews > 0 ? (
-                                        reviews.map((review) => (
-                                            <ReviewItem
-                                                key={review.id}
-                                                review={review}
-                                                currentUser={currentUser}
-                                                onDeleteReview={handleDeleteReview}
-                                                isReviewAuthor={isReviewAuthor}
-                                            />
-                                        ))
+                                <div className="rating-section-desktop">
+                                    <div className="rating-main-desktop">
+                                        <span className="rating-desktop">⭐ {averageRating}</span>
+                                        <span className="review-count-desktop">({totalReviews} reviews)</span>
+                                        {product.is_trending && <span className="trending-badge-desktop">TRENDING</span>}
+                                        {product.is_featured && <span className="featured-badge-desktop">FEATURED</span>}
+                                        {product.is_bestseller && <span className="bestseller-badge-desktop">BESTSELLER</span>}
+                                    </div>
+                                    <button className="view-reviews-btn-desktop" onClick={scrollToReviews}>
+                                        View all reviews
+                                    </button>
+                                </div>
+
+                                {product.sku && (
+                                    <div className="product-sku-desktop">
+                                        <strong>SKU:</strong> {product.sku}
+                                    </div>
+                                )}
+
+                                {product.brand && (
+                                    <div className="product-brand-desktop">
+                                        <strong>Brand:</strong> {product.brand}
+                                    </div>
+                                )}
+
+                                <div className="price-section-desktop">
+                                    {hasDiscount ? (
+                                        <>
+                                            <div className="price-row">
+                                                <span className="discounted-price-desktop">{formatPrice(discountedPrice)}</span>
+                                                <span className="discount-badge-desktop">{product.discount}% OFF</span>
+                                            </div>
+                                            <div className="original-price-row">
+                                                <span className="original-price-desktop">M.R.P.: {formatPrice(product.price)}</span>
+                                            </div>
+                                        </>
                                     ) : (
-                                        <div className="pankhudi-no-reviews">
-                                            <p>No reviews yet. Be the first to review this product!</p>
+                                        <div className="price-row">
+                                            <span className="price-desktop">{formatPrice(product.price)}</span>
+                                        </div>
+                                    )}
+                                    {product.tax_class && (
+                                        <div className="tax-info-desktop">
+                                            Inclusive of all taxes
                                         </div>
                                     )}
                                 </div>
+
+                                {product.short_description && (
+                                    <div className="short-description-desktop">
+                                        <h4>About this item</h4>
+                                        <p>{product.short_description}</p>
+                                    </div>
+                                )}
+
+                                <div className="variants-section-desktop">
+                                    <ProductVariants
+                                        sizes={product.sizes}
+                                        colors={product.colors}
+                                        materials={product.materials}
+                                        selectedSize={selectedSize}
+                                        setSelectedSize={setSelectedSize}
+                                        selectedColor={selectedColor}
+                                        setSelectedColor={setSelectedColor}
+                                        selectedMaterial={selectedMaterial}
+                                        setSelectedMaterial={setSelectedMaterial}
+                                    />
+                                </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Right Column - Buy Box */}
+                        <div className="buy-box-column">
+                            <div className="buy-box">
+                                <div className="buy-box-header">
+                                    <span className="buy-box-price">{formatPrice(discountedPrice)}</span>
+                                    {hasDiscount && (
+                                        <span className="buy-box-discount">Save ₹{(product.price - discountedPrice).toFixed(2)} ({product.discount}%)</span>
+                                    )}
+                                </div>
+
+                                <div className="buy-box-content">
+                                    <div className="stock-info-desktop">
+                                        <span className={`stock-desktop ${isLowStock ? 'low-stock' : ''} ${product.stock === 0 ? 'out-of-stock' : ''}`}>
+                                            {product.stock > 10 ? 'In Stock' :
+                                                product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock'}
+                                        </span>
+                                        {isLowStock && (
+                                            <span className="low-stock-warning-desktop">Order soon.</span>
+                                        )}
+                                    </div>
+
+                                    <div className="quantity-section-desktop">
+                                        <label className="quantity-label">Quantity:</label>
+                                        <div className="quantity-controls-desktop">
+                                            <button
+                                                type="button"
+                                                onClick={decrementQuantity}
+                                                disabled={quantity <= (product.min_order_quantity || 1)}
+                                                aria-label="Decrease quantity"
+                                            >−</button>
+                                            <input
+                                                type="number"
+                                                value={quantity}
+                                                onChange={handleQuantityChange}
+                                                min={product.min_order_quantity || 1}
+                                                max={product.max_order_quantity || product.stock}
+                                                aria-label="Product quantity"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={incrementQuantity}
+                                                disabled={quantity >= (product.max_order_quantity || product.stock || 0)}
+                                                aria-label="Increase quantity"
+                                            >+</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="buy-box-buttons">
+                                        <button
+                                            className="add-to-cart-btn-desktop"
+                                            onClick={handleAddToCart}
+                                            disabled={addingToCart || product.stock === 0}
+                                        >
+                                            {addingToCart ? 'Adding...' : (product.stock === 0 ? 'Out of Stock' : 'Add to Cart')}
+                                        </button>
+                                        <button
+                                            className="buy-now-btn-desktop"
+                                            onClick={handleBuyNow}
+                                            disabled={addingToCart || product.stock === 0}
+                                        >
+                                            Buy Now
+                                        </button>
+                                        <button
+                                            className="wishlist-btn-desktop"
+                                            onClick={handleWishlistToggle}
+                                            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                        >
+                                            {isWishlisted ? '❤️' : '🤍'} Add to Wishlist
+                                        </button>
+                                    </div>
+
+                                    <div className="delivery-info">
+                                        <div className="delivery-option">
+                                            <span className="delivery-icon">🚚</span>
+                                            <div className="delivery-details">
+                                                <span className="delivery-title">Delivery</span>
+                                                <span className="delivery-location">Select your location</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="return-info">
+                                        <span className="return-icon">↩️</span>
+                                        <span className="return-text">Return Policy: {product.return_policy || '7 days return policy'}</span>
+                                    </div>
+
+                                    <div className="secure-payment">
+                                        <span className="secure-icon">🔒</span>
+                                        <span className="secure-text">Secure transaction</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="seller-info">
+                                <h4>Sold by</h4>
+                                <div className="seller-details">
+                                    <span className="seller-name">Pankhudi Store</span>
+                                    <span className="seller-rating">⭐ 4.5/5</span>
+                                </div>
+                                <div className="seller-policies">
+                                    <span className="policy-item">✓ Fulfilled by Pankhudi</span>
+                                    <span className="policy-item">✓ 7-day Returns</span>
+                                    <span className="policy-item">✓ GST invoice available</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Related Products */}
-            <RelatedProducts
-                products={relatedProducts}
-                loading={relatedLoading}
-                navigate={navigate}
-            />
-            <div className="box">
+                {/* Product Details Tabs (Common for both mobile and desktop) */}
+                <section className="product-tabs-section">
+                    <div className="tabs-container">
+                        <div className="tab-headers">
+                            <button
+                                className={`tab-header ${activeTab === 'description' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('description')}
+                            >
+                                Description
+                            </button>
+                            <button
+                                className={`tab-header ${activeTab === 'specifications' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('specifications')}
+                            >
+                                Specifications
+                            </button>
+                            <button
+                                className={`tab-header ${activeTab === 'features' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('features')}
+                            >
+                                Features
+                            </button>
+                            <button
+                                className={`tab-header ${activeTab === 'reviews' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('reviews')}
+                                id="reviews-section"
+                            >
+                                Reviews ({totalReviews})
+                            </button>
+                        </div>
+
+                        <div className="tab-content">
+                            {activeTab === 'description' && (
+                                <div className="tab-panel">
+                                    <ProductDescription
+                                        description={product.description}
+                                        showFullDescription={showFullDescription}
+                                        setShowFullDescription={setShowFullDescription}
+                                    />
+                                    <ProductTags tags={product.tags} />
+                                </div>
+                            )}
+
+                            {activeTab === 'specifications' && (
+                                <div className="tab-panel">
+                                    <ProductSpecifications product={product} />
+                                </div>
+                            )}
+
+                            {activeTab === 'features' && (
+                                <div className="tab-panel">
+                                    <ProductFeatures features={product.features} />
+                                </div>
+                            )}
+
+                            {activeTab === 'reviews' && (
+                                <div className="tab-panel">
+                                    <div className="reviews-header">
+                                        <div className="reviews-summary">
+                                            <div className="average-rating">
+                                                <span className="rating-big">{averageRating}</span>
+                                                <div className="rating-stars">
+                                                    {'⭐'.repeat(5)}
+                                                </div>
+                                                <span className="rating-count">{totalReviews} reviews</span>
+                                            </div>
+                                            <div className="rating-breakdown">
+                                                {[5, 4, 3, 2, 1].map((rating) => (
+                                                    <div key={rating} className="rating-bar">
+                                                        <span>{rating} ⭐</span>
+                                                        <div className="bar-container">
+                                                            <div
+                                                                className="bar-fill"
+                                                                style={{
+                                                                    width: `${totalReviews > 0 ? (ratingDistribution[rating] / totalReviews) * 100 : 0}%`
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                        <span>({ratingDistribution[rating]})</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="reviews-controls">
+                                            <button
+                                                className="refresh-reviews"
+                                                onClick={manuallyRefreshReviews}
+                                                disabled={reviewsLoading}
+                                            >
+                                                {reviewsLoading ? 'Refreshing...' : '🔄 Refresh'}
+                                            </button>
+                                            {isLiveFetching && (
+                                                <span className="live-indicator">
+                                                    ● Live Updates
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Review Form */}
+                                    <ReviewForm
+                                        onSubmit={handleReviewSubmit}
+                                        reviewText={reviewText}
+                                        setReviewText={setReviewText}
+                                        selectedRating={selectedRating}
+                                        setSelectedRating={setSelectedRating}
+                                        loading={reviewLoading}
+                                        error={reviewError}
+                                        currentUser={currentUser}
+                                    />
+
+                                    {/* Reviews List */}
+                                    <div className="reviews-list">
+                                        {reviewsLoading ? (
+                                            <div className="reviews-loading">
+                                                <div className="loading-spinner"></div>
+                                                <p>Loading reviews...</p>
+                                            </div>
+                                        ) : totalReviews > 0 ? (
+                                            reviews.map((review) => (
+                                                <ReviewItem
+                                                    key={review.id}
+                                                    review={review}
+                                                    currentUser={currentUser}
+                                                    onDeleteReview={handleDeleteReview}
+                                                    isReviewAuthor={isReviewAuthor}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="no-reviews">
+                                                <p>No reviews yet. Be the first to review this product!</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Related Products */}
+                <RelatedProducts
+                    products={relatedProducts}
+                    loading={relatedLoading}
+                    navigate={navigate}
+                />
+            </main>
+
+            <div className="footer-container">
                 <Footer />
             </div>
         </div>
