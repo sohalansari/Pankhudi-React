@@ -13,6 +13,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const categoryRoutes = require("./routes/categories");
 const subCategoryRoutes = require("./routes/subcategories");
 const subSubCategoryRoutes = require("./routes/subsubcategories");
+const bannerRoutes = require('./routes/banner');
 
 const app = express();
 
@@ -31,12 +32,19 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// ✅ Database Middleware (NEW ADDITION - सिर्फ यह line add करें)
+app.use((req, res, next) => {
+    req.db = require('./config/db');
+    next();
+});
+
 // ✅ Routes
 app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin/reports", reportsRoutes);
 app.use("/api/cart", cartRoutes);
+app.use('/api/banners', bannerRoutes);
 
 // ✅ Category Management Routes
 app.use('/api', categoryRoutes);
@@ -136,6 +144,28 @@ app.get('/api/global-stats', async (req, res) => {
         });
     }
 });
+
+// ✅ Database Health Check Endpoint (NEW ADDITION)
+app.get("/api/db-health", (req, res) => {
+    const db = req.db;
+
+    db.query('SELECT 1 as test', (error, results) => {
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                message: "Database connection failed",
+                error: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Database is connected",
+            timestamp: new Date().toISOString()
+        });
+    });
+});
+
 // ✅ Health Check Endpoint
 app.get("/api/health", (req, res) => {
     res.json({
@@ -147,87 +177,11 @@ app.get("/api/health", (req, res) => {
             "/api/categories",
             "/api/subcategories",
             "/api/subsubcategories",
-            "/api/global-stats"
+            "/api/global-stats",
+            "/api/db-health",
+            "/api/banners"
         ]
     });
-});
-
-// ✅ Test route
-app.get("/", (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Admin Backend</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 50px;
-                    background: #f5f5f5;
-                }
-                .container {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 {
-                    color: #333;
-                }
-                .routes {
-                    margin-top: 30px;
-                }
-                .route-item {
-                    background: #f8f9fa;
-                    padding: 15px;
-                    margin: 10px 0;
-                    border-radius: 5px;
-                    border-left: 4px solid #4CAF50;
-                }
-                .route-item a {
-                    text-decoration: none;
-                    color: #007bff;
-                    font-weight: bold;
-                }
-                .status {
-                    display: inline-block;
-                    background: #4CAF50;
-                    color: white;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    font-size: 12px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🚀 Admin Backend Running...</h1>
-                <p><span class="status">Active</span> Server is running successfully</p>
-                
-                <div class="routes">
-                    <h3>Available Routes:</h3>
-                    <div class="route-item">
-                        <a href="/api/categories" target="_blank">/api/categories</a> - Get all categories
-                    </div>
-                    <div class="route-item">
-                        <a href="/api/subcategories" target="_blank">/api/subcategories</a> - Get all sub-categories
-                    </div>
-                    <div class="route-item">
-                        <a href="/api/subsubcategories" target="_blank">/api/subsubcategories</a> - Get all sub-sub-categories
-                    </div>
-                    <div class="route-item">
-                        <a href="/api/global-stats" target="_blank">/api/global-stats</a> - Get statistics
-                    </div>
-                    <div class="route-item">
-                        <a href="/api/health" target="_blank">/api/health</a> - Health check
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
 });
 
 // ✅ Error handling middleware

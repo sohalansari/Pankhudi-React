@@ -10,8 +10,8 @@ import AddProduct from "./pages/Product/AddProduct";
 import ManageProducts from "./pages/ManageProducts/ManageProducts";
 import AdminReports from "./pages/Reports/Reports";
 import Cart from "./pages/userCart/cart";
-// Import Category Management page
 import CategoryManagement from "./pages/Category/category";
+import BannerManagement from "./pages/AdminBanners/Banners"; // ✅ Import Banner Management
 
 import "./App.css";
 
@@ -35,8 +35,13 @@ function App() {
           <Route path="/products" element={<ManageProducts />} />
           <Route path="/reports" element={<AdminReports />} />
           <Route path="/cart" element={<Cart />} />
-          {/* Add Category Management route */}
           <Route path="/categories" element={<CategoryManagement />} />
+
+          {/* ✅ Banner Management Routes */}
+          <Route path="/banners" element={<BannerManagement />} />
+
+          {/* 404 Page - Add at the end */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </div>
     </Layout>

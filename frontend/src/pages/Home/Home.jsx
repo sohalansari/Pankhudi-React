@@ -117,108 +117,170 @@ const Home = () => {
     const [featuredCategories, setFeaturedCategories] = useState([]);
     const [trendingProducts, setTrendingProducts] = useState([]);
     const [dailyDeals, setDailyDeals] = useState([]);
+    const [bannerLoading, setBannerLoading] = useState(true);
+    const [bannerStats, setBannerStats] = useState({
+        total_clicks: 0,
+        total_impressions: 0,
+        active_banners: 0
+    });
+    const [activeBanners, setActiveBanners] = useState([]);
+    const [homeTopBanners, setHomeTopBanners] = useState([]);
+    const [homeMiddleBanners, setHomeMiddleBanners] = useState([]);
+    const [categoryTopBanners, setCategoryTopBanners] = useState([]);
+    const [sidebarBanners, setSidebarBanners] = useState([]);
 
     const navigate = useNavigate();
     const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-    // Debugging version with more details
+    // ✅ ENHANCED BANNER FETCHING WITH ALL SQL COLUMNS
     useEffect(() => {
         const fetchBanners = async () => {
             setIsLoading(true);
-            console.log('🔍 Fetching banners from:', `${API}/api/banners`);
+            setBannerLoading(true);
+            console.log('🔍 Fetching banners with all details...');
 
             try {
-                // Try multiple endpoints in sequence
-                let response = null;
+                // Try multiple endpoints
+                let bannersData = [];
                 let endpointUsed = '';
 
-                // Try different endpoints
-                const endpoints = [
-                    `${API}/api/banners`,           // Simple endpoint
-                    `${API}/api/banners/active`,    // Active endpoint
-                    `${API}/api/banners/position/home_top` // Position endpoint
-                ];
+                // Try /api/banners/active first (recommended)
+                try {
+                    const response = await axios.get(`${API}/api/banners/active`, { timeout: 5000 });
+                    endpointUsed = '/api/banners/active';
 
-                for (const endpoint of endpoints) {
-                    try {
-                        console.log(`Trying endpoint: ${endpoint}`);
-                        response = await axios.get(endpoint, { timeout: 5000 });
-                        endpointUsed = endpoint;
-                        console.log(`✅ Success with ${endpoint}:`, response.data);
-                        break;
-                    } catch (err) {
-                        console.log(`❌ Failed with ${endpoint}:`, err.message);
-                        continue;
+                    if (response.data.success && Array.isArray(response.data.data)) {
+                        bannersData = response.data.data;
+                        console.log(`✅ Got ${bannersData.length} banners from ${endpointUsed}`);
                     }
+                } catch (err) {
+                    console.log(`❌ ${endpointUsed} failed:`, err.message);
                 }
 
-                if (!response) {
-                    throw new Error('All banner endpoints failed');
-                }
+                // If no data, try direct endpoint
+                if (bannersData.length === 0) {
+                    try {
+                        const response = await axios.get(`${API}/api/banners`, { timeout: 5000 });
+                        endpointUsed = '/api/banners';
 
-                // Process based on response format
-                let bannersData = [];
-
-                if (Array.isArray(response.data)) {
-                    // Format 1: Direct array
-                    bannersData = response.data;
-                    console.log('Detected Format 1: Direct array');
-                }
-                else if (response.data && Array.isArray(response.data.data)) {
-                    // Format 2: Success/data wrapper
-                    bannersData = response.data.data;
-                    console.log('Detected Format 2: Wrapped array');
-                }
-                else if (response.data && response.data.banners) {
-                    // Format 3: Banners property
-                    bannersData = response.data.banners;
-                    console.log('Detected Format 3: Banners property');
+                        if (Array.isArray(response.data)) {
+                            bannersData = response.data;
+                            console.log(`✅ Got ${bannersData.length} banners from ${endpointUsed}`);
+                        }
+                    } catch (err) {
+                        console.log(`❌ ${endpointUsed} failed:`, err.message);
+                    }
                 }
 
                 console.log('Raw banners data:', bannersData);
 
                 if (bannersData.length > 0) {
-                    // Transform data for frontend
-                    const transformedBanners = bannersData.map((banner, index) => {
-                        // Handle image URL
-                        let imageUrl = '';
-
-                        if (banner.image_url) {
-                            imageUrl = banner.image_url;
-                        }
-                        else if (banner.image_path) {
-                            // Check if it's already a full URL
-                            if (banner.image_path.startsWith('http')) {
-                                imageUrl = banner.image_path;
-                            } else {
-                                imageUrl = `${API}/uploads/banners/${banner.image_path}`;
-                            }
-                        }
-                        else if (banner.image) {
-                            imageUrl = banner.image;
-                        }
-                        else {
-                            // Fallback to Unsplash image
-                            imageUrl = defaultBannerItems[index % defaultBannerItems.length].image;
-                        }
-
-                        return {
-                            id: banner.id || `banner-${index}`,
-                            image: imageUrl,
+                    // Process banners with ALL SQL COLUMNS
+                    const processedBanners = bannersData.map(banner => {
+                        // Complete banner object with all SQL columns
+                        const fullBanner = {
+                            // Basic Info
+                            id: banner.id || `banner-${Date.now()}`,
                             title: banner.title || 'Special Offer',
-                            subtitle: banner.subtitle || banner.description || 'Discover amazing deals',
-                            link: banner.link || banner.redirect_url || banner.url || '/',
-                            buttonText: banner.buttonText || 'Shop Now',
-                            theme: banner.theme || banner.position || 'home_top',
-                            discount: banner.discount || banner.discount_tag || banner.discount_text || ''
+                            description: banner.description || banner.subtitle || 'Discover amazing deals',
+
+                            // Image Info
+                            image: banner.image || banner.image_url ||
+                                (banner.image_path ? `${API}/uploads/banners/${banner.image_path}` :
+                                    getFallbackImage(banner.position)),
+                            image_path: banner.image_path,
+                            image_url: banner.image_url,
+
+                            // Positioning
+                            position: banner.position || 'home_top',
+                            display_order: banner.display_order || 0,
+
+                            // Status & Dates
+                            status: banner.status || 'active',
+                            start_date: banner.start_date,
+                            end_date: banner.end_date,
+                            created_at: banner.created_at,
+                            updated_at: banner.updated_at,
+
+                            // Links & Tags
+                            redirect_url: banner.redirect_url || banner.link || '/shop',
+                            discount_tag: banner.discount_tag || banner.discount || '',
+
+                            // Analytics
+                            clicks: banner.clicks || 0,
+                            impressions: banner.impressions || 0,
+
+                            // Calculated Fields
+                            is_active: (banner.status === 'active') &&
+                                (!banner.start_date || new Date(banner.start_date) <= new Date()) &&
+                                (!banner.end_date || new Date(banner.end_date) >= new Date()),
+                            days_remaining: banner.end_date ?
+                                Math.ceil((new Date(banner.end_date) - new Date()) / (1000 * 60 * 60 * 24)) :
+                                null,
+                            is_new: banner.created_at ?
+                                (new Date() - new Date(banner.created_at)) < (7 * 24 * 60 * 60 * 1000) :
+                                false,
+
+                            // Frontend display
+                            buttonText: 'Shop Now',
+                            theme: banner.theme || banner.position || 'home_top'
                         };
+
+                        return fullBanner;
                     });
 
-                    console.log('Transformed banners:', transformedBanners);
-                    setBannerItems(transformedBanners);
+                    console.log('Processed banners with all columns:', processedBanners);
+
+                    // Set main banner items for carousel
+                    setBannerItems(processedBanners);
+
+                    // Set all active banners
+                    setActiveBanners(processedBanners.filter(b => b.is_active));
+
+                    // Categorize banners by position
+                    const categorizedBanners = {
+                        home_top: [],
+                        home_middle: [],
+                        category_top: [],
+                        sidebar: []
+                    };
+
+                    processedBanners.forEach(banner => {
+                        if (categorizedBanners[banner.position]) {
+                            categorizedBanners[banner.position].push(banner);
+                        }
+                    });
+
+                    // Sort each category by display_order
+                    Object.keys(categorizedBanners).forEach(pos => {
+                        categorizedBanners[pos].sort((a, b) => a.display_order - b.display_order);
+                    });
+
+                    setHomeTopBanners(categorizedBanners.home_top);
+                    setHomeMiddleBanners(categorizedBanners.home_middle);
+                    setCategoryTopBanners(categorizedBanners.category_top);
+                    setSidebarBanners(categorizedBanners.sidebar);
+
+                    // Calculate statistics
+                    const stats = {
+                        total_clicks: processedBanners.reduce((sum, b) => sum + (b.clicks || 0), 0),
+                        total_impressions: processedBanners.reduce((sum, b) => sum + (b.impressions || 0), 0),
+                        active_banners: processedBanners.filter(b => b.is_active).length,
+                        total_banners: processedBanners.length,
+                        by_position: Object.keys(categorizedBanners).reduce((acc, pos) => {
+                            acc[pos] = categorizedBanners[pos].length;
+                            return acc;
+                        }, {})
+                    };
+
+                    setBannerStats(stats);
+
+                    console.log('Banner statistics:', stats);
+
                 } else {
-                    console.log('No banners in response, using defaults');
+                    console.log('No banners found, using defaults');
                     setBannerItems(defaultBannerItems);
+                    setActiveBanners(defaultBannerItems);
                 }
 
             } catch (error) {
@@ -228,11 +290,12 @@ const Home = () => {
                     status: error.response?.status
                 });
 
-                // Fallback to default banners
                 console.log('Using default banners');
                 setBannerItems(defaultBannerItems);
+                setActiveBanners(defaultBannerItems);
             } finally {
                 setIsLoading(false);
+                setBannerLoading(false);
             }
         };
 
@@ -243,6 +306,61 @@ const Home = () => {
 
         return () => clearInterval(interval);
     }, [API]);
+
+    // Helper function for fallback images
+    const getFallbackImage = (position) => {
+        const fallbackImages = {
+            'home_top': 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&auto=format&fit=crop&q=80',
+            'home_middle': 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=80',
+            'category_top': 'https://images.unsplash.com/photo-1583496661160-fb5886a13c43?w=1200&auto=format&fit=crop&q=80',
+            'product_page': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=1200&auto=format&fit=crop&q=80',
+            'sidebar': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80'
+        };
+        return fallbackImages[position] || fallbackImages['home_top'];
+    };
+
+    // ✅ FETCH ADDITIONAL BANNER DATA BY POSITION
+    useEffect(() => {
+        const fetchBannersByPosition = async () => {
+            const positions = ['home_middle', 'category_top', 'sidebar'];
+
+            positions.forEach(async (position) => {
+                try {
+                    const response = await axios.get(`${API}/api/banners/position/${position}`);
+
+                    if (response.data.success && Array.isArray(response.data.data)) {
+                        const banners = response.data.data.map(banner => ({
+                            ...banner,
+                            image: banner.image_url ||
+                                (banner.image_path ? `${API}/uploads/banners/${banner.image_path}` :
+                                    getFallbackImage(position)),
+                            is_active: true
+                        }));
+
+                        // Update respective state
+                        switch (position) {
+                            case 'home_middle':
+                                setHomeMiddleBanners(prev => [...prev, ...banners]);
+                                break;
+                            case 'category_top':
+                                setCategoryTopBanners(prev => [...prev, ...banners]);
+                                break;
+                            case 'sidebar':
+                                setSidebarBanners(prev => [...prev, ...banners]);
+                                break;
+                        }
+                    }
+                } catch (error) {
+                    console.log(`No ${position} banners or API error:`, error.message);
+                }
+            });
+        };
+
+        // Only fetch if we need more banners
+        if (activeBanners.length < 3) {
+            fetchBannersByPosition();
+        }
+    }, [API, activeBanners.length]);
 
     // Fetch featured categories from API
     useEffect(() => {
@@ -328,7 +446,7 @@ const Home = () => {
         fetchCategories();
     }, [API]);
 
-    // ✅ Fetch Products
+    // ✅ Get Product Image
     const getProductImage = useCallback((product) => {
         if (product.images && product.images.length > 0) {
             const firstImage = product.images[0];
@@ -572,6 +690,33 @@ const Home = () => {
     const toggleAutoPlay = () => setAutoPlay(prev => !prev);
     const navigateTo = (path) => navigate(path);
 
+    // ✅ Handle Banner Click with Tracking
+    const handleBannerClick = async (banner) => {
+        try {
+            // Track click in backend
+            if (banner.id && banner.id.toString().includes('banner-')) {
+                // Demo banner, no tracking
+            } else if (banner.id) {
+                await axios.post(`${API}/api/banners/track-click`, {
+                    bannerId: banner.id
+                });
+            }
+
+            // Navigate
+            if (banner.redirect_url) {
+                navigate(banner.redirect_url);
+            } else if (banner.link) {
+                navigate(banner.link);
+            } else {
+                navigate('/shop');
+            }
+        } catch (error) {
+            console.log('Banner click tracking error:', error);
+            // Still navigate even if tracking fails
+            navigate(banner.redirect_url || banner.link || '/shop');
+        }
+    };
+
     // ✅ Handle Add to Cart
     const handleAddToCart = async (product) => {
         if (product.stock <= 0) {
@@ -651,6 +796,31 @@ const Home = () => {
         return () => clearInterval(interval);
     }, [autoPlay, isLoading, bannerItems.length]);
 
+    // ✅ Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No date set';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
+
+    // ✅ Check if banner is active based on dates
+    const isBannerCurrentlyActive = (banner) => {
+        if (banner.status !== 'active') return false;
+
+        const now = new Date();
+        const startDate = banner.start_date ? new Date(banner.start_date) : null;
+        const endDate = banner.end_date ? new Date(banner.end_date) : null;
+
+        if (startDate && now < startDate) return false;
+        if (endDate && now > endDate) return false;
+
+        return true;
+    };
+
     if (isLoading) return (
         <div className="loading-screen">
             <div className="loading-content">
@@ -695,7 +865,7 @@ const Home = () => {
                                                 <img
                                                     src={item.image}
                                                     alt={item.title}
-                                                    onClick={() => navigateTo(item.link || '/')}
+                                                    onClick={() => handleBannerClick(item)}
                                                     loading="lazy"
                                                     className="slide-image"
                                                     onError={(e) => {
@@ -709,31 +879,56 @@ const Home = () => {
                                                         e.target.src = fallbacks[fallbackIndex];
                                                     }}
                                                 />
+                                                {/* Banner Info Overlay */}
+                                                <div className="banner-info-overlay">
+                                                    <div className="banner-meta-info">
+                                                        <span className="banner-position-badge">{item.position}</span>
+                                                        {item.display_order > 0 && (
+                                                            <span className="banner-order-badge">Order: {item.display_order}</span>
+                                                        )}
+                                                        {item.is_active && (
+                                                            <span className="banner-active-badge">ACTIVE</span>
+                                                        )}
+                                                    </div>
+                                                    {(item.start_date || item.end_date) && (
+                                                        <div className="banner-dates">
+                                                            <small>
+                                                                {item.start_date ? formatDate(item.start_date) : 'Immediate'} -
+                                                                {item.end_date ? formatDate(item.end_date) : 'No end date'}
+                                                            </small>
+                                                        </div>
+                                                    )}
+                                                    {item.clicks > 0 && (
+                                                        <div className="banner-stats">
+                                                            <small>👁️ {item.impressions || 0} | 👆 {item.clicks || 0}</small>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 {/* Loading skeleton */}
                                                 <div className="image-loading-skeleton"></div>
                                             </div>
                                             <div className="slide-content">
-                                                {item.discount && (
+                                                {item.discount_tag && (
                                                     <div className="discount-container">
-                                                        <span className="slide-discount-badge">{item.discount}</span>
+                                                        <span className="slide-discount-badge">{item.discount_tag}</span>
                                                     </div>
                                                 )}
                                                 <h2 className="slide-title">{item.title}</h2>
-                                                <p className="slide-subtitle">{item.subtitle}</p>
+                                                <p className="slide-subtitle">{item.description || item.subtitle || 'Discover amazing deals'}</p>
                                                 <div className="slide-actions">
                                                     <button
                                                         className="slide-button primary-btn"
-                                                        onClick={() => navigateTo(item.link || '/')}
+                                                        onClick={() => handleBannerClick(item)}
                                                     >
                                                         <span>{item.buttonText || 'Shop Now'}</span>
                                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                                             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
                                                         </svg>
                                                     </button>
-                                                    {item.link && (
+                                                    {item.redirect_url && (
                                                         <button
                                                             className="slide-button secondary-btn"
-                                                            onClick={() => navigateTo(item.link)}
+                                                            onClick={() => handleBannerClick(item)}
                                                         >
                                                             View Details
                                                         </button>
@@ -828,13 +1023,115 @@ const Home = () => {
                     </div>
 
                     {/* Banner Load Status */}
-                    {isLoading && bannerItems.length === 0 && (
+                    {bannerLoading && (
                         <div className="banner-loading">
                             <div className="loading-spinner small"></div>
                             <span>Loading banners...</span>
                         </div>
                     )}
+
+                    {/* Banner Statistics Summary */}
+                    {!bannerLoading && activeBanners.length > 0 && (
+                        <div className="banner-stats-summary">
+                            <div className="stats-item">
+                                <span className="stats-label">Active Banners:</span>
+                                <span className="stats-value">{activeBanners.length}</span>
+                            </div>
+                            <div className="stats-item">
+                                <span className="stats-label">Total Clicks:</span>
+                                <span className="stats-value">{bannerStats.total_clicks}</span>
+                            </div>
+                            <div className="stats-item">
+                                <span className="stats-label">Total Views:</span>
+                                <span className="stats-value">{bannerStats.total_impressions}</span>
+                            </div>
+                        </div>
+                    )}
                 </section>
+
+                {/* ✅ Home Middle Banners Section */}
+                {homeMiddleBanners.length > 0 && (
+                    <section className="home-middle-banners-section">
+                        <div className="section-header">
+                            <h2>Featured Offers</h2>
+                            <p>Special promotions and deals</p>
+                        </div>
+                        <div className="home-middle-banners-grid">
+                            {homeMiddleBanners.slice(0, 3).map((banner) => (
+                                <div
+                                    key={banner.id}
+                                    className="home-middle-banner-card"
+                                    onClick={() => handleBannerClick(banner)}
+                                >
+                                    <div className="banner-image-container">
+                                        <img
+                                            src={banner.image}
+                                            alt={banner.title}
+                                            className="banner-image"
+                                        />
+                                        {banner.discount_tag && (
+                                            <div className="banner-discount-tag">
+                                                {banner.discount_tag}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="banner-content">
+                                        <h3>{banner.title}</h3>
+                                        <p>{banner.description}</p>
+                                        <div className="banner-meta">
+                                            <span className="meta-item">
+                                                <small>Position: {banner.position}</small>
+                                            </span>
+                                            <span className="meta-item">
+                                                <small>Order: {banner.display_order}</small>
+                                            </span>
+                                        </div>
+                                        <button className="banner-action-btn">
+                                            {banner.buttonText || 'View Offer'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* ✅ Category Top Banners Section */}
+                {categoryTopBanners.length > 0 && (
+                    <section className="category-top-banners-section">
+                        <div className="section-header">
+                            <h2>Category Specials</h2>
+                            <p>Exclusive offers for specific categories</p>
+                        </div>
+                        <div className="category-top-banners-container">
+                            {categoryTopBanners.slice(0, 2).map((banner) => (
+                                <div
+                                    key={banner.id}
+                                    className="category-top-banner"
+                                    onClick={() => handleBannerClick(banner)}
+                                >
+                                    <img
+                                        src={banner.image}
+                                        alt={banner.title}
+                                        className="category-banner-image"
+                                    />
+                                    <div className="category-banner-content">
+                                        <h3>{banner.title}</h3>
+                                        <p>{banner.description}</p>
+                                        {banner.discount_tag && (
+                                            <span className="category-discount">{banner.discount_tag}</span>
+                                        )}
+                                        <div className="banner-dates-small">
+                                            {banner.start_date && (
+                                                <small>Starts: {formatDate(banner.start_date)}</small>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {/* Categories Section */}
                 <section className="categories-section">
@@ -926,6 +1223,36 @@ const Home = () => {
                     </section>
                 )}
 
+                {/* ✅ Sidebar Banners Section */}
+                {sidebarBanners.length > 0 && (
+                    <section className="sidebar-banners-section">
+                        <div className="section-header">
+                            <h2>Quick Links</h2>
+                            <p>Useful links and promotions</p>
+                        </div>
+                        <div className="sidebar-banners-grid">
+                            {sidebarBanners.slice(0, 4).map((banner) => (
+                                <div
+                                    key={banner.id}
+                                    className="sidebar-banner-card"
+                                    onClick={() => handleBannerClick(banner)}
+                                >
+                                    <div className="sidebar-banner-content">
+                                        <h4>{banner.title}</h4>
+                                        <p>{banner.description}</p>
+                                        <div className="sidebar-banner-meta">
+                                            <small>Position: {banner.position}</small>
+                                            {banner.clicks > 0 && (
+                                                <small>👆 {banner.clicks} clicks</small>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {/* Featured Categories */}
                 {featuredCategories.length > 0 && (
                     <section className="featured-categories-section">
@@ -1002,6 +1329,54 @@ const Home = () => {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </section>
+                )}
+
+                {/* ✅ Banner Statistics Dashboard */}
+                {activeBanners.length > 0 && (
+                    <section className="banner-stats-dashboard">
+                        <div className="section-header">
+                            <h2>Promotion Statistics</h2>
+                            <p>Overview of active campaigns</p>
+                        </div>
+                        <div className="stats-dashboard-grid">
+                            <div className="stats-card">
+                                <div className="stats-icon">📊</div>
+                                <div className="stats-content">
+                                    <h3>Active Campaigns</h3>
+                                    <p>{activeBanners.length} running promotions</p>
+                                    <div className="stats-breakdown">
+                                        <small>Home Top: {homeTopBanners.length}</small>
+                                        <small>Home Middle: {homeMiddleBanners.length}</small>
+                                        <small>Category: {categoryTopBanners.length}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="stats-card">
+                                <div className="stats-icon">👁️</div>
+                                <div className="stats-content">
+                                    <h3>Total Views</h3>
+                                    <p>{bannerStats.total_impressions.toLocaleString()} impressions</p>
+                                    <div className="stats-breakdown">
+                                        <small>Across all banners</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="stats-card">
+                                <div className="stats-icon">👆</div>
+                                <div className="stats-content">
+                                    <h3>Total Clicks</h3>
+                                    <p>{bannerStats.total_clicks.toLocaleString()} clicks</p>
+                                    <div className="stats-breakdown">
+                                        <small>Engagement rate: {
+                                            bannerStats.total_impressions > 0 ?
+                                                ((bannerStats.total_clicks / bannerStats.total_impressions) * 100).toFixed(2) :
+                                                0
+                                        }%</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 )}

@@ -502,7 +502,6 @@
 }
 
 .discounted-price::before {
-    content: '₹';
     font-size: 1.2rem;
     font-weight: 300;
 }
@@ -523,7 +522,6 @@
 }
 
 .original-price::before {
-    content: '₹';
     font-size: 0.9rem;
     font-weight: 300;
 }
@@ -547,7 +545,6 @@
 }
 
 .price::before {
-    content: '₹';
     font-size: 1.2rem;
     font-weight: 300;
 }
@@ -1095,7 +1092,6 @@
 }
 
 .discounted-price-desktop::before {
-    content: '₹';
     font-size: 1.2rem;
     font-weight: 300;
 }
@@ -1125,7 +1121,6 @@
 }
 
 .original-price-desktop::before {
-    content: '₹';
     font-size: 0.9rem;
     font-weight: 300;
 }
@@ -1146,7 +1141,6 @@
 }
 
 .price-desktop::before {
-    content: '₹';
     font-size: 1.2rem;
     font-weight: 300;
 }
@@ -1209,7 +1203,6 @@
 }
 
 .buy-box-price::before {
-    content: '₹';
     font-weight: 300;
 }
 
@@ -2183,7 +2176,6 @@
 }
 
 .related-current::before {
-    content: '₹';
     font-weight: 400;
 }
 
@@ -2197,7 +2189,6 @@
 }
 
 .related-original::before {
-    content: '₹';
     font-weight: 300;
 }
 
