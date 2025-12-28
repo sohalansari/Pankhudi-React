@@ -496,18 +496,18 @@ const Profile = () => {
 
               {/* ✅ Quick Actions */}
               <div className="quick-actions">
-                <button className="action-btn" onClick={shareProfile}>
+                <button className="action-btns" onClick={shareProfile}>
                   <FaShareAlt /> Share Profile
                 </button>
-                <button className="action-btn" onClick={() => downloadProfile('pdf')}>
+                <button className="action-btns" onClick={() => downloadProfile('pdf')}>
                   <FaDownload /> Download PDF
                 </button>
                 {user.is_premium === 1 ? (
-                  <button className="action-btn premium" onClick={togglePremium}>
+                  <button className="action-btns premium" onClick={togglePremium}>
                     <FaCrown /> Manage Premium
                   </button>
                 ) : (
-                  <button className="action-btn upgrade" onClick={togglePremium}>
+                  <button className="action-btns upgrade" onClick={togglePremium}>
                     <FaCrown /> Upgrade to Premium
                   </button>
                 )}
@@ -761,17 +761,17 @@ const Profile = () => {
                 <h4><MdSecurity /> Security</h4>
                 <div className="setting-item">
                   <label>Two-Factor Authentication</label>
-                  <button className="action-btn">Enable 2FA</button>
+                  <button className="action-btns">Enable 2FA</button>
                 </div>
 
                 <div className="setting-item">
                   <label>Login Activity</label>
-                  <button className="action-btn">View Recent Activity</button>
+                  <button className="action-btns">View Recent Activity</button>
                 </div>
 
                 <div className="setting-item">
                   <label>Active Sessions</label>
-                  <button className="action-btn">Manage Sessions</button>
+                  <button className="action-btns">Manage Sessions</button>
                 </div>
               </div>
 
@@ -779,14 +779,14 @@ const Profile = () => {
                 <h4>Data & Privacy</h4>
                 <div className="setting-item">
                   <label>Download Your Data</label>
-                  <button className="action-btn" onClick={() => downloadProfile('json')}>
+                  <button className="action-btns" onClick={() => downloadProfile('json')}>
                     Request Data Download
                   </button>
                 </div>
 
                 <div className="setting-item">
                   <label>Delete Account</label>
-                  <button className="action-btn danger">Delete My Account</button>
+                  <button className="action-btns danger">Delete My Account</button>
                 </div>
               </div>
             </div>

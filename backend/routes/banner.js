@@ -2,10 +2,8 @@
 const express = require('express');
 const router = express.Router();
 
-// 📌 GET ALL BANNERS (आपके Home.jsx के लिए compatible)
 router.get('/', async (req, res) => {
     try {
-        // req.db का उपयोग करें (आपके server.js में set किया गया है)
         const query = `
             SELECT * FROM banners 
             WHERE status = 'active' 
@@ -22,7 +20,6 @@ router.get('/', async (req, res) => {
                 });
             }
 
-            // Format को Home.jsx के according करें
             const formattedBanners = banners.map(banner => ({
                 id: banner.id,
                 image: banner.image_path
@@ -44,7 +41,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 📌 GET ACTIVE BANNERS (Alternative endpoint)
 router.get('/active', async (req, res) => {
     try {
         const query = `
@@ -86,7 +82,7 @@ router.get('/active', async (req, res) => {
     }
 });
 
-// 📌 GET BANNERS BY POSITION
+//  GET BANNERS BY POSITION
 router.get('/position/:position', async (req, res) => {
     try {
         const { position } = req.params;
@@ -130,7 +126,7 @@ router.get('/position/:position', async (req, res) => {
     }
 });
 
-// 📌 GET BANNER BY ID
+//  GET BANNER BY ID
 router.get('/:id', async (req, res) => {
     try {
         const query = `

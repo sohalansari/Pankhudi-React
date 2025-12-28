@@ -84,24 +84,15 @@ const defaultBannerItems = [
     }
 ];
 
-const priceRanges = [
-    { value: 'all', label: 'All Prices' },
-    { value: '0-500', label: 'Under ₹500' },
-    { value: '500-1000', label: '₹500 - ₹1000' },
-    { value: '1000-2000', label: '₹1000 - ₹2000' },
-    { value: '2000-5000', label: '₹2000 - ₹5000' },
-    { value: '5000+', label: 'Over ₹5000' }
-];
-
 const Home = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [midCurrentSlide, setMidCurrentSlide] = useState(0);
     const [autoPlay, setAutoPlay] = useState(true);
+    const [midAutoPlay, setMidAutoPlay] = useState(true);
     const [mainCategories, setMainCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [progress, setProgress] = useState(0);
-    const [activePriceFilter, setActivePriceFilter] = useState("all");
-    const [sortOption, setSortOption] = useState("featured");
     const [hoveredProduct, setHoveredProduct] = useState(null);
     const [products, setProducts] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
@@ -118,181 +109,169 @@ const Home = () => {
     const [trendingProducts, setTrendingProducts] = useState([]);
     const [dailyDeals, setDailyDeals] = useState([]);
     const [bannerLoading, setBannerLoading] = useState(true);
-    const [bannerStats, setBannerStats] = useState({
-        total_clicks: 0,
-        total_impressions: 0,
-        active_banners: 0
-    });
-    const [activeBanners, setActiveBanners] = useState([]);
     const [homeTopBanners, setHomeTopBanners] = useState([]);
-    const [homeMiddleBanners, setHomeMiddleBanners] = useState([]);
+    const [homeMiddleBanners, setHomeMiddleBanners] = useState(defaultBannerItems);
     const [categoryTopBanners, setCategoryTopBanners] = useState([]);
     const [sidebarBanners, setSidebarBanners] = useState([]);
+    const [showAllCategories, setShowAllCategories] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
+    const [notification, setNotification] = useState(null);
+    const [timeLeft, setTimeLeft] = useState({
+        hours: 24,
+        minutes: 0,
+        seconds: 0
+    });
+    const [quickSubCategories, setQuickSubCategories] = useState([]);
+    const [isLoadingQuickCategories, setIsLoadingQuickCategories] = useState(true);
 
     const navigate = useNavigate();
     const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const sliderIntervalRef = useRef(null);
+    const midSliderIntervalRef = useRef(null);
+    const timerIntervalRef = useRef(null);
 
-    // ✅ ENHANCED BANNER FETCHING WITH ALL SQL COLUMNS
+    // ✅ Fetch Quick Sub Categories
+    useEffect(() => {
+        const fetchQuickSubCategories = async () => {
+            try {
+                setIsLoadingQuickCategories(true);
+                const response = await axios.get(`${API}/api/subcategories`);
+
+                if (response.data.success && Array.isArray(response.data.data)) {
+                    // Filter active sub-categories and limit to 10 for quick view
+                    const activeSubCategories = response.data.data
+                        .filter(sub => sub.is_active === true || sub.is_active === undefined)
+                        .slice(0, 10);
+
+                    setQuickSubCategories(activeSubCategories);
+                } else if (Array.isArray(response.data)) {
+                    // Fallback if response structure is different
+                    const activeSubCategories = response.data
+                        .filter(sub => sub.is_active === true || sub.is_active === undefined)
+                        .slice(0, 10);
+
+                    setQuickSubCategories(activeSubCategories);
+                } else {
+                    // Fallback demo sub-categories
+                    const demoQuickSubCategories = [
+                        { id: 1, name: 'Sarees', category_id: 1, slug: 'sarees', image_url: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=600&auto=format&fit=crop&q=80' },
+                        { id: 2, name: 'Kurtas', category_id: 1, slug: 'kurtas', image_url: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&auto=format&fit=crop&q=80' },
+                        { id: 3, name: 'Lehengas', category_id: 1, slug: 'lehengas', image_url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80' },
+                        { id: 4, name: 'Dresses', category_id: 1, slug: 'dresses', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80' },
+                        { id: 5, name: 'Shirts', category_id: 2, slug: 'shirts', image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80' },
+                        { id: 6, name: 'T-Shirts', category_id: 2, slug: 't-shirts', image_url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&auto=format&fit=crop&q=80' },
+                        { id: 7, name: 'Jeans', category_id: 2, slug: 'jeans', image_url: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80' },
+                        { id: 8, name: 'Ethnic Wear', category_id: 4, slug: 'ethnic-wear', image_url: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80' },
+                        { id: 9, name: 'Formal Wear', category_id: 2, slug: 'formal-wear', image_url: 'https://images.unsplash.com/photo-1594938374184-6c1d8a6a6c1a?w=600&auto=format&fit=crop&q=80' },
+                        { id: 10, name: 'Winter Wear', category_id: 6, slug: 'winter-wear', image_url: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&auto=format&fit=crop&q=80' }
+                    ];
+                    setQuickSubCategories(demoQuickSubCategories);
+                }
+            } catch (error) {
+                console.error('Error fetching quick sub-categories:', error);
+                // Fallback demo sub-categories
+                const demoQuickSubCategories = [
+                    { id: 1, name: 'Sarees', category_id: 1, slug: 'sarees', image_url: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=600&auto=format&fit=crop&q=80' },
+                    { id: 2, name: 'Kurtas', category_id: 1, slug: 'kurtas', image_url: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&auto=format&fit=crop&q=80' },
+                    { id: 3, name: 'Lehengas', category_id: 1, slug: 'lehengas', image_url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80' },
+                    { id: 4, name: 'Dresses', category_id: 1, slug: 'dresses', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80' },
+                    { id: 5, name: 'Shirts', category_id: 2, slug: 'shirts', image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80' },
+                    { id: 6, name: 'T-Shirts', category_id: 2, slug: 't-shirts', image_url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&auto=format&fit=crop&q=80' },
+                    { id: 7, name: 'Jeans', category_id: 2, slug: 'jeans', image_url: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80' },
+                    { id: 8, name: 'Ethnic Wear', category_id: 4, slug: 'ethnic-wear', image_url: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80' },
+                    { id: 9, name: 'Formal Wear', category_id: 2, slug: 'formal-wear', image_url: 'https://images.unsplash.com/photo-1594938374184-6c1d8a6a6c1a?w=600&auto=format&fit=crop&q=80' },
+                    { id: 10, name: 'Winter Wear', category_id: 6, slug: 'winter-wear', image_url: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&auto=format&fit=crop&q=80' }
+                ];
+                setQuickSubCategories(demoQuickSubCategories);
+            } finally {
+                setIsLoadingQuickCategories(false);
+            }
+        };
+
+        fetchQuickSubCategories();
+    }, [API]);
+
+    // ✅ Timer for Daily Deals
+    useEffect(() => {
+        // Start countdown timer
+        const endTime = new Date();
+        endTime.setHours(endTime.getHours() + 24); // 24 hours from now
+
+        const updateTimer = () => {
+            const now = new Date();
+            const difference = endTime - now;
+
+            if (difference <= 0) {
+                setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+                if (timerIntervalRef.current) {
+                    clearInterval(timerIntervalRef.current);
+                }
+                return;
+            }
+
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            setTimeLeft({ hours, minutes, seconds });
+        };
+
+        updateTimer(); // Initial call
+        timerIntervalRef.current = setInterval(updateTimer, 1000);
+
+        return () => {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
+        };
+    }, []);
+
+    // ✅ ENHANCED BANNER FETCHING
     useEffect(() => {
         const fetchBanners = async () => {
             setIsLoading(true);
             setBannerLoading(true);
-            console.log('🔍 Fetching banners with all details...');
-
             try {
-                // Try multiple endpoints
-                let bannersData = [];
-                let endpointUsed = '';
-
-                // Try /api/banners/active first (recommended)
+                // Fetch home top banners
                 try {
-                    const response = await axios.get(`${API}/api/banners/active`, { timeout: 5000 });
-                    endpointUsed = '/api/banners/active';
-
+                    const response = await axios.get(`${API}/api/banners/position/home_top`, { timeout: 5000 });
                     if (response.data.success && Array.isArray(response.data.data)) {
-                        bannersData = response.data.data;
-                        console.log(`✅ Got ${bannersData.length} banners from ${endpointUsed}`);
+                        const banners = response.data.data.map(banner => ({
+                            ...banner,
+                            image: banner.image_url || banner.image || getFallbackImage('home_top'),
+                            is_active: true
+                        }));
+                        setHomeTopBanners(banners.length > 0 ? banners : defaultBannerItems);
+                        setBannerItems(banners.length > 0 ? banners : defaultBannerItems);
                     }
                 } catch (err) {
-                    console.log(`❌ ${endpointUsed} failed:`, err.message);
-                }
-
-                // If no data, try direct endpoint
-                if (bannersData.length === 0) {
-                    try {
-                        const response = await axios.get(`${API}/api/banners`, { timeout: 5000 });
-                        endpointUsed = '/api/banners';
-
-                        if (Array.isArray(response.data)) {
-                            bannersData = response.data;
-                            console.log(`✅ Got ${bannersData.length} banners from ${endpointUsed}`);
-                        }
-                    } catch (err) {
-                        console.log(`❌ ${endpointUsed} failed:`, err.message);
-                    }
-                }
-
-                console.log('Raw banners data:', bannersData);
-
-                if (bannersData.length > 0) {
-                    // Process banners with ALL SQL COLUMNS
-                    const processedBanners = bannersData.map(banner => {
-                        // Complete banner object with all SQL columns
-                        const fullBanner = {
-                            // Basic Info
-                            id: banner.id || `banner-${Date.now()}`,
-                            title: banner.title || 'Special Offer',
-                            description: banner.description || banner.subtitle || 'Discover amazing deals',
-
-                            // Image Info
-                            image: banner.image || banner.image_url ||
-                                (banner.image_path ? `${API}/uploads/banners/${banner.image_path}` :
-                                    getFallbackImage(banner.position)),
-                            image_path: banner.image_path,
-                            image_url: banner.image_url,
-
-                            // Positioning
-                            position: banner.position || 'home_top',
-                            display_order: banner.display_order || 0,
-
-                            // Status & Dates
-                            status: banner.status || 'active',
-                            start_date: banner.start_date,
-                            end_date: banner.end_date,
-                            created_at: banner.created_at,
-                            updated_at: banner.updated_at,
-
-                            // Links & Tags
-                            redirect_url: banner.redirect_url || banner.link || '/shop',
-                            discount_tag: banner.discount_tag || banner.discount || '',
-
-                            // Analytics
-                            clicks: banner.clicks || 0,
-                            impressions: banner.impressions || 0,
-
-                            // Calculated Fields
-                            is_active: (banner.status === 'active') &&
-                                (!banner.start_date || new Date(banner.start_date) <= new Date()) &&
-                                (!banner.end_date || new Date(banner.end_date) >= new Date()),
-                            days_remaining: banner.end_date ?
-                                Math.ceil((new Date(banner.end_date) - new Date()) / (1000 * 60 * 60 * 24)) :
-                                null,
-                            is_new: banner.created_at ?
-                                (new Date() - new Date(banner.created_at)) < (7 * 24 * 60 * 60 * 1000) :
-                                false,
-
-                            // Frontend display
-                            buttonText: 'Shop Now',
-                            theme: banner.theme || banner.position || 'home_top'
-                        };
-
-                        return fullBanner;
-                    });
-
-                    console.log('Processed banners with all columns:', processedBanners);
-
-                    // Set main banner items for carousel
-                    setBannerItems(processedBanners);
-
-                    // Set all active banners
-                    setActiveBanners(processedBanners.filter(b => b.is_active));
-
-                    // Categorize banners by position
-                    const categorizedBanners = {
-                        home_top: [],
-                        home_middle: [],
-                        category_top: [],
-                        sidebar: []
-                    };
-
-                    processedBanners.forEach(banner => {
-                        if (categorizedBanners[banner.position]) {
-                            categorizedBanners[banner.position].push(banner);
-                        }
-                    });
-
-                    // Sort each category by display_order
-                    Object.keys(categorizedBanners).forEach(pos => {
-                        categorizedBanners[pos].sort((a, b) => a.display_order - b.display_order);
-                    });
-
-                    setHomeTopBanners(categorizedBanners.home_top);
-                    setHomeMiddleBanners(categorizedBanners.home_middle);
-                    setCategoryTopBanners(categorizedBanners.category_top);
-                    setSidebarBanners(categorizedBanners.sidebar);
-
-                    // Calculate statistics
-                    const stats = {
-                        total_clicks: processedBanners.reduce((sum, b) => sum + (b.clicks || 0), 0),
-                        total_impressions: processedBanners.reduce((sum, b) => sum + (b.impressions || 0), 0),
-                        active_banners: processedBanners.filter(b => b.is_active).length,
-                        total_banners: processedBanners.length,
-                        by_position: Object.keys(categorizedBanners).reduce((acc, pos) => {
-                            acc[pos] = categorizedBanners[pos].length;
-                            return acc;
-                        }, {})
-                    };
-
-                    setBannerStats(stats);
-
-                    console.log('Banner statistics:', stats);
-
-                } else {
-                    console.log('No banners found, using defaults');
+                    console.log('Home top banners error:', err.message);
+                    setHomeTopBanners(defaultBannerItems);
                     setBannerItems(defaultBannerItems);
-                    setActiveBanners(defaultBannerItems);
+                }
+
+                // Fetch home middle banners
+                try {
+                    const response = await axios.get(`${API}/api/banners/position/home_middle`, { timeout: 5000 });
+                    if (response.data.success && Array.isArray(response.data.data)) {
+                        const banners = response.data.data.map(banner => ({
+                            ...banner,
+                            image: banner.image_url || banner.image || getFallbackImage('home_middle'),
+                            is_active: true
+                        }));
+                        setHomeMiddleBanners(banners.length > 0 ? banners : defaultBannerItems);
+                    }
+                } catch (err) {
+                    console.log('Home middle banners error:', err.message);
+                    setHomeMiddleBanners(defaultBannerItems);
                 }
 
             } catch (error) {
-                console.error('❌ Error fetching banners:', {
-                    message: error.message,
-                    response: error.response?.data,
-                    status: error.response?.status
-                });
-
-                console.log('Using default banners');
+                console.error('❌ Error fetching banners:', error.message);
+                setHomeTopBanners(defaultBannerItems);
                 setBannerItems(defaultBannerItems);
-                setActiveBanners(defaultBannerItems);
+                setHomeMiddleBanners(defaultBannerItems);
             } finally {
                 setIsLoading(false);
                 setBannerLoading(false);
@@ -300,11 +279,14 @@ const Home = () => {
         };
 
         fetchBanners();
-
-        // Auto-refresh banners every 5 minutes
-        const interval = setInterval(fetchBanners, 5 * 60 * 1000);
-
-        return () => clearInterval(interval);
+        return () => {
+            if (sliderIntervalRef.current) {
+                clearInterval(sliderIntervalRef.current);
+            }
+            if (midSliderIntervalRef.current) {
+                clearInterval(midSliderIntervalRef.current);
+            }
+        };
     }, [API]);
 
     // Helper function for fallback images
@@ -319,48 +301,125 @@ const Home = () => {
         return fallbackImages[position] || fallbackImages['home_top'];
     };
 
-    // ✅ FETCH ADDITIONAL BANNER DATA BY POSITION
+    // ✅ Show Notification
+    const showNotification = (message, type = 'success') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
+    // ✅ Auto Slide for top banners
     useEffect(() => {
-        const fetchBannersByPosition = async () => {
-            const positions = ['home_middle', 'category_top', 'sidebar'];
+        if (!autoPlay || isLoading || homeTopBanners.length <= 1) return;
 
-            positions.forEach(async (position) => {
-                try {
-                    const response = await axios.get(`${API}/api/banners/position/${position}`);
+        sliderIntervalRef.current = setInterval(() => {
+            setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+        }, 5000);
 
-                    if (response.data.success && Array.isArray(response.data.data)) {
-                        const banners = response.data.data.map(banner => ({
-                            ...banner,
-                            image: banner.image_url ||
-                                (banner.image_path ? `${API}/uploads/banners/${banner.image_path}` :
-                                    getFallbackImage(position)),
-                            is_active: true
-                        }));
-
-                        // Update respective state
-                        switch (position) {
-                            case 'home_middle':
-                                setHomeMiddleBanners(prev => [...prev, ...banners]);
-                                break;
-                            case 'category_top':
-                                setCategoryTopBanners(prev => [...prev, ...banners]);
-                                break;
-                            case 'sidebar':
-                                setSidebarBanners(prev => [...prev, ...banners]);
-                                break;
-                        }
-                    }
-                } catch (error) {
-                    console.log(`No ${position} banners or API error:`, error.message);
-                }
-            });
+        return () => {
+            if (sliderIntervalRef.current) {
+                clearInterval(sliderIntervalRef.current);
+            }
         };
+    }, [autoPlay, isLoading, homeTopBanners.length]);
 
-        // Only fetch if we need more banners
-        if (activeBanners.length < 3) {
-            fetchBannersByPosition();
+    // ✅ Auto Slide for middle banners
+    useEffect(() => {
+        if (!midAutoPlay || isLoading || homeMiddleBanners.length <= 1) return;
+
+        midSliderIntervalRef.current = setInterval(() => {
+            setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+        }, 5000);
+
+        return () => {
+            if (midSliderIntervalRef.current) {
+                clearInterval(midSliderIntervalRef.current);
+            }
+        };
+    }, [midAutoPlay, isLoading, homeMiddleBanners.length]);
+
+    // ✅ Navigation functions for top slider
+    const nextSlide = () => {
+        if (sliderIntervalRef.current) clearInterval(sliderIntervalRef.current);
+        setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+        if (autoPlay) {
+            sliderIntervalRef.current = setInterval(() => {
+                setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+            }, 5000);
         }
-    }, [API, activeBanners.length]);
+    };
+
+    const prevSlide = () => {
+        if (sliderIntervalRef.current) clearInterval(sliderIntervalRef.current);
+        setCurrentSlide(prev => (prev - 1 + homeTopBanners.length) % homeTopBanners.length);
+        if (autoPlay) {
+            sliderIntervalRef.current = setInterval(() => {
+                setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+            }, 5000);
+        }
+    };
+
+    const goToSlide = (index) => {
+        if (sliderIntervalRef.current) clearInterval(sliderIntervalRef.current);
+        setCurrentSlide(index);
+        if (autoPlay) {
+            sliderIntervalRef.current = setInterval(() => {
+                setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+            }, 5000);
+        }
+    };
+
+    const toggleAutoPlay = () => {
+        setAutoPlay(prev => !prev);
+        if (autoPlay) {
+            if (sliderIntervalRef.current) clearInterval(sliderIntervalRef.current);
+        } else {
+            sliderIntervalRef.current = setInterval(() => {
+                setCurrentSlide(prev => (prev + 1) % homeTopBanners.length);
+            }, 5000);
+        }
+    };
+
+    // ✅ Navigation functions for middle slider
+    const nextMidSlide = () => {
+        if (midSliderIntervalRef.current) clearInterval(midSliderIntervalRef.current);
+        setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+        if (midAutoPlay) {
+            midSliderIntervalRef.current = setInterval(() => {
+                setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+            }, 5000);
+        }
+    };
+
+    const prevMidSlide = () => {
+        if (midSliderIntervalRef.current) clearInterval(midSliderIntervalRef.current);
+        setMidCurrentSlide(prev => (prev - 1 + homeMiddleBanners.length) % homeMiddleBanners.length);
+        if (midAutoPlay) {
+            midSliderIntervalRef.current = setInterval(() => {
+                setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+            }, 5000);
+        }
+    };
+
+    const goToMidSlide = (index) => {
+        if (midSliderIntervalRef.current) clearInterval(midSliderIntervalRef.current);
+        setMidCurrentSlide(index);
+        if (midAutoPlay) {
+            midSliderIntervalRef.current = setInterval(() => {
+                setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+            }, 5000);
+        }
+    };
+
+    const toggleMidAutoPlay = () => {
+        setMidAutoPlay(prev => !prev);
+        if (midAutoPlay) {
+            if (midSliderIntervalRef.current) clearInterval(midSliderIntervalRef.current);
+        } else {
+            midSliderIntervalRef.current = setInterval(() => {
+                setMidCurrentSlide(prev => (prev + 1) % homeMiddleBanners.length);
+            }, 5000);
+        }
+    };
 
     // Fetch featured categories from API
     useEffect(() => {
@@ -391,6 +450,7 @@ const Home = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Fetch categories and products
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -411,7 +471,7 @@ const Home = () => {
             } catch (err) {
                 console.error('Error fetching categories:', err);
 
-                // Fallback demo categories for clothing store
+                // Fallback demo categories
                 const demoMainCategories = [
                     { id: 1, name: 'Women\'s Fashion', slug: 'womens-fashion', image: getCategoryImage('dresses'), featured: true },
                     { id: 2, name: 'Men\'s Fashion', slug: 'mens-fashion', image: getCategoryImage('shirts'), featured: true },
@@ -542,7 +602,7 @@ const Home = () => {
             } catch (err) {
                 console.error('Error fetching products:', err);
 
-                // Fallback demo products for clothing store
+                // Fallback demo products
                 const demoProducts = [
                     {
                         id: 'demo-1',
@@ -628,69 +688,7 @@ const Home = () => {
         return products.slice(0, limit);
     };
 
-    // ✅ Get Filtered Products
-    const getFilteredProducts = () => {
-        let filtered = [...products];
-
-        // Category filter
-        if (activeCategory.type !== 'all' && activeCategory.id) {
-            if (activeCategory.type === 'main') {
-                filtered = filtered.filter(p => p.category_id === activeCategory.id);
-            } else if (activeCategory.type === 'sub') {
-                filtered = filtered.filter(p => p.sub_category_id === activeCategory.id);
-            }
-        }
-
-        // Price filter
-        if (activePriceFilter !== 'all') {
-            if (activePriceFilter === '0-500') filtered = filtered.filter(p => p.price < 500);
-            else if (activePriceFilter === '500-1000') filtered = filtered.filter(p => p.price >= 500 && p.price < 1000);
-            else if (activePriceFilter === '1000-2000') filtered = filtered.filter(p => p.price >= 1000 && p.price < 2000);
-            else if (activePriceFilter === '2000-5000') filtered = filtered.filter(p => p.price >= 2000 && p.price < 5000);
-            else if (activePriceFilter === '5000+') filtered = filtered.filter(p => p.price >= 5000);
-        }
-
-        // Sorting
-        switch (sortOption) {
-            case 'price-low-high':
-                filtered.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-high-low':
-                filtered.sort((a, b) => b.price - a.price);
-                break;
-            case 'rating':
-                filtered.sort((a, b) => b.rating - a.rating);
-                break;
-            case 'newest':
-                filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                break;
-            case 'discount':
-                filtered.sort((a, b) => {
-                    const discountA = calculateDiscountPercentage(a);
-                    const discountB = calculateDiscountPercentage(b);
-                    return discountB - discountA;
-                });
-                break;
-            default:
-                break;
-        }
-
-        return filtered;
-    };
-
-    // ✅ Get Sub Categories for Main Category
-    const getSubCategoriesForMain = (mainCategoryId) => {
-        return subCategories.filter(sub => sub.category_id === mainCategoryId);
-    };
-
-    // ✅ Navigation Functions
-    const nextSlide = () => setCurrentSlide(prev => (prev + 1) % bannerItems.length);
-    const prevSlide = () => setCurrentSlide(prev => (prev - 1 + bannerItems.length) % bannerItems.length);
-    const goToSlide = (index) => setCurrentSlide(index);
-    const toggleAutoPlay = () => setAutoPlay(prev => !prev);
-    const navigateTo = (path) => navigate(path);
-
-    // ✅ Handle Banner Click with Tracking
+    // ✅ Handle Banner Click
     const handleBannerClick = async (banner) => {
         try {
             // Track click in backend
@@ -720,14 +718,14 @@ const Home = () => {
     // ✅ Handle Add to Cart
     const handleAddToCart = async (product) => {
         if (product.stock <= 0) {
-            alert("This product is out of stock!");
+            showNotification("This product is out of stock!", "error");
             return;
         }
 
         try {
             const token = localStorage.getItem("token");
             if (!token) {
-                alert("Please login first");
+                showNotification("Please login first", "error");
                 navigate('/login');
                 return;
             }
@@ -748,11 +746,11 @@ const Home = () => {
                 }
             });
 
-            alert('Product added to cart successfully!');
+            showNotification('Product added to cart successfully!', 'success');
             setCart(prev => [...prev, product]);
         } catch (error) {
             console.error('Cart error:', error);
-            alert(error.response?.data?.message || "Something went wrong");
+            showNotification(error.response?.data?.message || "Something went wrong", "error");
         }
     };
 
@@ -761,10 +759,10 @@ const Home = () => {
         const isInWishlist = wishlist.some(item => item.id === product.id);
         if (isInWishlist) {
             setWishlist(wishlist.filter(item => item.id !== product.id));
-            alert('Removed from wishlist');
+            showNotification('Removed from wishlist', 'success');
         } else {
             setWishlist([...wishlist, product]);
-            alert('Added to wishlist');
+            showNotification('Added to wishlist', 'success');
         }
     };
 
@@ -772,59 +770,45 @@ const Home = () => {
     const openQuickView = (product) => {
         setQuickViewProduct(product);
         setShowQuickView(true);
+        document.body.style.overflow = 'hidden';
     };
 
     const closeQuickView = () => {
         setShowQuickView(false);
         setQuickViewProduct(null);
+        document.body.style.overflow = 'auto';
     };
 
-    // ✅ Filter Functions
-    const filterByPrice = (priceRange) => setActivePriceFilter(priceRange);
-    const sortProducts = (option) => setSortOption(option);
-    const filterByCategory = (type, id = null) => setActiveCategory({ type, id });
-    const toggleFilters = () => setShowFilters(!showFilters);
-    const showMoreCategories = () => setVisibleCategories(mainCategories.length);
-    const loadMoreProducts = () => setDisplayLimit(prev => prev + 20);
+    // ✅ Navigation functions
+    const navigateTo = (path) => navigate(path);
+    const toggleShowAllCategories = () => setShowAllCategories(!showAllCategories);
 
-    // ✅ Auto Slide for banners
-    useEffect(() => {
-        if (!autoPlay || isLoading || bannerItems.length <= 1) return;
-        const interval = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % bannerItems.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [autoPlay, isLoading, bannerItems.length]);
 
-    // ✅ Format date for display
-    const formatDate = (dateString) => {
-        if (!dateString) return 'No date set';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
+
+    // ✅ Handle Newsletter Subscription
+    const handleNewsletterSubscribe = async (e) => {
+        e.preventDefault();
+        const email = e.target.email.value;
+        if (email) {
+            try {
+                await axios.post(`${API}/api/newsletter/subscribe`, { email });
+                showNotification('Subscribed successfully!', 'success');
+                e.target.reset();
+            } catch (error) {
+                showNotification('Subscription failed. Please try again.', 'error');
+            }
+        }
     };
 
-    // ✅ Check if banner is active based on dates
-    const isBannerCurrentlyActive = (banner) => {
-        if (banner.status !== 'active') return false;
-
-        const now = new Date();
-        const startDate = banner.start_date ? new Date(banner.start_date) : null;
-        const endDate = banner.end_date ? new Date(banner.end_date) : null;
-
-        if (startDate && now < startDate) return false;
-        if (endDate && now > endDate) return false;
-
-        return true;
+    // ✅ Format time for display
+    const formatTime = (time) => {
+        return time.toString().padStart(2, '0');
     };
 
     if (isLoading) return (
         <div className="loading-screen">
             <div className="loading-content">
-                <h1 className="brand-name">Fashion Store</h1>
+                <h1 className="brand-name">Pankhudi</h1>
                 <div className="loading-spinner"></div>
                 <div className="loading-progress-bar">
                     <div className="loading-progress" style={{ width: `${progress}%` }} />
@@ -838,7 +822,14 @@ const Home = () => {
         <>
             <Header cart={cart} wishlist={wishlist} />
             <main className="home-main">
-                {/* Hero Banner Section (Admin Controlled) */}
+                {/* Notification */}
+                {notification && (
+                    <div className={`notification ${notification.type}`}>
+                        {notification.message}
+                    </div>
+                )}
+
+                {/* Top Hero Banner Section */}
                 <section className="hero-section">
                     <div className="slider-container">
                         <button className="slider-btn left" onClick={prevSlide} aria-label="Previous slide">
@@ -855,116 +846,45 @@ const Home = () => {
                                     transition: 'transform 0.5s ease-in-out'
                                 }}
                             >
-                                {bannerItems.length > 0 ? (
-                                    bannerItems.map((item, index) => (
-                                        <div
-                                            key={item.id || index}
-                                            className={`slide ${index === currentSlide ? 'active' : ''} ${item.theme || ''}`}
-                                        >
-                                            <div className="slide-image-container">
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.title}
-                                                    onClick={() => handleBannerClick(item)}
-                                                    loading="lazy"
-                                                    className="slide-image"
-                                                    onError={(e) => {
-                                                        console.log('Banner image error, using fallback:', item.image);
-                                                        const fallbacks = [
-                                                            'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&auto=format&fit=crop&q=80',
-                                                            'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=80',
-                                                            'https://images.unsplash.com/photo-1583496661160-fb5886a13c43?w=1200&auto=format&fit=crop&q=80'
-                                                        ];
-                                                        const fallbackIndex = index % fallbacks.length;
-                                                        e.target.src = fallbacks[fallbackIndex];
-                                                    }}
-                                                />
-                                                {/* Banner Info Overlay */}
-                                                <div className="banner-info-overlay">
-                                                    <div className="banner-meta-info">
-                                                        <span className="banner-position-badge">{item.position}</span>
-                                                        {item.display_order > 0 && (
-                                                            <span className="banner-order-badge">Order: {item.display_order}</span>
-                                                        )}
-                                                        {item.is_active && (
-                                                            <span className="banner-active-badge">ACTIVE</span>
-                                                        )}
-                                                    </div>
-                                                    {(item.start_date || item.end_date) && (
-                                                        <div className="banner-dates">
-                                                            <small>
-                                                                {item.start_date ? formatDate(item.start_date) : 'Immediate'} -
-                                                                {item.end_date ? formatDate(item.end_date) : 'No end date'}
-                                                            </small>
-                                                        </div>
-                                                    )}
-                                                    {item.clicks > 0 && (
-                                                        <div className="banner-stats">
-                                                            <small>👁️ {item.impressions || 0} | 👆 {item.clicks || 0}</small>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {/* Loading skeleton */}
-                                                <div className="image-loading-skeleton"></div>
-                                            </div>
-                                            <div className="slide-content">
-                                                {item.discount_tag && (
-                                                    <div className="discount-container">
-                                                        <span className="slide-discount-badge">{item.discount_tag}</span>
-                                                    </div>
-                                                )}
-                                                <h2 className="slide-title">{item.title}</h2>
-                                                <p className="slide-subtitle">{item.description || item.subtitle || 'Discover amazing deals'}</p>
-                                                <div className="slide-actions">
-                                                    <button
-                                                        className="slide-button primary-btn"
-                                                        onClick={() => handleBannerClick(item)}
-                                                    >
-                                                        <span>{item.buttonText || 'Shop Now'}</span>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                                                        </svg>
-                                                    </button>
-                                                    {item.redirect_url && (
-                                                        <button
-                                                            className="slide-button secondary-btn"
-                                                            onClick={() => handleBannerClick(item)}
-                                                        >
-                                                            View Details
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    // Show default banners if no banners from API
-                                    defaultBannerItems.map((item, index) => (
-                                        <div
-                                            key={item.id || index}
-                                            className={`slide ${index === currentSlide ? 'active' : ''} ${item.theme || ''}`}
-                                        >
+                                {homeTopBanners.map((item, index) => (
+                                    <div
+                                        key={item.id || index}
+                                        className={`slide ${index === currentSlide ? 'active' : ''}`}
+                                    >
+                                        <div className="slide-image-container">
                                             <img
                                                 src={item.image}
                                                 alt={item.title}
-                                                onClick={() => navigateTo(item.link || '/')}
+                                                onClick={() => handleBannerClick(item)}
                                                 loading="lazy"
                                                 className="slide-image"
+                                                onError={(e) => {
+                                                    e.target.src = getFallbackImage('home_top');
+                                                }}
                                             />
-                                            <div className="slide-content">
-                                                {item.discount && <span className="slide-discount-badge">{item.discount}</span>}
-                                                <h2 className="slide-title">{item.title}</h2>
-                                                <p className="slide-subtitle">{item.subtitle}</p>
+                                        </div>
+                                        <div className="slide-content">
+                                            {item.discount_tag && (
+                                                <div className="discount-container">
+                                                    <span className="slide-discount-badge">{item.discount_tag}</span>
+                                                </div>
+                                            )}
+                                            <h2 className="slide-title">{item.title}</h2>
+                                            <p className="slide-subtitle">{item.description || item.subtitle || 'Discover amazing deals'}</p>
+                                            <div className="slide-actions">
                                                 <button
-                                                    className="slide-button"
-                                                    onClick={() => navigateTo(item.link || '/')}
+                                                    className="slide-button primary-btn"
+                                                    onClick={() => handleBannerClick(item)}
                                                 >
-                                                    {item.buttonText || 'Shop Now'}
+                                                    <span>{item.buttonText || 'Shop Now'}</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </div>
-                                    ))
-                                )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -977,10 +897,10 @@ const Home = () => {
 
                     {/* Bottom Controls */}
                     <div className="slider-controls">
-                        {bannerItems.length > 1 && (
+                        {homeTopBanners.length > 1 && (
                             <>
                                 <div className="slider-dots">
-                                    {bannerItems.map((_, index) => (
+                                    {homeTopBanners.map((_, index) => (
                                         <button
                                             key={index}
                                             className={`dot ${index === currentSlide ? 'active' : ''}`}
@@ -994,7 +914,7 @@ const Home = () => {
 
                                 <div className="slider-info">
                                     <span className="slide-counter">
-                                        {currentSlide + 1} / {bannerItems.length}
+                                        {currentSlide + 1} / {homeTopBanners.length}
                                     </span>
                                     <button
                                         className="auto-play-toggle"
@@ -1021,114 +941,229 @@ const Home = () => {
                             </>
                         )}
                     </div>
-
-                    {/* Banner Load Status */}
-                    {bannerLoading && (
-                        <div className="banner-loading">
-                            <div className="loading-spinner small"></div>
-                            <span>Loading banners...</span>
-                        </div>
-                    )}
-
-                    {/* Banner Statistics Summary */}
-                    {!bannerLoading && activeBanners.length > 0 && (
-                        <div className="banner-stats-summary">
-                            <div className="stats-item">
-                                <span className="stats-label">Active Banners:</span>
-                                <span className="stats-value">{activeBanners.length}</span>
-                            </div>
-                            <div className="stats-item">
-                                <span className="stats-label">Total Clicks:</span>
-                                <span className="stats-value">{bannerStats.total_clicks}</span>
-                            </div>
-                            <div className="stats-item">
-                                <span className="stats-label">Total Views:</span>
-                                <span className="stats-value">{bannerStats.total_impressions}</span>
-                            </div>
-                        </div>
-                    )}
                 </section>
 
-                {/* ✅ Home Middle Banners Section */}
-                {homeMiddleBanners.length > 0 && (
-                    <section className="home-middle-banners-section">
-                        <div className="section-header">
-                            <h2>Featured Offers</h2>
-                            <p>Special promotions and deals</p>
+                {/* UPDATED: Quick Categories Bar with Sub-Categories */}
+                <div className="quick-categories-container">
+                    <div className="section-header">
+                        <div className="header-title-section">
+                            <h2>Quick Categories</h2>
+                            <p>Browse by sub-categories for faster shopping</p>
                         </div>
-                        <div className="home-middle-banners-grid">
-                            {homeMiddleBanners.slice(0, 3).map((banner) => (
-                                <div
-                                    key={banner.id}
-                                    className="home-middle-banner-card"
-                                    onClick={() => handleBannerClick(banner)}
-                                >
-                                    <div className="banner-image-container">
-                                        <img
-                                            src={banner.image}
-                                            alt={banner.title}
-                                            className="banner-image"
-                                        />
-                                        {banner.discount_tag && (
-                                            <div className="banner-discount-tag">
-                                                {banner.discount_tag}
+                        <div className="hint">
+                            <span><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-label="Previous"
+                            >
+                                <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+                            </svg>
+                            </span>
+                            <span><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-label="Next"
+                            >
+                                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+                            </svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    {isLoadingQuickCategories ? (
+                        <div className="loading-quick-categories">
+                            <div className="spinner"></div>
+                            <p>Loading sub-categories...</p>
+                        </div>
+                    ) : (
+                        <div className="quick-categories-bar">
+                            <div className="quick-categories-scroll">
+                                {quickSubCategories.map(subCategory => {
+                                    // Find main category name for this sub-category
+                                    const mainCategory = mainCategories.find(
+                                        cat => cat.id === subCategory.category_id
+                                    );
+                                    const mainCategoryName = mainCategory ? mainCategory.name : 'Category';
+
+                                    return (
+                                        <div
+                                            key={subCategory.id}
+                                            className="quick-category"
+                                            onClick={() => navigate(`/subcategory/${subCategory.slug || subCategory.id}`)}
+                                        >
+                                            <div className="quick-category-image">
+                                                <img
+                                                    src={subCategory.image_url || getCategoryImage(subCategory.name)}
+                                                    alt={subCategory.name}
+                                                    loading="lazy"
+                                                    onError={(e) => {
+                                                        e.target.src = getCategoryImage(subCategory.name);
+                                                    }}
+                                                />
+                                                <div className="category-overlay-quick">
+                                                    <span className="shop-now-text">Shop Now</span>
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="banner-content">
-                                        <h3>{banner.title}</h3>
-                                        <p>{banner.description}</p>
-                                        <div className="banner-meta">
-                                            <span className="meta-item">
-                                                <small>Position: {banner.position}</small>
-                                            </span>
-                                            <span className="meta-item">
-                                                <small>Order: {banner.display_order}</small>
-                                            </span>
+                                            <div className="quick-category-info">
+                                                <span className="quick-category-name">{subCategory.name}</span>
+                                                <span className="quick-category-parent">
+                                                    {mainCategoryName}
+                                                </span>
+                                                <span className="quick-category-count">
+                                                    {getProductsByCategory('sub', subCategory.id).length} products
+                                                </span>
+                                            </div>
                                         </div>
-                                        <button className="banner-action-btn">
-                                            {banner.buttonText || 'View Offer'}
+                                    );
+                                })}
+
+                                {/* View All Sub-Categories Card */}
+                                <div
+                                    className="quick-category view-all-card"
+                                    onClick={() => navigate('/categories')}
+                                >
+                                    <div className="quick-category-image view-all-image">
+                                        <div className="view-all-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div className="quick-category-info">
+                                        <span className="quick-category-name">View All</span>
+                                        <span className="quick-category-count">
+                                            Explore all categories
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Middle Banner Section (Same as Top) */}
+                {homeMiddleBanners.length > 0 && (
+                    <section className="hero-section middle-banner">
+                        <div className="section-header">
+                            <h2>Special Offers</h2>
+                            <p>Exclusive deals just for you</p>
+                        </div>
+
+                        <div className="slider-container">
+                            <button className="slider-btn left" onClick={prevMidSlide} aria-label="Previous slide">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" />
+                                </svg>
+                            </button>
+
+                            <div className="slider-wrapper">
+                                <div
+                                    className="slider-track"
+                                    style={{
+                                        transform: `translateX(-${midCurrentSlide * 100}%)`,
+                                        transition: 'transform 0.5s ease-in-out'
+                                    }}
+                                >
+                                    {homeMiddleBanners.map((item, index) => (
+                                        <div
+                                            key={`mid-${item.id || index}`}
+                                            className={`slide ${index === midCurrentSlide ? 'active' : ''}`}
+                                        >
+                                            <div className="slide-image-container">
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.title}
+                                                    onClick={() => handleBannerClick(item)}
+                                                    loading="lazy"
+                                                    className="slide-image"
+                                                    onError={(e) => {
+                                                        e.target.src = getFallbackImage('home_middle');
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="slide-content">
+                                                {item.discount_tag && (
+                                                    <div className="discount-container">
+                                                        <span className="slide-discount-badge">{item.discount_tag}</span>
+                                                    </div>
+                                                )}
+                                                <h2 className="slide-title">{item.title}</h2>
+                                                <p className="slide-subtitle">{item.description || item.subtitle || 'Special offer for you'}</p>
+                                                <div className="slide-actions">
+                                                    <button
+                                                        className="slide-button primary-btn"
+                                                        onClick={() => handleBannerClick(item)}
+                                                    >
+                                                        <span>Shop Now</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button className="slider-btn right" onClick={nextMidSlide} aria-label="Next slide">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Bottom Controls */}
+                        <div className="slider-controls">
+                            {homeMiddleBanners.length > 1 && (
+                                <>
+                                    <div className="slider-dots">
+                                        {homeMiddleBanners.map((_, index) => (
+                                            <button
+                                                key={`mid-dot-${index}`}
+                                                className={`dot ${index === midCurrentSlide ? 'active' : ''}`}
+                                                onClick={() => goToMidSlide(index)}
+                                                aria-label={`Go to slide ${index + 1}`}
+                                            >
+                                                <div className="dot-inner"></div>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="slider-info">
+                                        <span className="slide-counter">
+                                            {midCurrentSlide + 1} / {homeMiddleBanners.length}
+                                        </span>
+                                        <button
+                                            className="auto-play-toggle"
+                                            onClick={toggleMidAutoPlay}
+                                            title={midAutoPlay ? 'Pause slideshow' : 'Play slideshow'}
+                                        >
+                                            {midAutoPlay ? (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                                                    </svg>
+                                                    Pause
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                    Play
+                                                </>
+                                            )}
                                         </button>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* ✅ Category Top Banners Section */}
-                {categoryTopBanners.length > 0 && (
-                    <section className="category-top-banners-section">
-                        <div className="section-header">
-                            <h2>Category Specials</h2>
-                            <p>Exclusive offers for specific categories</p>
-                        </div>
-                        <div className="category-top-banners-container">
-                            {categoryTopBanners.slice(0, 2).map((banner) => (
-                                <div
-                                    key={banner.id}
-                                    className="category-top-banner"
-                                    onClick={() => handleBannerClick(banner)}
-                                >
-                                    <img
-                                        src={banner.image}
-                                        alt={banner.title}
-                                        className="category-banner-image"
-                                    />
-                                    <div className="category-banner-content">
-                                        <h3>{banner.title}</h3>
-                                        <p>{banner.description}</p>
-                                        {banner.discount_tag && (
-                                            <span className="category-discount">{banner.discount_tag}</span>
-                                        )}
-                                        <div className="banner-dates-small">
-                                            {banner.start_date && (
-                                                <small>Starts: {formatDate(banner.start_date)}</small>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                                </>
+                            )}
                         </div>
                     </section>
                 )}
@@ -1138,9 +1173,15 @@ const Home = () => {
                     <div className="section-header">
                         <h2>Shop by Category</h2>
                         <p>Browse our exclusive clothing collections</p>
+                        <button
+                            className="toggle-categories-btn"
+                            onClick={toggleShowAllCategories}
+                        >
+                            {showAllCategories ? 'Show Less' : 'Show All'}
+                        </button>
                     </div>
                     <div className="categories-grid">
-                        {mainCategories.slice(0, visibleCategories).map((category) => (
+                        {mainCategories.slice(0, showAllCategories ? mainCategories.length : visibleCategories).map((category) => (
                             <div
                                 key={category.id}
                                 className="category-card"
@@ -1158,6 +1199,9 @@ const Home = () => {
                                     />
                                     <div className="category-overlay">
                                         <span className="shop-now-text">Shop Now</span>
+                                        <span className="product-count">
+                                            {getProductsByCategory('main', category.id).length} products
+                                        </span>
                                     </div>
                                 </div>
                                 <h3 className="category-title">{category.name}</h3>
@@ -1167,16 +1211,9 @@ const Home = () => {
                             </div>
                         ))}
                     </div>
-                    {visibleCategories < mainCategories.length && (
-                        <div className="show-more-container">
-                            <button className="show-more-btn" onClick={showMoreCategories}>
-                                Show All Categories
-                            </button>
-                        </div>
-                    )}
                 </section>
 
-                {/* Daily Deals Section */}
+                {/* Daily Deals Section with Working Timer */}
                 {dailyDeals.length > 0 && (
                     <section className="deals-section">
                         <div className="section-header">
@@ -1184,9 +1221,24 @@ const Home = () => {
                                 <h2>🔥 Daily Deals</h2>
                                 <p>Limited time offers - Don't miss out!</p>
                             </div>
-                            <div className="timer">
+                            <div className="timer-container">
                                 <span className="timer-label">Deal ends in:</span>
-                                <span className="timer-value">24:59:59</span>
+                                <div className="timer">
+                                    <div className="time-unit">
+                                        <span className="time-value">{formatTime(timeLeft.hours)}</span>
+                                        <span className="time-label">HOURS</span>
+                                    </div>
+                                    <span className="time-separator">:</span>
+                                    <div className="time-unit">
+                                        <span className="time-value">{formatTime(timeLeft.minutes)}</span>
+                                        <span className="time-label">MINS</span>
+                                    </div>
+                                    <span className="time-separator">:</span>
+                                    <div className="time-unit">
+                                        <span className="time-value">{formatTime(timeLeft.seconds)}</span>
+                                        <span className="time-label">SECS</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="deals-grid">
@@ -1201,6 +1253,26 @@ const Home = () => {
                                                 alt={product.name}
                                                 onClick={() => navigate(`/ProductDetail/${product.id}`)}
                                             />
+                                            <div className="product-actions">
+                                                <button
+                                                    className="action-btn wishlist-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleWishlist(product);
+                                                    }}
+                                                >
+                                                    {wishlist.some(item => item.id === product.id) ? '❤️' : '🤍'}
+                                                </button>
+                                                <button
+                                                    className="action-btn quick-view-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openQuickView(product);
+                                                    }}
+                                                >
+                                                    👁️
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="product-info">
                                             <h3 className="product-name">{product.name}</h3>
@@ -1219,36 +1291,6 @@ const Home = () => {
                                     </div>
                                 );
                             })}
-                        </div>
-                    </section>
-                )}
-
-                {/* ✅ Sidebar Banners Section */}
-                {sidebarBanners.length > 0 && (
-                    <section className="sidebar-banners-section">
-                        <div className="section-header">
-                            <h2>Quick Links</h2>
-                            <p>Useful links and promotions</p>
-                        </div>
-                        <div className="sidebar-banners-grid">
-                            {sidebarBanners.slice(0, 4).map((banner) => (
-                                <div
-                                    key={banner.id}
-                                    className="sidebar-banner-card"
-                                    onClick={() => handleBannerClick(banner)}
-                                >
-                                    <div className="sidebar-banner-content">
-                                        <h4>{banner.title}</h4>
-                                        <p>{banner.description}</p>
-                                        <div className="sidebar-banner-meta">
-                                            <small>Position: {banner.position}</small>
-                                            {banner.clicks > 0 && (
-                                                <small>👆 {banner.clicks} clicks</small>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </section>
                 )}
@@ -1274,6 +1316,7 @@ const Home = () => {
                                     />
                                     <div className="featured-category-content">
                                         <h3>{category.name}</h3>
+                                        <p>Explore our exclusive {category.name.toLowerCase()} collection</p>
                                         <button className="explore-btn">Explore Collection</button>
                                     </div>
                                 </div>
@@ -1282,7 +1325,7 @@ const Home = () => {
                     </section>
                 )}
 
-                {/* Trending Products */}
+                {/* Trending Products - 2 products side by side on mobile */}
                 {trendingProducts.length > 0 && (
                     <section className="trending-section">
                         <div className="section-header">
@@ -1309,6 +1352,26 @@ const Home = () => {
                                             {priceInfo.hasDiscount && (
                                                 <span className="discount-badge">-{priceInfo.discountPercentage}%</span>
                                             )}
+                                            <div className="product-hover-actions">
+                                                <button
+                                                    className="hover-action-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleWishlist(product);
+                                                    }}
+                                                >
+                                                    {wishlist.some(item => item.id === product.id) ? '❤️' : '🤍'}
+                                                </button>
+                                                <button
+                                                    className="hover-action-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openQuickView(product);
+                                                    }}
+                                                >
+                                                    👁️ Quick View
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="trending-info">
                                             <h3 className="product-name">{product.name}</h3>
@@ -1325,58 +1388,16 @@ const Home = () => {
                                             <div className="trending-rating">
                                                 ★★★★★ <span>({product.rating})</span>
                                             </div>
+                                            <button
+                                                className="add-to-cart-btn"
+                                                onClick={() => handleAddToCart(product)}
+                                            >
+                                                Add to Cart
+                                            </button>
                                         </div>
                                     </div>
                                 );
                             })}
-                        </div>
-                    </section>
-                )}
-
-                {/* ✅ Banner Statistics Dashboard */}
-                {activeBanners.length > 0 && (
-                    <section className="banner-stats-dashboard">
-                        <div className="section-header">
-                            <h2>Promotion Statistics</h2>
-                            <p>Overview of active campaigns</p>
-                        </div>
-                        <div className="stats-dashboard-grid">
-                            <div className="stats-card">
-                                <div className="stats-icon">📊</div>
-                                <div className="stats-content">
-                                    <h3>Active Campaigns</h3>
-                                    <p>{activeBanners.length} running promotions</p>
-                                    <div className="stats-breakdown">
-                                        <small>Home Top: {homeTopBanners.length}</small>
-                                        <small>Home Middle: {homeMiddleBanners.length}</small>
-                                        <small>Category: {categoryTopBanners.length}</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stats-card">
-                                <div className="stats-icon">👁️</div>
-                                <div className="stats-content">
-                                    <h3>Total Views</h3>
-                                    <p>{bannerStats.total_impressions.toLocaleString()} impressions</p>
-                                    <div className="stats-breakdown">
-                                        <small>Across all banners</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stats-card">
-                                <div className="stats-icon">👆</div>
-                                <div className="stats-content">
-                                    <h3>Total Clicks</h3>
-                                    <p>{bannerStats.total_clicks.toLocaleString()} clicks</p>
-                                    <div className="stats-breakdown">
-                                        <small>Engagement rate: {
-                                            bannerStats.total_impressions > 0 ?
-                                                ((bannerStats.total_clicks / bannerStats.total_impressions) * 100).toFixed(2) :
-                                                0
-                                        }%</small>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </section>
                 )}
@@ -1481,9 +1502,10 @@ const Home = () => {
                             <h3>Stay Updated with Latest Fashion</h3>
                             <p>Subscribe to get exclusive offers and style tips</p>
                         </div>
-                        <form className="newsletter-form">
+                        <form className="newsletter-form" onSubmit={handleNewsletterSubscribe}>
                             <input
                                 type="email"
+                                name="email"
                                 placeholder="Your email address"
                                 required
                             />
@@ -1491,13 +1513,6 @@ const Home = () => {
                         </form>
                     </div>
                 </section>
-
-                {/* Scroll to Top Button */}
-                {showScrollTop && (
-                    <button className="scroll-to-top" onClick={scrollToTop}>
-                        ↑
-                    </button>
-                )}
             </main>
 
             {/* Quick View Modal */}
@@ -1541,6 +1556,14 @@ const Home = () => {
                                         }}
                                     >
                                         View Details
+                                    </button>
+                                    <button
+                                        className="wishlist-btn square-btn"
+                                        onClick={() => {
+                                            handleWishlist(quickViewProduct);
+                                        }}
+                                    >
+                                        {wishlist.some(item => item.id === quickViewProduct.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
                                     </button>
                                 </div>
                             </div>

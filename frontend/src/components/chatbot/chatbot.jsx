@@ -248,7 +248,7 @@ export default function Chatbot() {
                     onClick={() => setIsOpen(true)}
                     aria-label="Open chatbot"
                 >
-                    💬 Style Help
+                    💬Help
                 </button>
             )}
 

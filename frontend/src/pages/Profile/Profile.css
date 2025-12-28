@@ -330,7 +330,7 @@ body {
   justify-content: center;
 }
 
-.action-btn {
+.action-btns {
   display: flex;
   align-items: center;
   gap: 8px;
