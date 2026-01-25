@@ -655,5 +655,188 @@ router.get("/categories", (req, res) => {
     });
 });
 
+
+
+
+
+
+
+
+
+
+// Smart Search Endpoint
+router.get('/api/search/smart', async (req, res) => {
+    try {
+        const {
+            q,
+            category_id,
+            sub_category_id,
+            sub_sub_category_id,
+            detected_category,
+            detected_price_range,
+            detected_color,
+            detected_season,
+            detected_occasion,
+            detected_material,
+            detected_size,
+            detected_brand,
+            detected_attributes,
+            price_range,
+            sort_by = 'relevance'
+        } = req.query;
+
+        let query = {};
+        let sort = {};
+
+        // Text search
+        if (q) {
+            query.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } },
+                { keywords: { $regex: q, $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } },
+                { sub_category: { $regex: q, $options: 'i' } }
+            ];
+        }
+
+        // Category filters
+        if (category_id) query.category_id = category_id;
+        if (sub_category_id) query.sub_category_id = sub_category_id;
+        if (sub_sub_category_id) query.sub_sub_category_id = sub_sub_category_id;
+
+        // NLP detected filters
+        if (detected_category) {
+            query.$or = query.$or || [];
+            query.$or.push({
+                $or: [
+                    { category: { $regex: detected_category, $options: 'i' } },
+                    { sub_category: { $regex: detected_category, $options: 'i' } },
+                    { name: { $regex: detected_category, $options: 'i' } }
+                ]
+            });
+        }
+
+        // Handle detected attributes
+        if (detected_attributes) {
+            const attributes = JSON.parse(detected_attributes);
+            attributes.forEach(attr => {
+                query.$or = query.$or || [];
+                query.$or.push({
+                    $or: [
+                        { description: { $regex: attr.value, $options: 'i' } },
+                        { name: { $regex: attr.value, $options: 'i' } },
+                        { tags: { $regex: attr.value, $options: 'i' } }
+                    ]
+                });
+            });
+        }
+
+        // Price range
+        if (price_range || detected_price_range) {
+            const range = price_range || detected_price_range;
+            if (range.includes('-')) {
+                const [min, max] = range.split('-').map(Number);
+                if (max) {
+                    query.price = { $gte: min, $lte: max };
+                } else {
+                    query.price = { $gte: min };
+                }
+            } else if (range.endsWith('+')) {
+                const min = parseInt(range.replace('+', ''));
+                query.price = { $gte: min };
+            }
+        }
+
+        // Sorting
+        switch (sort_by) {
+            case 'price_low_high':
+                sort.price = 1;
+                break;
+            case 'price_high_low':
+                sort.price = -1;
+                break;
+            case 'newest':
+                sort.createdAt = -1;
+                break;
+            case 'rating':
+                sort.rating = -1;
+                break;
+            case 'discount':
+                sort.discountPercentage = -1;
+                break;
+            case 'relevance':
+            default:
+                // Relevance sorting handled by frontend
+                break;
+        }
+
+        const products = await Product.find(query)
+            .sort(sort)
+            .limit(50)
+            .lean();
+
+        // Calculate relevance score for each product
+        const enhancedProducts = products.map(product => {
+            let relevanceScore = 0;
+
+            // Calculate basic relevance
+            if (q) {
+                const lowerQ = q.toLowerCase();
+                if (product.name.toLowerCase().includes(lowerQ)) relevanceScore += 30;
+                if (product.description?.toLowerCase().includes(lowerQ)) relevanceScore += 10;
+                if (product.category?.toLowerCase().includes(lowerQ)) relevanceScore += 20;
+            }
+
+            // Boost for exact category match
+            if (detected_category &&
+                (product.category?.toLowerCase().includes(detected_category.toLowerCase()) ||
+                    product.sub_category?.toLowerCase().includes(detected_category.toLowerCase()))) {
+                relevanceScore += 40;
+            }
+
+            // Boost for trending
+            if (product.is_trending) relevanceScore += 15;
+
+            // Boost for discount
+            if (product.discountPercentage > 0) {
+                relevanceScore += product.discountPercentage * 0.5;
+            }
+
+            return {
+                ...product,
+                relevanceScore
+            };
+        });
+
+        // Sort by relevance if needed
+        if (sort_by === 'relevance') {
+            enhancedProducts.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        }
+
+        res.json({
+            success: true,
+            products: enhancedProducts,
+            count: enhancedProducts.length,
+            metadata: {
+                query: q,
+                detected_category,
+                detected_attributes: detected_attributes ? JSON.parse(detected_attributes) : [],
+                has_nlp_results: !!(detected_category || detected_attributes)
+            }
+        });
+    } catch (error) {
+        console.error('Smart search error:', error);
+        res.status(500).json({ success: false, error: 'Search failed' });
+    }
+});
+
+
+
+
+
+
+
+
+
 module.exports = router;
 

@@ -436,10 +436,6 @@ const Home = () => {
         fetchFeaturedCategories();
     }, [API]);
 
-    // Scroll to top handler
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
 
     // Show scroll to top button
     useEffect(() => {

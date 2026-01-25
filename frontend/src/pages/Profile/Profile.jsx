@@ -298,6 +298,7 @@ const Profile = () => {
       localStorage.removeItem("user");
     }
   }, [sessionExpired]);
+
   // ✅ Password strength
   const getPasswordStrength = (password) => {
     if (!password) return 0;
