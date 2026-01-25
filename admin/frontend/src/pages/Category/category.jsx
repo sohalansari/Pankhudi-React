@@ -38,8 +38,13 @@ const CategoryManagement = () => {
         description: '',
         status: 'active',
         category_id: '',
-        sub_category_id: ''
+        sub_category_id: '',
+        image: null
     });
+
+    // Image preview state
+    const [imagePreview, setImagePreview] = useState(null);
+    const [existingImage, setExistingImage] = useState('');
 
     // Dropdown data
     const [categoriesList, setCategoriesList] = useState([]);
@@ -52,11 +57,51 @@ const CategoryManagement = () => {
 
     // ============ API BASE URL ============
     const API_URL = 'http://localhost:5001/api';
+    const IMAGE_BASE_URL = 'http://localhost:5001';
+
+    // ============ HELPER FUNCTIONS ============
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return 'https://via.placeholder.com/100x100?text=No+Image';
+
+        // Check if it's already a full URL
+        if (imagePath.startsWith('http')) return imagePath;
+
+        // Check if it's a relative path starting with /uploads
+        if (imagePath.startsWith('/uploads/')) {
+            return `${IMAGE_BASE_URL}${imagePath}`;
+        }
+
+        // For old format or just filename
+        let folder = '';
+        if (activeTab === 'categories') folder = 'categories';
+        else if (activeTab === 'subcategories') folder = 'sub_categories';
+        else if (activeTab === 'subsubcategories') folder = 'sub_sub_categories';
+
+        return `${IMAGE_BASE_URL}/uploads/${folder}/${imagePath}`;
+    };
+
+    const getImageUrlForItem = (imagePath, type) => {
+        if (!imagePath) return 'https://via.placeholder.com/100x100?text=No+Image';
+
+        if (imagePath.startsWith('http')) return imagePath;
+
+        if (imagePath.startsWith('/uploads/')) {
+            return `${IMAGE_BASE_URL}${imagePath}`;
+        }
+
+        let folder = '';
+        if (type === 'category') folder = 'categories';
+        else if (type === 'subcategory') folder = 'sub_categories';
+        else if (type === 'subsubcategory') folder = 'sub_sub_categories';
+
+        return `${IMAGE_BASE_URL}/uploads/${folder}/${imagePath}`;
+    };
 
     // ============ STATISTICS FUNCTIONS ============
     const fetchGlobalStats = useCallback(async () => {
         try {
             const response = await fetch(`${API_URL}/global-stats`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             if (data.success) {
                 setStats(data.data);
@@ -73,8 +118,8 @@ const CategoryManagement = () => {
             setError('');
 
             const queryParams = new URLSearchParams({
-                page: currentPage,
-                limit: itemsPerPage,
+                page: currentPage.toString(),
+                limit: itemsPerPage.toString(),
                 search: searchTerm,
                 status: statusFilter === 'all' ? '' : statusFilter,
                 sortBy: 'id',
@@ -82,6 +127,7 @@ const CategoryManagement = () => {
             }).toString();
 
             const response = await fetch(`${API_URL}/categories?${queryParams}`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
 
             if (data.success) {
@@ -104,8 +150,8 @@ const CategoryManagement = () => {
             setError('');
 
             const queryParams = new URLSearchParams({
-                page: currentPage,
-                limit: itemsPerPage,
+                page: currentPage.toString(),
+                limit: itemsPerPage.toString(),
                 search: searchTerm,
                 status: statusFilter === 'all' ? '' : statusFilter,
                 category_id: categoryFilter === 'all' ? '' : categoryFilter,
@@ -114,6 +160,7 @@ const CategoryManagement = () => {
             }).toString();
 
             const response = await fetch(`${API_URL}/subcategories?${queryParams}`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
 
             if (data.success) {
@@ -136,8 +183,8 @@ const CategoryManagement = () => {
             setError('');
 
             const queryParams = new URLSearchParams({
-                page: currentPage,
-                limit: itemsPerPage,
+                page: currentPage.toString(),
+                limit: itemsPerPage.toString(),
                 search: searchTerm,
                 status: statusFilter === 'all' ? '' : statusFilter,
                 sub_category_id: subCategoryFilter === 'all' ? '' : subCategoryFilter,
@@ -146,6 +193,7 @@ const CategoryManagement = () => {
             }).toString();
 
             const response = await fetch(`${API_URL}/subsubcategories?${queryParams}`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
 
             if (data.success) {
@@ -162,10 +210,11 @@ const CategoryManagement = () => {
         }
     }, [currentPage, itemsPerPage, searchTerm, statusFilter, subCategoryFilter]);
 
-    // ============ DROPDOWN FUNCTIONS - FIXED ============
+    // ============ DROPDOWN FUNCTIONS ============
     const fetchCategoriesForDropdown = useCallback(async () => {
         try {
             const response = await fetch(`${API_URL}/categories/list/all`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             if (data.success) {
                 setCategoriesList(data.data || []);
@@ -175,37 +224,10 @@ const CategoryManagement = () => {
         }
     }, []);
 
-    // FIXED: Sub-categories dropdown function for ALL sub-categories
-    const fetchSubCategoriesForDropdown = useCallback(async (categoryId = '') => {
-        try {
-            let url = `${API_URL}/subcategories/list/all`;
-
-            // If categoryId is provided, filter by category
-            if (categoryId && categoryId !== '') {
-                url += `?category_id=${categoryId}`;
-            }
-
-            console.log('Fetching sub-categories dropdown from:', url);
-            const response = await fetch(url);
-            const data = await response.json();
-            console.log('Sub-categories dropdown data:', data);
-
-            if (data.success) {
-                setSubCategoriesList(data.data || []);
-            } else {
-                console.error('Failed to fetch sub-categories for dropdown:', data.message);
-                setSubCategoriesList([]);
-            }
-        } catch (err) {
-            console.error('Fetch sub-categories dropdown error:', err);
-            setSubCategoriesList([]);
-        }
-    }, []);
-
-    // NEW: Fetch ALL sub-categories without filter (for sub-sub-categories form)
     const fetchAllSubCategoriesForDropdown = useCallback(async () => {
         try {
             const response = await fetch(`${API_URL}/subcategories/list/all`);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             if (data.success) {
                 setSubCategoriesList(data.data || []);
@@ -215,6 +237,40 @@ const CategoryManagement = () => {
         }
     }, []);
 
+    // ============ IMAGE HANDLING FUNCTIONS ============
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image size should be less than 5MB');
+                return;
+            }
+
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                setError('Please upload a valid image file (JPEG, PNG, GIF, WebP)');
+                return;
+            }
+
+            setFormData(prev => ({ ...prev, image: file }));
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const clearImage = () => {
+        setFormData(prev => ({ ...prev, image: null }));
+        setImagePreview(null);
+        setExistingImage('');
+    };
+
     // ============ FORM HANDLERS ============
     const resetForm = () => {
         setFormData({
@@ -223,10 +279,14 @@ const CategoryManagement = () => {
             description: '',
             status: 'active',
             category_id: '',
-            sub_category_id: ''
+            sub_category_id: '',
+            image: null
         });
+        setImagePreview(null);
+        setExistingImage('');
         setFormMode('add');
         setShowForm(false);
+        setError('');
     };
 
     const handleInputChange = (e) => {
@@ -242,22 +302,20 @@ const CategoryManagement = () => {
         setFormMode('add');
         setShowForm(true);
 
-        // Load dropdown data based on active tab
         if (activeTab === 'subsubcategories') {
-            // Load ALL sub-categories for sub-sub-categories form
             fetchAllSubCategoriesForDropdown();
         }
     };
 
     const openEditForm = (item) => {
-        // Prepare form data based on active tab
         let formDataToSet = {
             id: item.id,
             name: item.name,
             description: item.description || '',
             status: item.status || 'active',
-            category_id: '',
-            sub_category_id: ''
+            category_id: item.category_id || '',
+            sub_category_id: item.sub_category_id || '',
+            image: null
         };
 
         if (activeTab === 'subcategories') {
@@ -267,25 +325,24 @@ const CategoryManagement = () => {
         }
 
         setFormData(formDataToSet);
+        setExistingImage(item.image || '');
+
+        // Set image preview
+        if (item.image) {
+            let type = '';
+            if (activeTab === 'categories') type = 'category';
+            else if (activeTab === 'subcategories') type = 'subcategory';
+            else type = 'subsubcategory';
+
+            setImagePreview(getImageUrlForItem(item.image, type));
+        } else {
+            setImagePreview(null);
+        }
+
         setFormMode('edit');
         setShowForm(true);
 
-        // Load dropdown data based on active tab
-        if (activeTab === 'subcategories' && item.category_id) {
-            fetchSubCategoriesForDropdown(item.category_id);
-        } else if (activeTab === 'subsubcategories') {
-            // Load ALL sub-categories for sub-sub-categories edit form
-            fetchAllSubCategoriesForDropdown();
-        }
-    };
-
-    // ============ TAB CHANGE HANDLER ============
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        setCurrentPage(1);
-
-        // Load dropdown data when switching to sub-sub-categories tab
-        if (tab === 'subsubcategories') {
+        if (activeTab === 'subsubcategories') {
             fetchAllSubCategoriesForDropdown();
         }
     };
@@ -296,39 +353,55 @@ const CategoryManagement = () => {
         setError('');
         setSuccess('');
 
-        try {
-            let url = '';
-            let data = {};
+        // Validate required fields
+        if (!formData.name.trim()) {
+            setError('Name is required');
+            return;
+        }
 
-            if (activeTab === 'categories') {
-                url = `${API_URL}/categories`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    status: formData.status
-                };
-            } else if (activeTab === 'subcategories') {
-                url = `${API_URL}/subcategories`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    category_id: formData.category_id,
-                    status: formData.status
-                };
-            } else {
-                url = `${API_URL}/subsubcategories`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    sub_category_id: formData.sub_category_id,
-                    status: formData.status
-                };
+        if (activeTab === 'subcategories' && !formData.category_id) {
+            setError('Please select a category');
+            return;
+        }
+
+        if (activeTab === 'subsubcategories' && !formData.sub_category_id) {
+            setError('Please select a sub-category');
+            return;
+        }
+
+        try {
+            const formDataToSend = new FormData();
+
+            // Add common fields
+            formDataToSend.append('name', formData.name.trim());
+            formDataToSend.append('description', formData.description || '');
+            formDataToSend.append('status', formData.status);
+
+            // Add parent IDs based on tab
+            if (activeTab === 'subcategories') {
+                formDataToSend.append('category_id', formData.category_id);
+            } else if (activeTab === 'subsubcategories') {
+                formDataToSend.append('sub_category_id', formData.sub_category_id);
             }
 
+            // Add image if exists
+            if (formData.image) {
+                formDataToSend.append('image', formData.image);
+            }
+
+            let url = '';
+            if (activeTab === 'categories') {
+                url = `${API_URL}/categories`;
+            } else if (activeTab === 'subcategories') {
+                url = `${API_URL}/subcategories`;
+            } else {
+                url = `${API_URL}/subsubcategories`;
+            }
+
+            setLoading(true);
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formDataToSend
             });
 
             const result = await response.json();
@@ -344,6 +417,8 @@ const CategoryManagement = () => {
         } catch (err) {
             console.error('Add error:', err);
             setError('Failed to add item. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -352,39 +427,55 @@ const CategoryManagement = () => {
         setError('');
         setSuccess('');
 
-        try {
-            let url = '';
-            let data = {};
+        // Validate required fields
+        if (!formData.name.trim()) {
+            setError('Name is required');
+            return;
+        }
 
-            if (activeTab === 'categories') {
-                url = `${API_URL}/categories/${formData.id}`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    status: formData.status
-                };
-            } else if (activeTab === 'subcategories') {
-                url = `${API_URL}/subcategories/${formData.id}`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    category_id: formData.category_id,
-                    status: formData.status
-                };
-            } else {
-                url = `${API_URL}/subsubcategories/${formData.id}`;
-                data = {
-                    name: formData.name,
-                    description: formData.description,
-                    sub_category_id: formData.sub_category_id,
-                    status: formData.status
-                };
+        if (activeTab === 'subcategories' && !formData.category_id) {
+            setError('Please select a category');
+            return;
+        }
+
+        if (activeTab === 'subsubcategories' && !formData.sub_category_id) {
+            setError('Please select a sub-category');
+            return;
+        }
+
+        try {
+            const formDataToSend = new FormData();
+
+            // Add common fields
+            formDataToSend.append('name', formData.name.trim());
+            formDataToSend.append('description', formData.description || '');
+            formDataToSend.append('status', formData.status);
+
+            // Add parent IDs based on tab
+            if (activeTab === 'subcategories') {
+                formDataToSend.append('category_id', formData.category_id);
+            } else if (activeTab === 'subsubcategories') {
+                formDataToSend.append('sub_category_id', formData.sub_category_id);
             }
 
+            // Add image if exists
+            if (formData.image) {
+                formDataToSend.append('image', formData.image);
+            }
+
+            let url = '';
+            if (activeTab === 'categories') {
+                url = `${API_URL}/categories/${formData.id}`;
+            } else if (activeTab === 'subcategories') {
+                url = `${API_URL}/subcategories/${formData.id}`;
+            } else {
+                url = `${API_URL}/subsubcategories/${formData.id}`;
+            }
+
+            setLoading(true);
             const response = await fetch(url, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formDataToSend
             });
 
             const result = await response.json();
@@ -400,11 +491,13 @@ const CategoryManagement = () => {
         } catch (err) {
             console.error('Edit error:', err);
             setError('Failed to update item. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this item?')) {
+        if (!window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
             return;
         }
 
@@ -422,7 +515,9 @@ const CategoryManagement = () => {
                 url = `${API_URL}/subsubcategories/${id}`;
             }
 
-            const response = await fetch(url, { method: 'DELETE' });
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
             const result = await response.json();
 
             if (result.success) {
@@ -454,7 +549,9 @@ const CategoryManagement = () => {
 
             const response = await fetch(url, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ status: newStatus })
             });
 
@@ -472,9 +569,65 @@ const CategoryManagement = () => {
         }
     };
 
+    // ============ UPDATE IMAGE FUNCTION ============
+    const handleUpdateImage = async (id) => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validate file
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image size should be less than 5MB');
+                return;
+            }
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                setError('Please upload a valid image file (JPEG, PNG, GIF, WebP)');
+                return;
+            }
+
+            try {
+                const formDataToSend = new FormData();
+                formDataToSend.append('image', file);
+
+                let url = '';
+                if (activeTab === 'categories') {
+                    url = `${API_URL}/categories/${id}/image`;
+                } else if (activeTab === 'subcategories') {
+                    url = `${API_URL}/subcategories/${id}/image`;
+                } else {
+                    url = `${API_URL}/subsubcategories/${id}/image`;
+                }
+
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    body: formDataToSend
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    setSuccess('Image updated successfully!');
+                    await refreshAllData();
+                } else {
+                    setError(result.message || 'Failed to update image');
+                }
+            } catch (err) {
+                console.error('Update image error:', err);
+                setError('Failed to update image. Please try again.');
+            }
+        };
+
+        fileInput.click();
+    };
+
     // ============ HELPER FUNCTIONS ============
     const refreshAllData = async () => {
-        // Refresh current tab data
         if (activeTab === 'categories') {
             await fetchCategories();
             await fetchCategoriesForDropdown();
@@ -482,11 +635,8 @@ const CategoryManagement = () => {
             await fetchSubCategories();
         } else {
             await fetchSubSubCategories();
-            // Refresh sub-categories dropdown for sub-sub-categories
             await fetchAllSubCategoriesForDropdown();
         }
-
-        // Refresh statistics
         await fetchGlobalStats();
     };
 
@@ -523,35 +673,36 @@ const CategoryManagement = () => {
 
     // ============ EFFECTS ============
     useEffect(() => {
-        // Initial data fetch
         fetchCategoriesForDropdown();
         fetchGlobalStats();
 
-        // Load sub-categories for dropdown if on sub-sub-categories tab
         if (activeTab === 'subsubcategories') {
             fetchAllSubCategoriesForDropdown();
         }
     }, []);
 
     useEffect(() => {
-        // Fetch data when active tab changes
         if (activeTab === 'categories') {
             fetchCategories();
         } else if (activeTab === 'subcategories') {
             fetchSubCategories();
         } else {
             fetchSubSubCategories();
-            // Also load sub-categories dropdown for sub-sub-categories
             fetchAllSubCategoriesForDropdown();
         }
     }, [activeTab, currentPage, itemsPerPage]);
 
     useEffect(() => {
-        // Fetch sub-categories when category filter changes (for sub-categories tab)
-        if (activeTab === 'subcategories' && categoryFilter !== 'all') {
-            fetchSubCategoriesForDropdown(categoryFilter);
+        if (activeTab === 'subcategories') {
+            fetchSubCategories();
         }
-    }, [categoryFilter, activeTab]);
+    }, [categoryFilter]);
+
+    useEffect(() => {
+        if (activeTab === 'subsubcategories') {
+            fetchSubSubCategories();
+        }
+    }, [subCategoryFilter]);
 
     // ============ RENDER FUNCTIONS ============
     const renderStats = () => (
@@ -625,19 +776,19 @@ const CategoryManagement = () => {
         <div className="tabs-container">
             <button
                 className={`tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
-                onClick={() => handleTabChange('categories')}
+                onClick={() => setActiveTab('categories')}
             >
                 <i className="fas fa-list"></i> Categories ({stats.categories.total})
             </button>
             <button
                 className={`tab-btn ${activeTab === 'subcategories' ? 'active' : ''}`}
-                onClick={() => handleTabChange('subcategories')}
+                onClick={() => setActiveTab('subcategories')}
             >
                 <i className="fas fa-sitemap"></i> Sub-Categories ({stats.sub_categories.total})
             </button>
             <button
                 className={`tab-btn ${activeTab === 'subsubcategories' ? 'active' : ''}`}
-                onClick={() => handleTabChange('subsubcategories')}
+                onClick={() => setActiveTab('subsubcategories')}
             >
                 <i className="fas fa-stream"></i> Sub-Sub-Categories ({stats.sub_sub_categories.total})
             </button>
@@ -702,7 +853,7 @@ const CategoryManagement = () => {
                         <option value="all">All Sub-Categories</option>
                         {subCategoriesList.map(subCat => (
                             <option key={subCat.id} value={subCat.id}>
-                                {subCat.name}
+                                {subCat.name} {subCat.category_name ? `(${subCat.category_name})` : ''}
                             </option>
                         ))}
                     </select>
@@ -785,6 +936,48 @@ const CategoryManagement = () => {
                             />
                         </div>
 
+                        {/* Image Upload Field */}
+                        <div className="form-group">
+                            <label>Image {formMode === 'edit' && '(Optional)'}</label>
+                            <div className="image-upload-container">
+                                {(imagePreview) && (
+                                    <div className="image-preview-container">
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="image-preview"
+                                            onError={(e) => {
+                                                e.target.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={clearImage}
+                                            className="clear-image-btn"
+                                        >
+                                            <i className="fas fa-times"></i> Remove
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="file-upload-wrapper">
+                                    <label htmlFor="image-upload" className="file-upload-label">
+                                        <i className="fas fa-cloud-upload-alt"></i>
+                                        <span>{formMode === 'edit' ? 'Change Image' : 'Choose Image'}</span>
+                                    </label>
+                                    <input
+                                        id="image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="file-input"
+                                    />
+                                    <p className="file-help-text">
+                                        Supports: JPG, PNG, GIF, WebP | Max: 5MB
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {activeTab === 'subcategories' && (
                             <div className="form-group">
                                 <label>Parent Category *</label>
@@ -824,11 +1017,6 @@ const CategoryManagement = () => {
                                         <option value="" disabled>No sub-categories available</option>
                                     )}
                                 </select>
-                                {subCategoriesList.length === 0 && (
-                                    <p className="form-help-text">
-                                        <i className="fas fa-info-circle"></i> Please add sub-categories first
-                                    </p>
-                                )}
                             </div>
                         )}
 
@@ -849,8 +1037,12 @@ const CategoryManagement = () => {
                             <button type="button" onClick={resetForm} className="cancel-btn">
                                 Cancel
                             </button>
-                            <button type="submit" className="submit-btn" disabled={activeTab === 'subsubcategories' && !formData.sub_category_id}>
-                                {formMode === 'add' ? (
+                            <button type="submit" className="submit-btn" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <i className="fas fa-spinner fa-spin"></i> Processing...
+                                    </>
+                                ) : formMode === 'add' ? (
                                     <>
                                         <i className="fas fa-plus"></i> Add
                                     </>
@@ -898,6 +1090,7 @@ const CategoryManagement = () => {
                 <table className="data-table">
                     <thead>
                         <tr>
+                            <th>Image</th>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Description</th>
@@ -914,73 +1107,101 @@ const CategoryManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((item) => (
-                            <tr key={item.id}>
-                                <td>{item.id}</td>
-                                <td className="name-cell">
-                                    <strong>{item.name}</strong>
-                                </td>
-                                <td>{item.description || <em className="text-muted">No description</em>}</td>
+                        {data.map((item) => {
+                            // Determine type for image URL
+                            let type = '';
+                            if (activeTab === 'categories') type = 'category';
+                            else if (activeTab === 'subcategories') type = 'subcategory';
+                            else type = 'subsubcategory';
 
-                                {activeTab === 'subcategories' && (
-                                    <td>
-                                        <span className="parent-info">
-                                            <i className="fas fa-folder"></i> {item.category_name || 'N/A'}
-                                        </span>
+                            return (
+                                <tr key={item.id}>
+                                    <td className="image-cell">
+                                        <div className="table-image-wrapper">
+                                            <img
+                                                src={getImageUrlForItem(item.image, type)}
+                                                alt={item.name}
+                                                className="table-image"
+                                                onError={(e) => {
+                                                    e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
+                                                    e.target.style.backgroundColor = '#f5f5f5';
+                                                }}
+                                            />
+                                            <button
+                                                className="update-image-btn"
+                                                onClick={() => handleUpdateImage(item.id)}
+                                                title="Update Image"
+                                            >
+                                                <i className="fas fa-camera"></i>
+                                            </button>
+                                        </div>
                                     </td>
-                                )}
+                                    <td>{item.id}</td>
+                                    <td className="name-cell">
+                                        <strong>{item.name}</strong>
+                                    </td>
+                                    <td>{item.description || <em className="text-muted">No description</em>}</td>
 
-                                {activeTab === 'subsubcategories' && (
-                                    <>
-                                        <td>
-                                            <span className="parent-info">
-                                                <i className="fas fa-sitemap"></i> {item.sub_category_name || 'N/A'}
-                                            </span>
-                                        </td>
+                                    {activeTab === 'subcategories' && (
                                         <td>
                                             <span className="parent-info">
                                                 <i className="fas fa-folder"></i> {item.category_name || 'N/A'}
                                             </span>
                                         </td>
-                                    </>
-                                )}
+                                    )}
 
-                                <td>
-                                    <span className={`status-badge status-${item.status}`}>
-                                        <i className={`fas fa-circle ${item.status === 'active' ? 'active' : 'inactive'}`}></i>
-                                        {item.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
-                                </td>
-                                <td className="action-buttons">
-                                    <button
-                                        className="edit-btn"
-                                        onClick={() => openEditForm(item)}
-                                        title="Edit"
-                                    >
-                                        <i className="fas fa-edit"></i>
-                                    </button>
-                                    <button
-                                        className="delete-btn"
-                                        onClick={() => handleDelete(item.id)}
-                                        title="Delete"
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                    <button
-                                        className={`status-toggle-btn ${item.status === 'active' ? 'active' : 'inactive'}`}
-                                        onClick={() => handleStatusChange(item.id,
-                                            item.status === 'active' ? 'inactive' : 'active'
-                                        )}
-                                        title={`Mark as ${item.status === 'active' ? 'Inactive' : 'Active'}`}
-                                    >
-                                        <i className={`fas fa-toggle-${item.status === 'active' ? 'on' : 'off'}`}></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                                    {activeTab === 'subsubcategories' && (
+                                        <>
+                                            <td>
+                                                <span className="parent-info">
+                                                    <i className="fas fa-sitemap"></i> {item.sub_category_name || 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="parent-info">
+                                                    <i className="fas fa-folder"></i> {item.category_name || 'N/A'}
+                                                </span>
+                                            </td>
+                                        </>
+                                    )}
+
+                                    <td>
+                                        <span className={`status-badge status-${item.status}`}>
+                                            <i className={`fas fa-circle ${item.status === 'active' ? 'active' : 'inactive'}`}></i>
+                                            {item.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
+                                    </td>
+                                    <td className="action-buttons">
+                                        <button
+                                            className="edit-btn"
+                                            onClick={() => openEditForm(item)}
+                                            title="Edit"
+                                        >
+                                            <i className="fas fa-edit"></i>
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDelete(item.id)}
+                                            title="Delete"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                        <button
+                                            className={`status-toggle-btn ${item.status === 'active' ? 'active' : 'inactive'}`}
+                                            onClick={() => handleStatusChange(item.id,
+                                                item.status === 'active' ? 'inactive' : 'active'
+                                            )}
+                                            title={`Mark as ${item.status === 'active' ? 'Inactive' : 'Active'}`}
+                                        >
+                                            <i className={`fas fa-toggle-${item.status === 'active' ? 'on' : 'off'}`}></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -1052,7 +1273,7 @@ const CategoryManagement = () => {
                     <h1>
                         <i className="fas fa-sitemap"></i> Category Management
                     </h1>
-                    <p className="subtitle">Manage categories, sub-categories, and sub-sub-categories</p>
+                    <p className="subtitle">Manage categories, sub-categories, and sub-sub-categories with images</p>
                 </div>
                 <div className="header-right">
                     <button className="refresh-all-btn" onClick={handleRefresh} title="Refresh All">

@@ -1,4 +1,23 @@
+// backend > src > controllers > categoryController.js
 const db = require('../config/db');
+const path = require('path');
+const fs = require('fs');
+
+// ============ HELPER FUNCTION TO DELETE IMAGE ============
+const deleteImageFile = (imagePath) => {
+    if (imagePath && imagePath.startsWith('/uploads/')) {
+        const fullPath = path.join(__dirname, '..', imagePath);
+        if (fs.existsSync(fullPath)) {
+            fs.unlink(fullPath, (err) => {
+                if (err) {
+                    console.error('Error deleting image file:', err);
+                } else {
+                    console.log(`🗑️ Deleted image file: ${fullPath}`);
+                }
+            });
+        }
+    }
+};
 
 // Get all categories with pagination and filters
 exports.getAllCategories = (req, res) => {
@@ -98,203 +117,28 @@ exports.getAllCategories = (req, res) => {
     }
 };
 
-// Get single category by ID
-exports.getCategoryById = (req, res) => {
-    const { id } = req.params;
-
-    db.query('SELECT * FROM categories WHERE id = ?', [id], (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database error'
-            });
-        }
-
-        if (results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Category not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            data: results[0]
-        });
-    });
-};
-
-// Create new category
-exports.createCategory = (req, res) => {
-    const { name, description, status = 'active' } = req.body;
-
-    if (!name) {
-        return res.status(400).json({
-            success: false,
-            message: 'Category name is required'
-        });
-    }
-
-    db.query(
-        'INSERT INTO categories (name, description, status) VALUES (?, ?, ?)',
-        [name, description || '', status],
-        (err, result) => {
-            if (err) {
-                console.error('Create error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to create category'
-                });
-            }
-
-            // Fetch the created category
-            db.query('SELECT * FROM categories WHERE id = ?', [result.insertId], (err2, results) => {
-                if (err2) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Category created but failed to fetch details'
-                    });
-                }
-
-                res.status(201).json({
-                    success: true,
-                    message: 'Category created successfully',
-                    data: results[0]
-                });
-            });
-        }
-    );
-};
-
-// Update category
-exports.updateCategory = (req, res) => {
-    const { id } = req.params;
-    const { name, description, status } = req.body;
-
-    db.query(
-        'UPDATE categories SET name = ?, description = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [name, description || '', status, id],
-        (err, result) => {
-            if (err) {
-                console.error('Update error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to update category'
-                });
-            }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Category not found'
-                });
-            }
-
-            // Fetch updated category
-            db.query('SELECT * FROM categories WHERE id = ?', [id], (err2, results) => {
-                if (err2) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Updated but failed to fetch details'
-                    });
-                }
-
-                res.json({
-                    success: true,
-                    message: 'Category updated successfully',
-                    data: results[0]
-                });
-            });
-        }
-    );
-};
-
-// Delete category
-exports.deleteCategory = (req, res) => {
-    const { id } = req.params;
-
-    // First check if category has subcategories
-    db.query('SELECT COUNT(*) as count FROM sub_categories WHERE category_id = ?', [id], (checkErr, checkResult) => {
-        if (checkErr) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database error'
-            });
-        }
-
-        if (checkResult[0].count > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot delete category. It has subcategories. Delete subcategories first.'
-            });
-        }
-
-        // Delete category
-        db.query('DELETE FROM categories WHERE id = ?', [id], (err, result) => {
-            if (err) {
-                console.error('Delete error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to delete category'
-                });
-            }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Category not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'Category deleted successfully'
-            });
-        });
-    });
-};
-
-// Update category status
-exports.updateCategoryStatus = (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['active', 'inactive', 'draft'].includes(status)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Invalid status value'
-        });
-    }
-
-    db.query(
-        'UPDATE categories SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [status, id],
-        (err, result) => {
-            if (err) {
-                console.error('Status update error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to update status'
-                });
-            }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Category not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'Status updated successfully'
-            });
-        }
-    );
-};
-
 // Get all categories for dropdown (active only)
 exports.getAllCategoriesForDropdown = (req, res) => {
+    db.query(
+        'SELECT id, name FROM categories WHERE status = "active" ORDER BY name',
+        (err, results) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Database error'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: results
+            });
+        }
+    );
+};
+
+// Get all active categories for dropdown
+exports.getAllCategoriesList = (req, res) => {
     db.query(
         'SELECT id, name FROM categories WHERE status = "active" ORDER BY name',
         (err, results) => {
@@ -345,6 +189,293 @@ exports.getCategoryStats = (req, res) => {
         res.json({
             success: true,
             data: stats
+        });
+    });
+};
+
+// Get single category by ID
+exports.getCategoryById = (req, res) => {
+    const { id } = req.params;
+
+    db.query('SELECT * FROM categories WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: results[0]
+        });
+    });
+};
+
+// Create new category
+exports.createCategory = (req, res) => {
+    const { name, description, status = 'active' } = req.body;
+
+    if (!name) {
+        return res.status(400).json({
+            success: false,
+            message: 'Category name is required'
+        });
+    }
+
+    let imageUrl = '';
+    if (req.file) {
+        if (req.file.error) {
+            return res.status(400).json({
+                success: false,
+                message: req.file.error
+            });
+        }
+        imageUrl = req.file.path;
+    }
+
+    db.query(
+        'INSERT INTO categories (name, description, status, image) VALUES (?, ?, ?, ?)',
+        [name, description || '', status, imageUrl],
+        (err, result) => {
+            if (err) {
+                console.error('Create error:', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to create category'
+                });
+            }
+
+            // Fetch the created category
+            db.query('SELECT * FROM categories WHERE id = ?', [result.insertId], (err2, results) => {
+                if (err2) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Category created but failed to fetch details'
+                    });
+                }
+
+                res.status(201).json({
+                    success: true,
+                    message: 'Category created successfully',
+                    data: results[0]
+                });
+            });
+        }
+    );
+};
+
+// Update category
+exports.updateCategory = (req, res) => {
+    const { id } = req.params;
+    const { name, description, status } = req.body;
+
+    // First get old image path
+    db.query('SELECT image FROM categories WHERE id = ?', [id], (selectErr, selectResult) => {
+        if (selectErr) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        const oldImagePath = selectResult[0]?.image;
+
+        db.query(
+            'UPDATE categories SET name = ?, description = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [name, description || '', status, id],
+            (err, result) => {
+                if (err) {
+                    console.error('Update error:', err);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to update category'
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Category not found'
+                    });
+                }
+
+                // If image is being removed (empty string sent), delete old image
+                if (req.body.image === '' && oldImagePath) {
+                    deleteImageFile(oldImagePath);
+                }
+
+                // Fetch updated category
+                db.query('SELECT * FROM categories WHERE id = ?', [id], (err2, results) => {
+                    if (err2) {
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Updated but failed to fetch details'
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        message: 'Category updated successfully',
+                        data: results[0]
+                    });
+                });
+            }
+        );
+    });
+};
+
+// Update category image only
+exports.updateCategoryImage = (req, res) => {
+    const { id } = req.params;
+
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: 'No image file uploaded'
+        });
+    }
+
+    if (req.file.error) {
+        return res.status(400).json({
+            success: false,
+            message: req.file.error
+        });
+    }
+
+    const imageUrl = req.file.path;
+
+    db.query(
+        'UPDATE categories SET image = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [imageUrl, id],
+        (err, result) => {
+            if (err) {
+                console.error('Image update error:', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to update image'
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Category not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Category image updated successfully',
+                data: {
+                    imageUrl: imageUrl
+                }
+            });
+        }
+    );
+};
+
+// Update category status
+exports.updateCategoryStatus = (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'inactive', 'draft'].includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid status value'
+        });
+    }
+
+    db.query(
+        'UPDATE categories SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [status, id],
+        (err, result) => {
+            if (err) {
+                console.error('Status update error:', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to update status'
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Category not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Status updated successfully'
+            });
+        }
+    );
+};
+
+// Delete category
+exports.deleteCategory = (req, res) => {
+    const { id } = req.params;
+
+    // First get category image path
+    db.query('SELECT image FROM categories WHERE id = ?', [id], (imgErr, imgResult) => {
+        if (imgErr) {
+            console.error('Image fetch error:', imgErr);
+        }
+
+        const imagePath = imgResult[0]?.image;
+
+        // Check if category has subcategories
+        db.query('SELECT COUNT(*) as count FROM sub_categories WHERE category_id = ?', [id], (checkErr, checkResult) => {
+            if (checkErr) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Database error'
+                });
+            }
+
+            if (checkResult[0].count > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot delete category. It has subcategories. Delete subcategories first.'
+                });
+            }
+
+            // Delete category
+            db.query('DELETE FROM categories WHERE id = ?', [id], (err, result) => {
+                if (err) {
+                    console.error('Delete error:', err);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to delete category'
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Category not found'
+                    });
+                }
+
+                // Delete associated image file
+                if (imagePath) {
+                    deleteImageFile(imagePath);
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Category deleted successfully'
+                });
+            });
         });
     });
 };

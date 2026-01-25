@@ -1,4 +1,23 @@
+// backend > src > controllers > subSubCategoryController.js
 const db = require('../config/db');
+const path = require('path');
+const fs = require('fs');
+
+// Helper function to delete image file
+const deleteImageFile = (imagePath) => {
+    if (imagePath && imagePath.startsWith('/uploads/')) {
+        const fullPath = path.join(__dirname, '..', imagePath);
+        if (fs.existsSync(fullPath)) {
+            fs.unlink(fullPath, (err) => {
+                if (err) {
+                    console.error('Error deleting subsubcategory image:', err);
+                } else {
+                    console.log(`🗑️ Deleted subsubcategory image: ${fullPath}`);
+                }
+            });
+        }
+    }
+};
 
 // Get all sub-sub-categories with parent info
 exports.getAllSubSubCategories = (req, res) => {
@@ -146,7 +165,7 @@ exports.getSubSubCategoryById = (req, res) => {
     );
 };
 
-// Create new sub-sub-category
+// Create new sub-sub-category with image upload
 exports.createSubSubCategory = (req, res) => {
     const { name, description, sub_category_id, status = 'active' } = req.body;
 
@@ -162,6 +181,17 @@ exports.createSubSubCategory = (req, res) => {
             success: false,
             message: 'Sub-category ID is required'
         });
+    }
+
+    let imageUrl = '';
+    if (req.file) {
+        if (req.file.error) {
+            return res.status(400).json({
+                success: false,
+                message: req.file.error
+            });
+        }
+        imageUrl = req.file.path;
     }
 
     // Check if sub-category exists
@@ -182,8 +212,8 @@ exports.createSubSubCategory = (req, res) => {
 
         // Create sub-sub-category
         db.query(
-            'INSERT INTO sub_sub_categories (name, description, sub_category_id, status) VALUES (?, ?, ?, ?)',
-            [name, description || '', sub_category_id, status],
+            'INSERT INTO sub_sub_categories (name, description, sub_category_id, status, image) VALUES (?, ?, ?, ?, ?)',
+            [name, description || '', sub_category_id, status, imageUrl],
             (err, result) => {
                 if (err) {
                     console.error('Create error:', err);
@@ -193,7 +223,7 @@ exports.createSubSubCategory = (req, res) => {
                     });
                 }
 
-                // Fetch the created sub-sub-category with parent info
+                // Fetch the created sub-sub-category
                 db.query(
                     `SELECT ssc.*, 
                             sc.name as sub_category_name,
@@ -228,15 +258,100 @@ exports.updateSubSubCategory = (req, res) => {
     const { id } = req.params;
     const { name, description, sub_category_id, status } = req.body;
 
+    // First get old image path
+    db.query('SELECT image FROM sub_sub_categories WHERE id = ?', [id], (selectErr, selectResult) => {
+        if (selectErr) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        const oldImagePath = selectResult[0]?.image;
+
+        db.query(
+            'UPDATE sub_sub_categories SET name = ?, description = ?, sub_category_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [name, description || '', sub_category_id, status, id],
+            (err, result) => {
+                if (err) {
+                    console.error('Update error:', err);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to update sub-sub-category'
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Sub-sub-category not found'
+                    });
+                }
+
+                // If image is being removed (empty string sent), delete old image
+                if (req.body.image === '' && oldImagePath) {
+                    deleteImageFile(oldImagePath);
+                }
+
+                // Fetch updated sub-sub-category
+                db.query(
+                    `SELECT ssc.*, 
+                            sc.name as sub_category_name,
+                            c.name as category_name
+                     FROM sub_sub_categories ssc
+                     LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id
+                     LEFT JOIN categories c ON sc.category_id = c.id
+                     WHERE ssc.id = ?`,
+                    [id],
+                    (err2, results) => {
+                        if (err2) {
+                            return res.status(500).json({
+                                success: false,
+                                message: 'Updated but failed to fetch details'
+                            });
+                        }
+
+                        res.json({
+                            success: true,
+                            message: 'Sub-sub-category updated successfully',
+                            data: results[0]
+                        });
+                    }
+                );
+            }
+        );
+    });
+};
+
+// Update sub-sub-category image only
+exports.updateSubSubCategoryImage = (req, res) => {
+    const { id } = req.params;
+
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: 'No image file uploaded'
+        });
+    }
+
+    if (req.file.error) {
+        return res.status(400).json({
+            success: false,
+            message: req.file.error
+        });
+    }
+
+    const imageUrl = req.file.path;
+
     db.query(
-        'UPDATE sub_sub_categories SET name = ?, description = ?, sub_category_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [name, description || '', sub_category_id, status, id],
+        'UPDATE sub_sub_categories SET image = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [imageUrl, id],
         (err, result) => {
             if (err) {
-                console.error('Update error:', err);
+                console.error('Image update error:', err);
                 return res.status(500).json({
                     success: false,
-                    message: 'Failed to update sub-sub-category'
+                    message: 'Failed to update image'
                 });
             }
 
@@ -247,60 +362,15 @@ exports.updateSubSubCategory = (req, res) => {
                 });
             }
 
-            // Fetch updated sub-sub-category with parent info
-            db.query(
-                `SELECT ssc.*, 
-                        sc.name as sub_category_name,
-                        c.name as category_name
-                 FROM sub_sub_categories ssc
-                 LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id
-                 LEFT JOIN categories c ON sc.category_id = c.id
-                 WHERE ssc.id = ?`,
-                [id],
-                (err2, results) => {
-                    if (err2) {
-                        return res.status(500).json({
-                            success: false,
-                            message: 'Updated but failed to fetch details'
-                        });
-                    }
-
-                    res.json({
-                        success: true,
-                        message: 'Sub-sub-category updated successfully',
-                        data: results[0]
-                    });
+            res.json({
+                success: true,
+                message: 'Sub-sub-category image updated successfully',
+                data: {
+                    imageUrl: imageUrl
                 }
-            );
+            });
         }
     );
-};
-
-// Delete sub-sub-category
-exports.deleteSubSubCategory = (req, res) => {
-    const { id } = req.params;
-
-    db.query('DELETE FROM sub_sub_categories WHERE id = ?', [id], (err, result) => {
-        if (err) {
-            console.error('Delete error:', err);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to delete sub-sub-category'
-            });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Sub-sub-category not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Sub-sub-category deleted successfully'
-        });
-    });
 };
 
 // Update sub-sub-category status
@@ -342,26 +412,178 @@ exports.updateSubSubCategoryStatus = (req, res) => {
     );
 };
 
+// Delete sub-sub-category
+exports.deleteSubSubCategory = (req, res) => {
+    const { id } = req.params;
+
+    // First get sub-sub-category image path
+    db.query('SELECT image FROM sub_sub_categories WHERE id = ?', [id], (imgErr, imgResult) => {
+        if (imgErr) {
+            console.error('Image fetch error:', imgErr);
+        }
+
+        const imagePath = imgResult[0]?.image;
+
+        // Delete sub-sub-category
+        db.query('DELETE FROM sub_sub_categories WHERE id = ?', [id], (err, result) => {
+            if (err) {
+                console.error('Delete error:', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to delete sub-sub-category'
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Sub-sub-category not found'
+                });
+            }
+
+            // Delete associated image file
+            if (imagePath) {
+                deleteImageFile(imagePath);
+            }
+
+            res.json({
+                success: true,
+                message: 'Sub-sub-category deleted successfully'
+            });
+        });
+    });
+};
+
 // Get all sub-sub-categories for dropdown
 exports.getAllSubSubCategoriesForDropdown = (req, res) => {
     let { sub_category_id } = req.query;
+    const showAll = req.query.all === 'true' || req.query.all === '1';
 
     let query = `
-        SELECT ssc.id, ssc.name, ssc.sub_category_id, sc.name as sub_category_name
+        SELECT ssc.id, ssc.name, ssc.sub_category_id, 
+               sc.name as sub_category_name,
+               c.name as category_name
         FROM sub_sub_categories ssc
         LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id
-        WHERE ssc.status = "active"
+        LEFT JOIN categories c ON sc.category_id = c.id
     `;
     const params = [];
 
+    if (!showAll) {
+        query += ` WHERE ssc.status = "active"`;
+    }
+
     if (sub_category_id) {
-        query += ` AND ssc.sub_category_id = ?`;
+        if (showAll) {
+            query += ` WHERE ssc.sub_category_id = ?`;
+        } else {
+            query += ` AND ssc.sub_category_id = ?`;
+        }
         params.push(sub_category_id);
     }
 
     query += ` ORDER BY ssc.name`;
 
     db.query(query, params, (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: results
+        });
+    });
+};
+
+// Get sub-sub-categories by sub-category ID
+exports.getSubSubCategoriesBySubCategory = (req, res) => {
+    const { subCategoryId } = req.params;
+    const showAll = req.query.all === 'true' || req.query.all === '1';
+
+    let query = `
+        SELECT ssc.id, ssc.name, ssc.description, ssc.image, ssc.status, ssc.created_at
+        FROM sub_sub_categories ssc
+        WHERE ssc.sub_category_id = ?
+    `;
+    const params = [subCategoryId];
+
+    if (!showAll) {
+        query += ` AND ssc.status = "active"`;
+    }
+
+    query += ` ORDER BY ssc.name`;
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: results
+        });
+    });
+};
+
+// Get sub-sub-category statistics
+exports.getSubSubCategoryStats = (req, res) => {
+    const queries = `
+        SELECT COUNT(*) as total_sub_sub_categories FROM sub_sub_categories;
+        SELECT status, COUNT(*) as count FROM sub_sub_categories GROUP BY status;
+        SELECT COUNT(*) as active_sub_sub_categories FROM sub_sub_categories WHERE status = 'active';
+        SELECT COUNT(*) as inactive_sub_sub_categories FROM sub_sub_categories WHERE status = 'inactive';
+        SELECT name as latest_sub_sub_category FROM sub_sub_categories ORDER BY created_at DESC LIMIT 1;
+    `;
+
+    db.query(queries, (err, results) => {
+        if (err) {
+            console.error('Stats error:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to fetch statistics'
+            });
+        }
+
+        const stats = {
+            total_sub_sub_categories: results[0][0].total_sub_sub_categories,
+            status_distribution: results[1],
+            active_sub_sub_categories: results[2][0].active_sub_sub_categories,
+            inactive_sub_sub_categories: results[3][0].inactive_sub_sub_categories,
+            latest_sub_sub_category: results[4][0]?.latest_sub_sub_category || 'None'
+        };
+
+        res.json({
+            success: true,
+            data: stats
+        });
+    });
+};
+
+// Get all sub-sub-categories list
+exports.getAllSubSubCategoriesList = (req, res) => {
+    const showAll = req.query.all === 'true' || req.query.all === '1';
+
+    let query = `
+        SELECT ssc.id, ssc.name, ssc.sub_category_id, 
+               sc.name as sub_category_name,
+               c.name as category_name
+        FROM sub_sub_categories ssc
+        LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id
+        LEFT JOIN categories c ON sc.category_id = c.id
+    `;
+    if (!showAll) {
+        query += ' WHERE ssc.status = "active"';
+    }
+    query += ' ORDER BY ssc.name';
+
+    db.query(query, (err, results) => {
         if (err) {
             return res.status(500).json({
                 success: false,
