@@ -8,7 +8,7 @@ import Register from "./pages/Ragister/Register";
 import ForgotPassword from "./pages/Forget_Password/Forget";
 import TermsAndConditions from "./pages/Terms/Tearm";
 import NotFound from "./pages/404/NotFound";
-import CheckoutPage from "./pages/Checkout/Checkout";
+import Checkout from "./pages/Checkout/Checkout"; // ✅ UPDATED PATH
 import Profile from "./pages/Profile/Profile";
 import DummyPayment from "./pages/Payment/DummyPayment";
 import OrderConfirmation from "./pages/OrderConfirmation/OrderConfirmation";
@@ -21,7 +21,6 @@ import ProtectedRoute from "./context/ProtectedRoute";
 import PublicRoute from "./context/PublicRoute";
 import ProductDetails from "./pages/ProductDetail/ProductDetail";
 import SearchResults from "./pages/SearchResult/SearchResults";
-
 import CategoryPage from "./pages/CategoryPage/CategoryPage";
 
 const AppRoutes = () => {
@@ -42,16 +41,19 @@ const AppRoutes = () => {
                 <Route path="/ProductDetail/:id" element={<ProductDetails />} />
                 <Route path="/category/:id" element={<CategoryPage />} />
 
-
                 {/* Login/Register ko PublicRoute se wrap kiya */}
                 <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
                 <Route path="/register" element={<PublicRoute> <Register /> </PublicRoute>} />
+
+                {/* ✅ UPDATED: Single Checkout Route for Both Flows */}
+                <Route path="/checkout" element={<Checkout />} />
+
                 {/* Protected Routes */}
-                <Route path="/checkout" element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />
                 <Route path="/profile/:id" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
                 <Route path="/dummy-payment" element={<ProtectedRoute> <DummyPayment /> </ProtectedRoute>} />
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
                 <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
             </Routes>

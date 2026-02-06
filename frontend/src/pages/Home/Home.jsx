@@ -6,50 +6,6 @@ import Footer from '../../components/Footer';
 import ChatBot from '../../components/chatbot';
 import './Home.css';
 
-// Enhanced Categories with clothing-specific images
-const getCategoryImage = (categoryName) => {
-    const images = {
-        // Women's Clothing
-        sarees: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=600&auto=format&fit=crop&q=80',
-        dresses: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80',
-        kurtas: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&auto=format&fit=crop&q=80',
-        lehengas: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
-        suits: 'https://images.unsplash.com/photo-1583496661160-fb5886a13c43?w=600&auto=format&fit=crop&q=80',
-
-        // Men's Clothing
-        shirts: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
-        tshirts: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&auto=format&fit=crop&q=80',
-        jeans: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80',
-        ethnicwear: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80',
-        formalwear: 'https://images.unsplash.com/photo-1594938374184-6c1d8a6a6c1a?w=600&auto=format&fit=crop&q=80',
-
-        // Kids Clothing
-        kidsdresses: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&auto=format&fit=crop&q=80',
-        kidstshirts: 'https://images.unsplash.com/photo-1558769132-cb1c458e4222?w=600&auto=format&fit=crop&q=80',
-
-        // Seasonal
-        winterwear: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&auto=format&fit=crop&q=80',
-        summerwear: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=600&auto=format&fit=crop&q=80',
-
-        // Accessories
-        accessories: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=600&auto=format&fit=crop&q=80',
-        footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
-        bags: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80',
-
-        general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&auto=format&fit=crop&q=80'
-    };
-
-    const lowerCaseName = categoryName?.toLowerCase() || '';
-    for (const [key, value] of Object.entries(images)) {
-        if (lowerCaseName.includes(key) || key.includes(lowerCaseName)) {
-            return value;
-        }
-    }
-    return images.general;
-};
-
-const getFallbackProductImage = getCategoryImage;
-
 // Default banner items (will be overridden by API)
 const defaultBannerItems = [
     {
@@ -130,6 +86,59 @@ const Home = () => {
     const sliderIntervalRef = useRef(null);
     const midSliderIntervalRef = useRef(null);
     const timerIntervalRef = useRef(null);
+
+    // ✅ Enhanced Categories with clothing-specific images
+    const getCategoryImage = (categoryName, categoryData) => {
+        // Pehle category data se image check karo
+        if (categoryData && categoryData.image) {
+            const imageUrl = categoryData.image;
+            if (imageUrl.startsWith("http")) return imageUrl;
+            if (imageUrl.startsWith("/")) return `${API}${imageUrl}`;
+            return `${API}/${imageUrl}`;
+        }
+
+        // Agar database mein image nahi hai, toh fallback images use karo
+        const images = {
+            // Women's Clothing
+            sarees: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=600&auto=format&fit=crop&q=80',
+            dresses: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80',
+            kurtas: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&auto=format&fit=crop&q=80',
+            lehengas: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
+            suits: 'https://images.unsplash.com/photo-1583496661160-fb5886a13c43?w=600&auto=format&fit=crop&q=80',
+
+            // Men's Clothing
+            shirts: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
+            tshirts: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&auto=format&fit=crop&q=80',
+            jeans: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80',
+            ethnicwear: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80',
+            formalwear: 'https://images.unsplash.com/photo-1594938374184-6c1d8a6a6c1a?w=600&auto=format&fit=crop&q=80',
+
+            // Kids Clothing
+            kidsdresses: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&auto=format&fit=crop&q=80',
+            kidstshirts: 'https://images.unsplash.com/photo-1558769132-cb1c458e4222?w=600&auto=format&fit=crop&q=80',
+
+            // Seasonal
+            winterwear: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&auto=format&fit=crop&q=80',
+            summerwear: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=600&auto=format&fit=crop&q=80',
+
+            // Accessories
+            accessories: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=600&auto=format&fit=crop&q=80',
+            footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
+            bags: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80',
+
+            general: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&auto=format&fit=crop&q=80'
+        };
+
+        const lowerCaseName = categoryName?.toLowerCase() || '';
+        for (const [key, value] of Object.entries(images)) {
+            if (lowerCaseName.includes(key) || key.includes(lowerCaseName)) {
+                return value;
+            }
+        }
+        return images.general;
+    };
+
+    const getFallbackProductImage = getCategoryImage;
 
     // ✅ Fetch Quick Sub Categories
     useEffect(() => {
@@ -455,6 +464,7 @@ const Home = () => {
                 // Fetch main categories
                 const mainCatResponse = await axios.get(`${API}/api/categories`);
                 if (Array.isArray(mainCatResponse.data)) {
+                    // Category data mein image hai, to getCategoryImage function use karega
                     setMainCategories(mainCatResponse.data);
                 }
 
@@ -1185,7 +1195,7 @@ const Home = () => {
                             >
                                 <div className="category-image-container">
                                     <img
-                                        src={category.image || getCategoryImage(category.name)}
+                                        src={category.image || getCategoryImage(category.name, category)}
                                         alt={category.name}
                                         loading="lazy"
                                         className="category-image"
@@ -1306,7 +1316,7 @@ const Home = () => {
                                     onClick={() => navigate(`/category/${category.slug || category.id}`)}
                                 >
                                     <img
-                                        src={category.image || getCategoryImage(category.name)}
+                                        src={category.image || getCategoryImage(category.name, category)}
                                         alt={category.name}
                                         className="featured-category-image"
                                     />

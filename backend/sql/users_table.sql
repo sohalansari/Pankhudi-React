@@ -24,3 +24,17 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login DATETIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+-- ✅ Users table mein ye columns:
+ALTER TABLE users ADD COLUMN IF NOT EXISTS (
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    postal_code VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'India',
+    date_of_birth DATE,
+    gender ENUM('male', 'female', 'other'),
+    newsletter_subscribed TINYINT(1) DEFAULT 0
+);

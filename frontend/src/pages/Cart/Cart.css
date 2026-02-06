@@ -1052,3 +1052,360 @@ only screen and (min-resolution: 192dpi) {
         height: 120px;
     }
 }
+
+
+
+/* Stock related styles */
+.pankhudi-out-of-stock {
+    opacity: 0.7;
+    background-color: #f9f9f9;
+}
+
+.pankhudi-out-of-stock-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #ff4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.pankhudi-stock-info {
+    font-size: 14px;
+    margin: 5px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.pankhudi-stock-out {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.pankhudi-stock-low {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.pankhudi-stock-available {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.pankhudi-low-stock-warning {
+    color: #d84315;
+    font-weight: bold;
+}
+
+.pankhudi-stock-warning {
+    background-color: #fff3e0;
+    color: #ef6c00;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 8px;
+    border-left: 3px solid #ff9800;
+}
+
+.pankhudi-exceeds-stock {
+    font-size: 12px;
+    color: #f44336;
+    margin-left: 8px;
+}
+
+
+
+/* Add these styles to your existing Cart.css */
+
+.pankhudi-cart-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.pankhudi-cart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 30px;
+}
+
+.pankhudi-back-btn {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    transition: all 0.3s;
+}
+
+.pankhudi-back-btn:hover {
+    background: #f8f9fa;
+    border-color: #999;
+}
+
+.brand-name {
+    font-size: 28px;
+    color: #333;
+    margin: 0;
+}
+
+.pankhudi-cart-stats {
+    background: #e44d26;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Product Specifications */
+.pankhudi-product-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+.pankhudi-product-specs span {
+    background: #f5f5f5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.pankhudi-brand {
+    color: #e44d26;
+    font-weight: 500;
+    margin-left: 5px;
+}
+
+/* Stock Info */
+.pankhudi-stock-info {
+    font-size: 13px;
+    margin: 5px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.pankhudi-stock-out {
+    background: #ffe6e6;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+/* Item Controls Layout */
+.pankhudi-item-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.pankhudi-quantity-section {
+    min-width: 150px;
+}
+
+.pankhudi-item-total {
+    text-align: center;
+    min-width: 120px;
+}
+
+.pankhudi-item-total-amount {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e44d26;
+}
+
+.pankhudi-item-unit-price {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.pankhudi-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 120px;
+}
+
+/* Buttons */
+.pankhudi-buy-now-btn {
+    background: #e44d26;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s;
+}
+
+.pankhudi-buy-now-btn:hover:not(.pankhudi-disabled-btn) {
+    background: #d1401e;
+}
+
+.pankhudi-buy-now-btn.pankhudi-disabled-btn {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.pankhudi-remove-btn {
+    background: #f8f9fa;
+    color: #d32f2f;
+    border: 1px solid #ddd;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.pankhudi-remove-btn:hover:not(:disabled) {
+    background: #ffebee;
+    border-color: #d32f2f;
+}
+
+.pankhudi-remove-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Order Summary Enhancements */
+.pankhudi-free-shipping {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.pankhudi-free-shipping-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.pankhudi-summary-total {
+    font-size: 20px;
+    padding: 15px 0;
+    border-top: 2px solid #333;
+    border-bottom: 2px solid #333;
+    margin: 15px 0;
+}
+
+.pankhudi-continue-shopping {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.pankhudi-continue-btn {
+    background: none;
+    border: 1px solid #ddd;
+    color: #555;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.pankhudi-continue-btn:hover {
+    background: #f8f9fa;
+    border-color: #999;
+}
+
+/* Clear Cart Button */
+.pankhudi-clear-cart-btn {
+    background: none;
+    border: 1px solid #d32f2f;
+    color: #d32f2f;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.pankhudi-clear-cart-btn:hover {
+    background: #ffebee;
+}
+
+/* Quantity Controls */
+.pankhudi-quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.pankhudi-qty-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pankhudi-qty-btn:hover:not(.pankhudi-disabled) {
+    background: #f8f9fa;
+    border-color: #999;
+}
+
+.pankhudi-qty-btn.pankhudi-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pankhudi-quantity {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pankhudi-cart-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .pankhudi-item-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .pankhudi-action-buttons {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .pankhudi-buy-now-btn,
+    .pankhudi-remove-btn {
+        flex: 1;
+    }
+}

@@ -1,912 +1,1487 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiChevronDown, FiChevronUp, FiCreditCard, FiTruck, FiHome, FiMapPin, FiEdit2, FiX, FiLock } from 'react-icons/fi';
-import './Checkout.css';
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./Checkout.css";
 
 const Checkout = () => {
+    const location = useLocation();
     const navigate = useNavigate();
-    const [order, setOrder] = useState(null);
-    const [cartItems, setCartItems] = useState([]);
-    const [subtotal, setSubtotal] = useState(0);
-    const [shipping, setShipping] = useState(0);
-    const [total, setTotal] = useState(0);
-    const [expandedSection, setExpandedSection] = useState('shipping');
-    const [paymentMethod, setPaymentMethod] = useState('credit-card');
-    const [couponCode, setCouponCode] = useState('');
-    const [couponApplied, setCouponApplied] = useState(false);
-    const [discount, setDiscount] = useState(0);
-    const [addresses, setAddresses] = useState([
-        {
-            id: 1,
-            type: 'home',
-            name: 'Sohal Ansari',
-            street: 'Near Nurani Masjid Kurla East',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            zip: '400001',
-            phone: '8574814934',
-            isDefault: true
-        },
-        {
-            id: 2,
-            type: 'work',
-            name: 'Sohal Ansari',
-            street: '456 Business Avenue',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            zip: '400002',
-            phone: '8574814934',
-            isDefault: false
-        }
-    ]);
-    const [selectedAddress, setSelectedAddress] = useState(null);
-    const [showAddressForm, setShowAddressForm] = useState(false);
-    const [newAddress, setNewAddress] = useState({
-        type: 'home',
-        name: '',
-        street: '',
-        city: '',
-        state: '',
-        zip: '',
-        phone: '',
-        isDefault: false
+
+    // ✅ State for checkout type
+    const [checkoutType, setCheckoutType] = useState(""); // "cart" or "direct"
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [userDetails, setUserDetails] = useState(null);
+
+    // ✅ Form states
+    const [step, setStep] = useState(1); // 1: Address, 2: Payment, 3: Review
+    const [shippingAddress, setShippingAddress] = useState({
+        fullName: "",
+        address: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India",
+        phone: "",
+        email: ""
     });
-    const [cardDetails, setCardDetails] = useState({
-        number: '',
-        expiry: '',
-        cvv: '',
-        name: ''
+
+    const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+    const [billingAddress, setBillingAddress] = useState({
+        fullName: "",
+        address: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India"
     });
-    const [upiId, setUpiId] = useState('');
-    const [selectedBank, setSelectedBank] = useState('');
-    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+    const [paymentMethod, setPaymentMethod] = useState("cod");
+    const [orderNote, setOrderNote] = useState("");
+    const [placingOrder, setPlacingOrder] = useState(false);
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [selectedSavedAddress, setSelectedSavedAddress] = useState(null);
+    const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
+    const [saveAddressAsNew, setSaveAddressAsNew] = useState(false);
+
+    // ✅ Get user token
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // ✅ Minimum order value for free shipping (as per business logic)
+    const MIN_FREE_SHIPPING_AMOUNT = 1000;
+    const DEFAULT_SHIPPING_CHARGE = 50;
+
     useEffect(() => {
-        // Auto scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        initializeCheckout();
+    }, [location]);
 
-        // Restore scroll if body has overflow hidden
-        document.body.style.overflow = 'auto';
+    const initializeCheckout = async () => {
+        setLoading(true);
 
-        return () => {
-            // Cleanup (in case you want to control scroll again later)
-            document.body.style.overflow = 'auto';
-        };
-    }, []);
-    // Auto scroll to top on page load
-    useEffect(() => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-
-        // Load saved data
-        const savedOrder = localStorage.getItem('currentOrder');
-        const savedCart = localStorage.getItem('pankhudiCart');
-        const savedPaymentMethod = localStorage.getItem('selectedPaymentMethod');
-        const savedCardDetails = localStorage.getItem('cardDetails');
-        const savedUpiId = localStorage.getItem('upiId');
-        const savedBank = localStorage.getItem('selectedBank');
-        const savedShippingDetails = JSON.parse(localStorage.getItem('shippingDetails'));
-
-        if (savedOrder) {
-            const orderData = JSON.parse(savedOrder);
-            setOrder(orderData);
-            setCartItems([orderData.product]);
-        } else if (savedCart) {
-            const cartData = JSON.parse(savedCart);
-            setCartItems(cartData);
-        }
-
-        if (savedPaymentMethod) {
-            setPaymentMethod(savedPaymentMethod);
-        }
-        if (savedCardDetails) {
-            setCardDetails(JSON.parse(savedCardDetails));
-        }
-        if (savedUpiId) {
-            setUpiId(savedUpiId);
-        }
-        if (savedBank) {
-            setSelectedBank(savedBank);
-        }
-        if (savedShippingDetails) {
-            setSelectedAddress(savedShippingDetails.selectedAddress);
-            setShipping(savedShippingDetails.shipping);
-            setSubtotal(savedShippingDetails.subtotal);
-            setDiscount(savedShippingDetails.discount);
-            setTotal(savedShippingDetails.total);
-        }
-
-        // Set default address if none selected
-        const defaultAddress = addresses.find(addr => addr.isDefault);
-        if (defaultAddress && !selectedAddress) {
-            setSelectedAddress(defaultAddress.id);
-        }
-    }, []);
-
-    // Calculate totals whenever cart items or discount changes
-    useEffect(() => {
-        const subtotalCalc = cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-        setSubtotal(subtotalCalc);
-        const shippingCalc = subtotalCalc > 5000 ? 0 : 150;
-        setShipping(shippingCalc);
-        const totalCalc = subtotalCalc + shippingCalc - discount;
-        setTotal(totalCalc);
-    }, [cartItems, discount]);
-
-    // Save shipping details to localStorage
-    const saveShippingDetails = () => {
-        const shippingData = {
-            selectedAddress,
-            shipping,
-            subtotal,
-            discount,
-            total
-        };
-        localStorage.setItem('shippingDetails', JSON.stringify(shippingData));
-    };
-
-    const handlePaymentMethodChange = (method) => {
-        setPaymentMethod(method);
-        localStorage.setItem('selectedPaymentMethod', method);
-    };
-
-    const applyCoupon = () => {
-        if (couponCode.toUpperCase() === 'PAN10') {
-            const newDiscount = subtotal * 0.1;
-            setDiscount(newDiscount);
-            setCouponApplied(true);
-            showNotification('Coupon applied successfully! 10% discount added.');
-
-            // Update shipping details with new discount
-            saveShippingDetails();
-        } else {
-            showNotification('Invalid coupon code');
-        }
-    };
-
-    const removeCoupon = () => {
-        setDiscount(0);
-        setCouponApplied(false);
-        setCouponCode('');
-        saveShippingDetails(); // Update shipping details
-    };
-
-    const handleAddressSelect = (id) => {
-        setSelectedAddress(id);
-        saveShippingDetails(); // Save immediately when address changes
-    };
-
-    const handleAddressFormChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setNewAddress(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
-
-    const saveNewAddress = () => {
-        const newId = addresses.length + 1;
-        const addressToAdd = { ...newAddress, id: newId };
-
-        if (addressToAdd.isDefault) {
-            setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: false })));
-        }
-
-        setAddresses(prev => [...prev, addressToAdd]);
-        setSelectedAddress(newId);
-        setShowAddressForm(false);
-        setNewAddress({
-            type: 'home',
-            name: '',
-            street: '',
-            city: '',
-            state: '',
-            zip: '',
-            phone: '',
-            isDefault: false
-        });
-
-        // Save the new address and shipping details
-        saveShippingDetails();
-    };
-
-    const proceedToPayment = () => {
-        if (!selectedAddress) {
-            showNotification('Please select a delivery address');
-            return;
-        }
-        saveShippingDetails(); // Save before proceeding
-        setExpandedSection('payment');
-    };
-
-    const handleCardInputChange = (e) => {
-        const { name, value } = e.target;
-
-        // Format card number with spaces every 4 digits
-        if (name === 'number') {
-            const formattedValue = value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
-            const updatedCardDetails = { ...cardDetails, [name]: formattedValue };
-            setCardDetails(updatedCardDetails);
-            localStorage.setItem('cardDetails', JSON.stringify(updatedCardDetails));
-            return;
-        }
-
-        // Format expiry date with slash
-        if (name === 'expiry') {
-            const formattedValue = value.replace(/\D/g, '').replace(/(\d{2})(\d{0,2})/, '$1/$2');
-            const updatedCardDetails = { ...cardDetails, [name]: formattedValue };
-            setCardDetails(updatedCardDetails);
-            localStorage.setItem('cardDetails', JSON.stringify(updatedCardDetails));
-            return;
-        }
-
-        const updatedCardDetails = { ...cardDetails, [name]: value };
-        setCardDetails(updatedCardDetails);
-        localStorage.setItem('cardDetails', JSON.stringify(updatedCardDetails));
-    };
-
-    const validatePaymentDetails = () => {
-        if (paymentMethod === 'credit-card') {
-            if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv || !cardDetails.name) {
-                showNotification('Please fill all card details');
-                return false;
+        try {
+            // ✅ Fetch user details from database
+            if (token && user.id) {
+                await fetchUserDetails();
+                await fetchSavedAddresses();
             }
 
-            // Simple validation for card number (16 digits)
-            const cleanCardNumber = cardDetails.number.replace(/\s/g, '');
-            if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
-                showNotification('Please enter a valid 16-digit card number');
-                return false;
+            // ✅ Check if coming from "Buy Now" or "Cart"
+            if (location.state?.directBuy) {
+                // Direct Buy Now flow
+                setCheckoutType("direct");
+                await fetchProductDetails(location.state.product);
+            } else {
+                // Cart checkout flow
+                setCheckoutType("cart");
+                await fetchCartItems();
             }
 
-            // Validate expiry date (MM/YY format)
-            if (!/^\d{2}\/\d{2}$/.test(cardDetails.expiry)) {
-                showNotification('Please enter a valid expiry date (MM/YY)');
-                return false;
-            }
-
-            // Validate CVV (3 or 4 digits)
-            if (!/^\d{3,4}$/.test(cardDetails.cvv)) {
-                showNotification('Please enter a valid CVV (3 or 4 digits)');
-                return false;
-            }
-        }
-
-        if (paymentMethod === 'upi' && !upiId) {
-            showNotification('Please enter your UPI ID');
-            return false;
-        }
-
-        if (paymentMethod === 'netbanking' && !selectedBank) {
-            showNotification('Please select your bank');
-            return false;
-        }
-
-        return true;
-    };
-
-    const getPaymentDetails = () => {
-        switch (paymentMethod) {
-            case 'credit-card':
-                return {
-                    method: 'Credit Card',
-                    details: `Card ending with ${cardDetails.number.slice(-4)}`,
-                    cardName: cardDetails.name
-                };
-            case 'upi':
-                return {
-                    method: 'UPI',
-                    details: upiId
-                };
-            case 'netbanking':
-                return {
-                    method: 'Net Banking',
-                    details: selectedBank
-                };
-            case 'cod':
-                return {
-                    method: 'Cash on Delivery',
-                    details: 'Pay when you receive your order'
-                };
-            default:
-                return {
-                    method: paymentMethod,
-                    details: ''
-                };
+        } catch (error) {
+            console.error("Checkout initialization error:", error);
+            alert("Failed to initialize checkout");
+        } finally {
+            setLoading(false);
         }
     };
 
-    const createOrder = (status, transactionId = null) => {
-        // Get shipping details from local storage first
-        const savedShippingDetails = JSON.parse(localStorage.getItem('shippingDetails'));
-        const selectedAddr = addresses.find(addr => addr.id === selectedAddress) ||
-            (savedShippingDetails && savedShippingDetails.selectedAddress);
+    // ✅ Fetch complete user details from database
+    const fetchUserDetails = async () => {
+        try {
+            const response = await axios.get(
+                `http://localhost:5000/api/users/${user.id}/details`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
 
-        if (!selectedAddr) {
-            showNotification('Please select a delivery address');
-            return;
-        }
+            if (response.data.success) {
+                setUserDetails(response.data.user);
 
-        // Use shipping details from local storage if available
-        const finalShipping = savedShippingDetails ? savedShippingDetails.shipping : shipping;
-        const finalSubtotal = savedShippingDetails ? savedShippingDetails.subtotal : subtotal;
-        const finalDiscount = savedShippingDetails ? savedShippingDetails.discount : discount;
-        const finalTotal = savedShippingDetails ? savedShippingDetails.total : total;
-
-        const formattedItems = cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity || 1,
-            image: item.image,
-            selectedColor: item.selectedColor,
-            selectedSize: item.selectedSize
-        }));
-
-        const orderDetails = {
-            orderId: `PANKH${Date.now()}`,
-            date: new Date().toISOString(),
-            items: formattedItems,
-            shippingAddress: selectedAddr,
-            paymentMethod,
-            subtotal: finalSubtotal,
-            shipping: finalShipping,
-            discount: finalDiscount,
-            total: finalTotal,
-            status: status,
-            transactionId: transactionId,
-            paymentDetails: getPaymentDetails(),
-            paymentStatus: paymentMethod === 'cod' ? 'pending' : 'completed'
-        };
-
-        // Save to order history
-        const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-        localStorage.setItem('orderHistory', JSON.stringify([...orderHistory, orderDetails]));
-
-        // Clear temporary data
-        localStorage.removeItem('selectedPaymentMethod');
-        localStorage.removeItem('cardDetails');
-        localStorage.removeItem('upiId');
-        localStorage.removeItem('selectedBank');
-        localStorage.removeItem('currentOrder');
-        localStorage.removeItem('pankhudiCart');
-        localStorage.removeItem('shippingDetails');
-
-        navigate('/order-confirmation', { state: { order: orderDetails } });
-    };
-
-    const redirectToDummyPayment = () => {
-        if (!paymentMethod) {
-            showNotification('Please select a payment method');
-            return;
-        }
-
-        if (!validatePaymentDetails()) {
-            return;
-        }
-
-        // Get the selected address
-        const selectedAddr = addresses.find(addr => addr.id === selectedAddress);
-
-        // Save shipping details again to ensure they're up to date
-        saveShippingDetails();
-
-        // For COD, place the order directly
-        if (paymentMethod === 'cod') {
-            createOrder('confirmed');
-            return;
-        }
-
-        // Prepare payment data with all necessary details
-        const paymentData = {
-            amount: total,
-            currency: 'INR',
-            method: paymentMethod,
-            orderId: `PANKH${Date.now()}`,
-            items: cartItems.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity || 1
-            })),
-            shippingDetails: {
-                address: selectedAddr,
-                shippingCharge: shipping
-            },
-            ...(paymentMethod === 'credit-card' && {
-                cardDetails,
-                maskedCard: `**** **** **** ${cardDetails.number.slice(-4)}`
-            }),
-            ...(paymentMethod === 'upi' && { upiId }),
-            ...(paymentMethod === 'netbanking' && { bank: selectedBank }),
-            callbackUrl: `${window.location.origin}/order-confirmation`,
-            customerDetails: selectedAddr
-        };
-
-        // Store payment data temporarily
-        sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
-
-        // Redirect to dummy payment page with all necessary data
-        navigate('/dummy-payment', {
-            state: {
-                paymentData,
-                orderSummary: {
-                    items: cartItems,
-                    subtotal,
-                    shipping,
-                    discount,
-                    total,
-                    shippingAddress: selectedAddr
+                // ✅ Pre-fill shipping address with user details
+                if (response.data.user) {
+                    const userData = response.data.user;
+                    setShippingAddress(prev => ({
+                        ...prev,
+                        fullName: userData.name || "",
+                        email: userData.email || "",
+                        phone: userData.phone || "",
+                        address: userData.address || "",
+                        city: userData.city || "",
+                        state: userData.state || "",
+                        postalCode: userData.postalCode || userData.postal_code || ""
+                    }));
                 }
             }
+        } catch (error) {
+            console.error("Error fetching user details:", error);
+        }
+    };
+
+    // ✅ Fetch saved addresses for user
+    const fetchSavedAddresses = async () => {
+        try {
+            const response = await axios.get(
+                `http://localhost:5000/api/users/${user.id}/addresses`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            if (response.data.success) {
+                setSavedAddresses(response.data.addresses || []);
+
+                // Auto-select default address if available
+                const defaultAddress = response.data.addresses?.find(addr => addr.isDefault);
+                if (defaultAddress && !selectedSavedAddress) {
+                    handleSavedAddressSelect(defaultAddress);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching saved addresses:", error);
+            setSavedAddresses([]);
+        }
+    };
+
+    // ✅ Save address to user's saved addresses
+    const saveAddressToProfile = async (addressData) => {
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/users/${user.id}/addresses/add`,
+                {
+                    fullName: addressData.fullName,
+                    address: addressData.address,
+                    city: addressData.city,
+                    state: addressData.state,
+                    postalCode: addressData.postalCode,
+                    country: addressData.country,
+                    phone: addressData.phone,
+                    addressType: 'home',
+                    isDefault: savedAddresses.length === 0 // Set as default if first address
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            if (response.data.success) {
+                // Refresh addresses list
+                await fetchSavedAddresses();
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error saving address:", error);
+            return false;
+        }
+    };
+
+    // ✅ Fetch complete product details from database
+    const fetchProductDetails = async (productData) => {
+        try {
+            const response = await axios.get(
+                `http://localhost:5000/api/products/${productData.id}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            const product = response.data.product || response.data;
+            setProducts([{
+                ...product,
+                quantity: productData.quantity || 1,
+                selectedSize: productData.selectedSize,
+                selectedColor: productData.selectedColor,
+                finalPrice: calculateFinalPrice(product),
+                shipping_cost: product.shipping_cost || DEFAULT_SHIPPING_CHARGE,
+                free_shipping: product.free_shipping || 0
+            }]);
+        } catch (error) {
+            console.error("Error fetching product details:", error);
+            // Fallback to passed data
+            setProducts([{
+                ...productData,
+                shipping_cost: productData.shipping_cost || DEFAULT_SHIPPING_CHARGE,
+                free_shipping: productData.free_shipping || 0
+            }]);
+        }
+    };
+
+    // ✅ UPDATED: Fetch cart items with better error handling
+    const fetchCartItems = async () => {
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+
+        console.log("Fetching cart for user:", user.id);
+        console.log("Token available:", !!token);
+
+        try {
+            // Try multiple endpoints
+            let cartData = null;
+            let cartItems = [];
+
+            // Endpoints to try
+            const endpoints = [
+                `http://localhost:5000/api/cart`,
+                `http://localhost:5000/api/cart/items`,
+                `http://localhost:5000/api/cart/${user.id}`,
+                `http://localhost:5000/api/cart/user/${user.id}`
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    console.log(`Trying endpoint: ${endpoint}`);
+                    const response = await axios.get(endpoint, {
+                        headers: { Authorization: `Bearer ${token}` },
+                        timeout: 5000
+                    });
+
+                    console.log(`Response from ${endpoint}:`, response.data);
+
+                    if (response.data) {
+                        cartData = response.data;
+                        break;
+                    }
+                } catch (endpointError) {
+                    console.log(`Endpoint ${endpoint} failed:`, endpointError.message);
+                }
+            }
+
+            // Extract cart items from response
+            if (cartData) {
+                if (cartData.items) {
+                    cartItems = cartData.items;
+                } else if (cartData.cart) {
+                    cartItems = Array.isArray(cartData.cart) ? cartData.cart : [cartData.cart];
+                } else if (Array.isArray(cartData)) {
+                    cartItems = cartData;
+                } else if (cartData.data) {
+                    cartItems = Array.isArray(cartData.data) ? cartData.data : [cartData.data];
+                } else if (cartData.products) {
+                    cartItems = cartData.products;
+                }
+            }
+
+            console.log("Extracted cart items:", cartItems);
+
+            // If no cart items found, check localStorage
+            if (!cartItems || cartItems.length === 0) {
+                console.log("No cart items from API, checking localStorage...");
+                const localCart = localStorage.getItem('pankhudiCart');
+                if (localCart) {
+                    try {
+                        cartItems = JSON.parse(localCart);
+                        console.log("Found cart in localStorage:", cartItems);
+                    } catch (parseError) {
+                        console.error("Error parsing localStorage cart:", parseError);
+                    }
+                }
+            }
+
+            // If still no items
+            if (!cartItems || cartItems.length === 0) {
+                alert("Your cart is empty");
+                navigate("/");
+                return;
+            }
+
+            // Process cart items
+            const productsWithDetails = [];
+
+            for (const item of cartItems) {
+                try {
+                    let productDetails = null;
+
+                    // Try to fetch product details if product_id exists
+                    if (item.product_id || item.productId || item.id) {
+                        const productId = item.product_id || item.productId || item.id;
+
+                        try {
+                            const productResponse = await axios.get(
+                                `http://localhost:5000/api/products/${productId}`,
+                                {
+                                    headers: { Authorization: `Bearer ${token}` },
+                                    timeout: 3000
+                                }
+                            );
+
+                            productDetails = productResponse.data.product || productResponse.data;
+                        } catch (productError) {
+                            console.error(`Error fetching product ${productId}:`, productError.message);
+                            // Continue with basic item data
+                        }
+                    }
+
+                    // Combine item data with product details
+                    const product = {
+                        // Basic item data
+                        id: item.product_id || item.productId || item.id,
+                        quantity: item.quantity || 1,
+                        selectedSize: item.size || item.selectedSize,
+                        selectedColor: item.color || item.selectedColor,
+
+                        // Product details (from API or fallback)
+                        name: productDetails?.name || item.product_name || item.name || "Product",
+                        price: parseFloat(productDetails?.price || item.price || 0),
+                        discount: parseFloat(productDetails?.discount || item.discount || 0),
+                        shipping_cost: parseFloat(productDetails?.shipping_cost || item.shipping_cost || DEFAULT_SHIPPING_CHARGE),
+                        free_shipping: productDetails?.free_shipping || item.free_shipping || 0,
+                        sku: productDetails?.sku || item.sku,
+                        brand: productDetails?.brand || item.brand,
+                        material: productDetails?.material || item.material,
+                        images: productDetails?.images || (item.image ? [item.image] : []),
+
+                        // Calculated fields
+                        finalPrice: 0 // Will be calculated below
+                    };
+
+                    // Calculate final price
+                    product.finalPrice = calculateFinalPrice(product);
+
+                    productsWithDetails.push(product);
+
+                } catch (itemError) {
+                    console.error("Error processing cart item:", itemError);
+                    // Add basic item as fallback
+                    productsWithDetails.push({
+                        id: item.product_id || item.productId || item.id || Date.now(),
+                        name: item.product_name || item.name || "Product",
+                        price: parseFloat(item.price || 0),
+                        quantity: item.quantity || 1,
+                        selectedSize: item.size || item.selectedSize,
+                        selectedColor: item.color || item.selectedColor,
+                        finalPrice: parseFloat(item.final_price || item.price || 0),
+                        shipping_cost: parseFloat(item.shipping_cost || DEFAULT_SHIPPING_CHARGE),
+                        free_shipping: item.free_shipping || 0,
+                        images: item.image ? [item.image] : []
+                    });
+                }
+            }
+
+            console.log("Final products for checkout:", productsWithDetails);
+
+            if (productsWithDetails.length === 0) {
+                alert("No valid products found in cart");
+                navigate("/cart");
+                return;
+            }
+
+            setProducts(productsWithDetails);
+
+        } catch (error) {
+            console.error("Error in fetchCartItems:", error);
+
+            // User-friendly error message
+            let errorMessage = "Failed to load cart items";
+
+            if (error.response) {
+                console.error("Error response:", error.response.data);
+                errorMessage = error.response.data.message || errorMessage;
+            } else if (error.request) {
+                console.error("Error request:", error.request);
+                errorMessage = "Network error. Please check your connection.";
+            }
+
+            alert(errorMessage);
+
+            // Try to use localStorage as last resort
+            try {
+                const localCart = localStorage.getItem('pankhudiCart');
+                if (localCart) {
+                    const cartItems = JSON.parse(localCart);
+                    if (cartItems && cartItems.length > 0) {
+                        alert("Using saved cart data from browser");
+                        const processedItems = cartItems.map(item => ({
+                            ...item,
+                            finalPrice: calculateFinalPrice(item),
+                            shipping_cost: item.shipping_cost || DEFAULT_SHIPPING_CHARGE,
+                            free_shipping: item.free_shipping || 0
+                        }));
+                        setProducts(processedItems);
+                        return;
+                    }
+                }
+            } catch (localError) {
+                console.error("Error reading localStorage:", localError);
+            }
+
+            navigate("/cart");
+        }
+    };
+
+    // ✅ Calculate final price with discount
+    const calculateFinalPrice = (product) => {
+        if (!product) return 0;
+        const price = parseFloat(product.price) || 0;
+        const discount = parseFloat(product.discount) || 0;
+
+        if (discount > 0) {
+            return price - (price * discount / 100);
+        }
+        return price;
+    };
+
+    // ✅ UPDATED: Calculate totals with proper shipping logic
+    const calculateTotals = () => {
+        // Calculate subtotal
+        const subtotal = products.reduce((total, product) => {
+            const price = product.finalPrice || product.price || 0;
+            const quantity = product.quantity || 1;
+            return total + (parseFloat(price) * parseInt(quantity));
+        }, 0);
+
+        // Calculate shipping details
+        let shipping = 0;
+        let hasFreeShipping = false;
+        let shippingMessage = "";
+        let individualShippingCost = 0;
+
+        // Check individual product shipping costs
+        individualShippingCost = products.reduce((total, product) => {
+            return total + (parseFloat(product.shipping_cost) || DEFAULT_SHIPPING_CHARGE);
+        }, 0);
+
+        // Check if any product has free shipping
+        const hasFreeShippingProduct = products.some(p => p.free_shipping === 1);
+
+        // Check if order qualifies for free shipping (order value >= ₹1000)
+        const qualifiesForFreeShipping = subtotal >= MIN_FREE_SHIPPING_AMOUNT;
+
+        // Apply shipping logic
+        if (hasFreeShippingProduct) {
+            // If any product has free shipping
+            shipping = 0;
+            hasFreeShipping = true;
+            shippingMessage = "Free shipping on selected products";
+        } else if (qualifiesForFreeShipping) {
+            // If order value is ₹1000 or more
+            shipping = 0;
+            hasFreeShipping = true;
+            shippingMessage = `Order value qualifies for FREE shipping!`;
+        } else {
+            // Apply regular shipping charges
+            shipping = individualShippingCost;
+            hasFreeShipping = false;
+
+            // Ensure minimum shipping charge
+            if (shipping < DEFAULT_SHIPPING_CHARGE) {
+                shipping = DEFAULT_SHIPPING_CHARGE;
+            }
+
+            shippingMessage = "Shipping charges apply";
+        }
+
+        const tax = subtotal * 0.18; // 18% GST
+        const total = subtotal + shipping + tax;
+
+        return {
+            subtotal,
+            shipping,
+            tax,
+            total,
+            hasFreeShipping,
+            shippingMessage,
+            individualShippingCost,
+            qualifiesForFreeShipping
+        };
+    };
+
+    // ✅ Handle saved address selection
+    const handleSavedAddressSelect = (address) => {
+        setSelectedSavedAddress(address.id);
+        setIsAddingNewAddress(false);
+        setShippingAddress({
+            fullName: address.fullName || address.full_name || userDetails?.name || "",
+            address: address.addressLine || address.address_line || address.address || "",
+            city: address.city || "",
+            state: address.state || "",
+            postalCode: address.postalCode || address.postal_code || "",
+            country: address.country || "India",
+            phone: address.phone || userDetails?.phone || "",
+            email: userDetails?.email || shippingAddress.email || ""
         });
     };
 
-    const showNotification = (message) => {
-        const notification = document.createElement('div');
-        notification.className = 'pankhudi-notification';
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.classList.add('pankhudi-notification-show');
-        }, 10);
-
-        setTimeout(() => {
-            notification.classList.remove('pankhudi-notification-show');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
+    // ✅ Handle add new address click
+    const handleAddNewAddressClick = () => {
+        setIsAddingNewAddress(true);
+        setSelectedSavedAddress(null);
+        // Reset to empty form or user details
+        setShippingAddress({
+            fullName: userDetails?.name || "",
+            address: "",
+            city: "",
+            state: "",
+            postalCode: "",
+            country: "India",
+            phone: userDetails?.phone || "",
+            email: userDetails?.email || ""
+        });
     };
 
-    return (
-        <div className="pankhudi-checkout-container">
-            <div className="pankhudi-checkout-header">
-                <Link to="/" className="pankhudi-checkout-logo">Pankhudi</Link>
-                <div className="pankhudi-checkout-steps">
-                    <div className={`pankhudi-step ${expandedSection === 'shipping' ? 'active' : ''}`}>
-                        <span>1</span>
-                        <p>Shipping</p>
-                    </div>
-                    <div className={`pankhudi-step ${expandedSection === 'payment' ? 'active' : ''}`}>
-                        <span>2</span>
-                        <p>Payment</p>
-                    </div>
-                    <div className="pankhudi-step">
-                        <span>3</span>
-                        <p>Confirmation</p>
+    // ✅ Handle address form submission
+    const handleAddressSubmit = async (e) => {
+        e.preventDefault();
+
+        // Basic validation
+        const requiredFields = ["fullName", "address", "city", "state", "postalCode", "phone", "email"];
+        const missingFields = requiredFields.filter(field => !shippingAddress[field]?.trim());
+
+        if (missingFields.length > 0) {
+            alert(`Please fill in: ${missingFields.map(f => f.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}`);
+            return;
+        }
+
+        // Validate phone number
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (!phoneRegex.test(shippingAddress.phone.replace(/\D/g, ''))) {
+            alert("Please enter a valid 10-digit Indian phone number");
+            return;
+        }
+
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(shippingAddress.email)) {
+            alert("Please enter a valid email address");
+            return;
+        }
+
+        // Save address if checkbox is checked
+        if (saveAddressAsNew && token) {
+            try {
+                const saved = await saveAddressToProfile(shippingAddress);
+                if (saved) {
+                    alert("Address saved to your profile!");
+                }
+            } catch (saveError) {
+                console.error("Error saving address:", saveError);
+                // Continue anyway
+            }
+        }
+
+        // Copy to billing if same
+        if (billingSameAsShipping) {
+            setBillingAddress({ ...shippingAddress });
+        }
+
+        setStep(2);
+    };
+
+    // ✅ Handle payment method selection
+    const handlePaymentSelect = (method) => {
+        setPaymentMethod(method);
+        setStep(3);
+    };
+
+    // ✅ Place order
+    const handlePlaceOrder = async () => {
+        if (!token) {
+            alert("Please login to place order");
+            navigate("/login");
+            return;
+        }
+
+        setPlacingOrder(true);
+        const { total } = calculateTotals();
+
+        try {
+            const orderData = {
+                shippingAddress,
+                billingAddress: billingSameAsShipping ? shippingAddress : billingAddress,
+                paymentMethod,
+                totalAmount: total,
+                orderNote,
+                items: products.map(product => ({
+                    productId: product.id,
+                    quantity: product.quantity || 1,
+                    price: product.finalPrice || product.price,
+                    size: product.selectedSize,
+                    color: product.selectedColor,
+                    shipping_cost: product.shipping_cost,
+                    free_shipping: product.free_shipping,
+                    productDetails: {
+                        name: product.name,
+                        sku: product.sku,
+                        brand: product.brand,
+                        material: product.material
+                    }
+                }))
+            };
+
+            let endpoint = "/api/orders/create";
+            if (checkoutType === "direct") {
+                endpoint = "/api/orders/direct-buy";
+                orderData.productId = products[0].id;
+            }
+
+            console.log("Placing order with data:", orderData);
+
+            const response = await axios.post(
+                `http://localhost:5000${endpoint}`,
+                orderData,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            console.log("Order response:", response.data);
+
+            if (response.data.success) {
+                // Clear cart if it was a cart checkout
+                if (checkoutType === "cart") {
+                    try {
+                        await axios.delete(
+                            `http://localhost:5000/api/cart/clear/${user.id}`,
+                            {
+                                headers: { Authorization: `Bearer ${token}` }
+                            }
+                        );
+                    } catch (cartError) {
+                        console.error("Error clearing cart:", cartError);
+                        // Don't stop order confirmation if cart clear fails
+                    }
+
+                    // Also clear localStorage cart
+                    localStorage.removeItem('pankhudiCart');
+                }
+
+                // Redirect to confirmation
+                navigate("/order-confirmation", {
+                    state: {
+                        orderId: response.data.orderId,
+                        orderDetails: response.data.order,
+                        checkoutType
+                    }
+                });
+            } else {
+                throw new Error(response.data.message || "Failed to place order");
+            }
+        } catch (error) {
+            console.error("Order placement error:", error);
+            const errorMsg = error.response?.data?.error ||
+                error.response?.data?.message ||
+                error.message ||
+                "Failed to place order. Please try again.";
+            alert(errorMsg);
+        } finally {
+            setPlacingOrder(false);
+        }
+    };
+
+    // ✅ Render product shipping details
+    const renderProductShippingDetails = () => {
+        return products.map((product, index) => {
+            const productShipping = parseFloat(product.shipping_cost) || DEFAULT_SHIPPING_CHARGE;
+            const hasFreeShippingProduct = product.free_shipping === 1;
+
+            return (
+                <div key={index} className="product-shipping-info">
+                    <div className="product-shipping-header">
+                        <span className="product-name">{product.name}</span>
+                        <span className="shipping-status">
+                            {hasFreeShippingProduct ? (
+                                <span className="free-shipping-badge">FREE Shipping</span>
+                            ) : (
+                                <span className="shipping-charge">Shipping: ₹{productShipping.toFixed(2)}</span>
+                            )}
+                        </span>
                     </div>
                 </div>
-            </div>
+            );
+        });
+    };
 
-            <div className="pankhudi-checkout-main">
-                <div className="pankhudi-checkout-form">
-                    {/* Shipping Section */}
-                    <div className="pankhudi-checkout-section">
-                        <div
-                            className="pankhudi-section-header"
-                            onClick={() => setExpandedSection(expandedSection === 'shipping' ? null : 'shipping')}
-                        >
-                            <h2>
-                                <FiTruck className="pankhudi-section-icon" />
-                                Shipping Information
-                            </h2>
-                            {expandedSection === 'shipping' ? <FiChevronUp /> : <FiChevronDown />}
-                        </div>
+    // ✅ Render product summary with all details
+    const renderProductSummary = () => {
+        const {
+            subtotal,
+            shipping,
+            tax,
+            total,
+            hasFreeShipping,
+            shippingMessage,
+            individualShippingCost,
+            qualifiesForFreeShipping
+        } = calculateTotals();
 
-                        {expandedSection === 'shipping' && (
-                            <div className="pankhudi-section-content">
-                                <h3>Select Delivery Address</h3>
-                                <div className="pankhudi-address-list">
-                                    {addresses.map(address => (
-                                        <div
-                                            key={address.id}
-                                            className={`pankhudi-address-card ${selectedAddress === address.id ? 'selected' : ''}`}
-                                            onClick={() => handleAddressSelect(address.id)}
-                                        >
-                                            <div className="pankhudi-address-type">
-                                                {address.type === 'home' ? <FiHome /> : <FiMapPin />}
-                                                <span>{address.type === 'home' ? 'Home' : 'Work'}</span>
-                                                {address.isDefault && <span className="pankhudi-default-badge">Default</span>}
-                                            </div>
-                                            <p className="pankhudi-address-name">{address.name}</p>
-                                            <p className="pankhudi-address-street">{address.street}</p>
-                                            <p className="pankhudi-address-city">{address.city}, {address.state} - {address.zip}</p>
-                                            <p className="pankhudi-address-phone">Phone: {address.phone}</p>
-                                            <button className="pankhudi-edit-address">
-                                                <FiEdit2 /> Edit
-                                            </button>
+        return (
+            <div className="checkout-product-summary">
+                <div className="summary-header">
+                    <h3>
+                        {checkoutType === "direct" ? "Product Details" : `Order Summary (${products.length} items)`}
+                    </h3>
+                    <span className="edit-link" onClick={() => navigate(checkoutType === "cart" ? "/cart" : -1)}>
+                        {checkoutType === "cart" ? "Edit Cart" : "Change Product"}
+                    </span>
+                </div>
+
+                {/* Product Shipping Details */}
+                {products.length > 0 && (
+                    <div className="product-shipping-section">
+                        <h4>Shipping Details</h4>
+                        {renderProductShippingDetails()}
+                    </div>
+                )}
+
+                <div className="checkout-products-list">
+                    {products.map((product, index) => (
+                        <div key={index} className="checkout-product-item">
+                            <div className="product-image-section">
+                                <img
+                                    src={product.images?.[0] || product.image || "/images/placeholder-product.jpg"}
+                                    alt={product.name}
+                                    onError={(e) => {
+                                        e.target.src = "/images/placeholder-product.jpg";
+                                    }}
+                                />
+                                <span className="product-quantity">x{product.quantity || 1}</span>
+                            </div>
+
+                            <div className="checkout-product-info">
+                                <h4>{product.name}</h4>
+
+                                {/* Product Details */}
+                                <div className="product-details-list">
+                                    {product.sku && (
+                                        <div className="product-detail">
+                                            <span className="detail-label">SKU:</span>
+                                            <span className="detail-value">{product.sku}</span>
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {product.selectedSize && (
+                                        <div className="product-detail">
+                                            <span className="detail-label">Size:</span>
+                                            <span className="detail-value">{product.selectedSize}</span>
+                                        </div>
+                                    )}
+
+                                    {product.selectedColor && (
+                                        <div className="product-detail">
+                                            <span className="detail-label">Color:</span>
+                                            <span className="detail-value">{product.selectedColor}</span>
+                                        </div>
+                                    )}
+
+                                    {product.material && (
+                                        <div className="product-detail">
+                                            <span className="detail-label">Material:</span>
+                                            <span className="detail-value">{product.material}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {showAddressForm ? (
-                                    <div className="pankhudi-new-address-form">
-                                        <h3>Add New Address</h3>
-                                        <div className="pankhudi-form-group">
-                                            <label>Address Type</label>
-                                            <select
-                                                name="type"
-                                                value={newAddress.type}
-                                                onChange={handleAddressFormChange}
-                                            >
-                                                <option value="home">Home</option>
-                                                <option value="work">Work</option>
-                                            </select>
-                                        </div>
-                                        <div className="pankhudi-form-group">
-                                            <label>Full Name</label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={newAddress.name}
-                                                onChange={handleAddressFormChange}
-                                                placeholder="Enter your full name"
-                                            />
-                                        </div>
-                                        <div className="pankhudi-form-group">
-                                            <label>Street Address</label>
-                                            <input
-                                                type="text"
-                                                name="street"
-                                                value={newAddress.street}
-                                                onChange={handleAddressFormChange}
-                                                placeholder="House number and street name"
-                                            />
-                                        </div>
-                                        <div className="pankhudi-form-row">
-                                            <div className="pankhudi-form-group">
-                                                <label>City</label>
-                                                <input
-                                                    type="text"
-                                                    name="city"
-                                                    value={newAddress.city}
-                                                    onChange={handleAddressFormChange}
-                                                    placeholder="Enter city"
-                                                />
-                                            </div>
-                                            <div className="pankhudi-form-group">
-                                                <label>State</label>
-                                                <input
-                                                    type="text"
-                                                    name="state"
-                                                    value={newAddress.state}
-                                                    onChange={handleAddressFormChange}
-                                                    placeholder="Enter state"
-                                                />
-                                            </div>
-                                            <div className="pankhudi-form-group">
-                                                <label>ZIP Code</label>
-                                                <input
-                                                    type="text"
-                                                    name="zip"
-                                                    value={newAddress.zip}
-                                                    onChange={handleAddressFormChange}
-                                                    placeholder="Enter ZIP code"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="pankhudi-form-group">
-                                            <label>Phone Number</label>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={newAddress.phone}
-                                                onChange={handleAddressFormChange}
-                                                placeholder="Enter phone number"
-                                            />
-                                        </div>
-                                        <div className="pankhudi-form-checkbox">
-                                            <input
-                                                type="checkbox"
-                                                id="defaultAddress"
-                                                name="isDefault"
-                                                checked={newAddress.isDefault}
-                                                onChange={handleAddressFormChange}
-                                            />
-                                            <label htmlFor="defaultAddress">Set as default address</label>
-                                        </div>
-                                        <div className="pankhudi-form-actions">
-                                            <button
-                                                className="pankhudi-cancel-btn"
-                                                onClick={() => setShowAddressForm(false)}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                className="pankhudi-save-btn"
-                                                onClick={saveNewAddress}
-                                            >
-                                                Save Address
-                                            </button>
-                                        </div>
+                                {/* Price Details */}
+                                <div className="product-price-details">
+                                    <div className="price-row">
+                                        <span>Price:</span>
+                                        <span>₹{parseFloat(product.price || 0).toFixed(2)}</span>
                                     </div>
-                                ) : (
+
+                                    {product.discount > 0 && (
+                                        <div className="price-row discount">
+                                            <span>Discount ({product.discount}%):</span>
+                                            <span>-₹{(product.price * product.discount / 100).toFixed(2)}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="price-row final">
+                                        <strong>Final Price:</strong>
+                                        <strong>₹{(product.finalPrice || product.price).toFixed(2)}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Order Totals */}
+                <div className="checkout-price-breakdown">
+                    <h4>Price Breakdown</h4>
+
+                    <div className="price-row">
+                        <span>Subtotal ({products.length} items)</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <div className="price-row shipping-row">
+                        <div className="shipping-details">
+                            <span>Shipping</span>
+                            {!hasFreeShipping && products.length === 1 && products[0].shipping_cost && (
+                                <div className="shipping-note">
+                                    (Product shipping: ₹{parseFloat(products[0].shipping_cost).toFixed(2)})
+                                </div>
+                            )}
+                        </div>
+                        <div className="shipping-amount">
+                            {hasFreeShipping ? (
+                                <div className="free-shipping-section">
+                                    <span className="free-shipping">FREE</span>
+                                    {shippingMessage && (
+                                        <div className="shipping-message">
+                                            <span className="tick-icon">✓</span> {shippingMessage}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <span>₹{shipping.toFixed(2)}</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="price-row">
+                        <span>Tax (18% GST)</span>
+                        <span>₹{tax.toFixed(2)}</span>
+                    </div>
+
+                    <div className="price-row total-row">
+                        <strong>Total Amount</strong>
+                        <strong>₹{total.toFixed(2)}</strong>
+                    </div>
+
+                    {/* Free Shipping Information */}
+                    {!hasFreeShipping && qualifiesForFreeShipping === false && subtotal < MIN_FREE_SHIPPING_AMOUNT && (
+                        <div className="free-shipping-info">
+                            <div className="free-shipping-progress">
+                                <div className="progress-bar">
+                                    <div
+                                        className="progress-fill"
+                                        style={{ width: `${Math.min((subtotal / MIN_FREE_SHIPPING_AMOUNT) * 100, 100)}%` }}
+                                    ></div>
+                                </div>
+                                <div className="progress-text">
+                                    Add ₹{(MIN_FREE_SHIPPING_AMOUNT - subtotal).toFixed(2)} more for FREE shipping
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {hasFreeShipping && (
+                        <div className="free-shipping-banner">
+                            <div className="banner-icon">🚚</div>
+                            <div className="banner-content">
+                                <strong>Free Shipping Applied!</strong>
+                                <p>You saved ₹{individualShippingCost.toFixed(2)} on shipping</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // ✅ Render user details section
+    const renderUserDetails = () => {
+        if (!userDetails) return null;
+
+        return (
+            <div className="user-details-section">
+                <h3>Your Account Details</h3>
+                <div className="user-details-grid">
+                    <div className="user-detail">
+                        <span className="detail-label">Name:</span>
+                        <span className="detail-value">{userDetails.name}</span>
+                    </div>
+                    <div className="user-detail">
+                        <span className="detail-label">Email:</span>
+                        <span className="detail-value">{userDetails.email}</span>
+                    </div>
+                    {userDetails.phone && (
+                        <div className="user-detail">
+                            <span className="detail-label">Phone:</span>
+                            <span className="detail-value">{userDetails.phone}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="checkout-loading">
+                <div className="spinner"></div>
+                <p>Loading checkout...</p>
+            </div>
+        );
+    }
+
+    if (products.length === 0) {
+        return (
+            <div className="checkout-empty">
+                <h2>No items to checkout</h2>
+                <p>Your cart is empty or product information is missing.</p>
+                <div className="checkout-empty-actions">
+                    <button
+                        className="btn-primary"
+                        onClick={() => navigate("/products")}
+                    >
+                        Continue Shopping
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        onClick={() => navigate("/cart")}
+                    >
+                        View Cart
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="checkout-container">
+            {/* Checkout Header */}
+            <div className="checkout-header">
+                <h1><span className="brand-name">Pankhudi</span> Secure Checkout </h1>
+                <div className="checkout-type-badge">
+                    {checkoutType === "direct" ? "Buy Now" : "Cart Checkout"}
+                </div>
+                {/* <div className="checkout-steps">
+                    <div className={`step ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}>
+                        <div className="step-number">1</div>
+                        <div className="step-label">Address</div>
+                    </div>
+                    <div className={`step ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}>
+                        <div className="step-number">2</div>
+                        <div className="step-label">Payment</div>
+                    </div>
+                    <div className={`step ${step === 3 ? "active" : ""}`}>
+                        <div className="step-number">3</div>
+                        <div className="step-label">Review</div>
+                    </div>
+                </div> */}
+
+                <div className="checkout-steps">
+                    <div className={`step ${step >= 1 ? "active" : ""} ${step > 1 ? "completed" : ""}`}>
+                        <div className="circle">1</div>
+                        <span>Address</span>
+                    </div>
+
+                    <div className={`step ${step >= 2 ? "active" : ""} ${step > 2 ? "completed" : ""}`}>
+                        <div className="circle">2</div>
+                        <span>Payment</span>
+                    </div>
+
+                    <div className={`step ${step >= 3 ? "active" : ""}`}>
+                        <div className="circle">3</div>
+                        <span>Review</span>
+                    </div>
+
+                    <div className={`progress step-${step}`}></div>
+                </div>
+
+            </div>
+
+            <div className="checkout-content">
+                {/* Left Column: Checkout Form */}
+                <div className="checkout-form-column">
+                    {/* Show user details */}
+                    {userDetails && step === 1 && renderUserDetails()}
+
+                    {step === 1 && (
+                        <div className="address-form-section">
+                            <h2>Shipping Address</h2>
+
+                            {/* Saved Addresses */}
+                            {savedAddresses.length > 0 && !isAddingNewAddress && (
+                                <div className="saved-addresses">
+                                    <h4>Saved Addresses</h4>
+                                    <div className="address-list">
+                                        {savedAddresses.map((address) => (
+                                            <div
+                                                key={address.id}
+                                                className={`address-card ${selectedSavedAddress === address.id ? "selected" : ""}`}
+                                                onClick={() => handleSavedAddressSelect(address)}
+                                            >
+                                                <div className="address-card-header">
+                                                    <span className="address-type">{address.addressType || address.address_type || "Home"}</span>
+                                                    {address.isDefault && (
+                                                        <span className="default-badge">Default</span>
+                                                    )}
+                                                </div>
+                                                <div className="address-card-body">
+                                                    <p><strong>{address.fullName || address.full_name}</strong></p>
+                                                    <p>{address.addressLine || address.address_line || address.address}</p>
+                                                    <p>{address.city}, {address.state} - {address.postalCode || address.postal_code}</p>
+                                                    <p>{address.country}</p>
+                                                    {address.phone && <p>📞 {address.phone}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="or-divider">
+                                        <span>OR</span>
+                                    </div>
                                     <button
                                         className="pankhudi-add-address-btn"
-                                        onClick={() => setShowAddressForm(true)}
+                                        onClick={handleAddNewAddressClick}
                                     >
                                         + Add New Address
                                     </button>
-                                )}
-
-                                <div className="pankhudi-shipping-actions">
-                                    <Link to="/cart" className="pankhudi-back-to-cart">
-                                        ← Back to Cart
-                                    </Link>
-                                    <button
-                                        className="pankhudi-proceed-btn"
-                                        onClick={proceedToPayment}
-                                        disabled={!selectedAddress}
-                                    >
-                                        Proceed to Payment
-                                    </button>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
 
-                    {/* Payment Section */}
-                    <div className="pankhudi-checkout-section">
-                        <div
-                            className="pankhudi-section-header"
-                            onClick={() => setExpandedSection(expandedSection === 'payment' ? null : 'payment')}
-                        >
-                            <h2>
-                                <FiCreditCard className="pankhudi-section-icon" />
-                                Payment Method
-                            </h2>
-                            {expandedSection === 'payment' ? <FiChevronUp /> : <FiChevronDown />}
-                        </div>
-
-                        {expandedSection === 'payment' && (
-                            <div className="pankhudi-section-content">
-                                <div className="pankhudi-payment-security-banner">
-                                    <FiLock className="pankhudi-security-icon" />
-                                    <span>Secure Payment</span>
-                                    <span>•</span>
-                                    <span>SSL Encrypted</span>
-                                    <span>•</span>
-                                    <span>Your data is safe</span>
-                                </div>
-
-                                <div className="pankhudi-payment-methods">
-                                    <div
-                                        className={`pankhudi-payment-method ${paymentMethod === 'credit-card' ? 'selected' : ''}`}
-                                        onClick={() => handlePaymentMethodChange('credit-card')}
-                                    >
+                            {/* Address Form */}
+                            {(isAddingNewAddress || savedAddresses.length === 0) && (
+                                <form onSubmit={handleAddressSubmit}>
+                                    <div className="form-group">
+                                        <label>Full Name *</label>
                                         <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={paymentMethod === 'credit-card'}
-                                            onChange={() => { }}
+                                            type="text"
+                                            value={shippingAddress.fullName}
+                                            onChange={(e) => setShippingAddress({
+                                                ...shippingAddress,
+                                                fullName: e.target.value
+                                            })}
+                                            required
+                                            placeholder="Enter your full name"
                                         />
-                                        <div className="pankhudi-payment-details">
-                                            <h3>Credit/Debit Card</h3>
-                                            <p>Pay using Visa, Mastercard, Rupay, or other cards</p>
-                                        </div>
                                     </div>
 
-                                    <div
-                                        className={`pankhudi-payment-method ${paymentMethod === 'upi' ? 'selected' : ''}`}
-                                        onClick={() => handlePaymentMethodChange('upi')}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={paymentMethod === 'upi'}
-                                            onChange={() => { }}
-                                        />
-                                        <div className="pankhudi-payment-details">
-                                            <h3>UPI Payment</h3>
-                                            <p>Pay using Google Pay, PhonePe, Paytm or other UPI apps</p>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        className={`pankhudi-payment-method ${paymentMethod === 'netbanking' ? 'selected' : ''}`}
-                                        onClick={() => handlePaymentMethodChange('netbanking')}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={paymentMethod === 'netbanking'}
-                                            onChange={() => { }}
-                                        />
-                                        <div className="pankhudi-payment-details">
-                                            <h3>Net Banking</h3>
-                                            <p>Pay directly from your bank account</p>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        className={`pankhudi-payment-method ${paymentMethod === 'cod' ? 'selected' : ''}`}
-                                        onClick={() => handlePaymentMethodChange('cod')}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={paymentMethod === 'cod'}
-                                            onChange={() => { }}
-                                        />
-                                        <div className="pankhudi-payment-details">
-                                            <h3>Cash on Delivery</h3>
-                                            <p>Pay when you receive your order</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {paymentMethod === 'credit-card' && (
-                                    <div className="pankhudi-card-details">
-                                        <h3>Card Details</h3>
-                                        <div className="pankhudi-form-group">
-                                            <label>Card Number</label>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Email *</label>
                                             <input
-                                                type="text"
-                                                name="number"
-                                                value={cardDetails.number}
-                                                onChange={handleCardInputChange}
-                                                placeholder="1234 5678 9012 3456"
-                                                maxLength="19"
+                                                type="email"
+                                                value={shippingAddress.email}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    email: e.target.value
+                                                })}
+                                                required
+                                                placeholder="your@email.com"
                                             />
                                         </div>
-                                        <div className="pankhudi-form-row">
-                                            <div className="pankhudi-form-group">
-                                                <label>Expiry Date</label>
-                                                <input
-                                                    type="text"
-                                                    name="expiry"
-                                                    value={cardDetails.expiry}
-                                                    onChange={handleCardInputChange}
-                                                    placeholder="MM/YY"
-                                                    maxLength="5"
-                                                />
-                                            </div>
-                                            <div className="pankhudi-form-group">
-                                                <label>CVV</label>
-                                                <input
-                                                    type="password"
-                                                    name="cvv"
-                                                    value={cardDetails.cvv}
-                                                    onChange={handleCardInputChange}
-                                                    placeholder="123"
-                                                    maxLength="3"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="pankhudi-form-group">
-                                            <label>Name on Card</label>
+                                        <div className="form-group">
+                                            <label>Phone *</label>
                                             <input
-                                                type="text"
-                                                name="name"
-                                                value={cardDetails.name}
-                                                onChange={handleCardInputChange}
-                                                placeholder="Enter name as on card"
+                                                type="tel"
+                                                value={shippingAddress.phone}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    phone: e.target.value
+                                                })}
+                                                required
+                                                placeholder="10-digit mobile number"
+                                                maxLength="10"
                                             />
                                         </div>
                                     </div>
-                                )}
 
-                                {paymentMethod === 'upi' && (
-                                    <div className="pankhudi-upi-details">
-                                        <h3>Enter UPI ID</h3>
-                                        <div className="pankhudi-form-group">
+                                    <div className="form-group">
+                                        <label>Complete Address *</label>
+                                        <textarea
+                                            value={shippingAddress.address}
+                                            onChange={(e) => setShippingAddress({
+                                                ...shippingAddress,
+                                                address: e.target.value
+                                            })}
+                                            rows="3"
+                                            placeholder="House no, Building, Street, Area, Landmark"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>City *</label>
                                             <input
                                                 type="text"
-                                                value={upiId}
-                                                onChange={(e) => {
-                                                    setUpiId(e.target.value);
-                                                    localStorage.setItem('upiId', e.target.value);
+                                                value={shippingAddress.city}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    city: e.target.value
+                                                })}
+                                                required
+                                                placeholder="Enter city"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>State *</label>
+                                            <input
+                                                type="text"
+                                                value={shippingAddress.state}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    state: e.target.value
+                                                })}
+                                                required
+                                                placeholder="Enter state"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Postal Code *</label>
+                                            <input
+                                                type="text"
+                                                value={shippingAddress.postalCode}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    postalCode: e.target.value
+                                                })}
+                                                required
+                                                placeholder="Enter PIN code"
+                                                maxLength="6"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Country</label>
+                                            <select
+                                                value={shippingAddress.country}
+                                                onChange={(e) => setShippingAddress({
+                                                    ...shippingAddress,
+                                                    country: e.target.value
+                                                })}
+                                            >
+                                                <option value="India">India</option>
+                                                <option value="USA">USA</option>
+                                                <option value="UK">UK</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Save address option */}
+                                    {token && (
+                                        <div className="save-address-option">
+                                            <label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={saveAddressAsNew}
+                                                    onChange={(e) => setSaveAddressAsNew(e.target.checked)}
+                                                />
+                                                Save this address to my profile for future orders
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    {/* Billing Address Section */}
+                                    <div className="billing-address-section">
+                                        <div className="billing-toggle">
+                                            <label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={billingSameAsShipping}
+                                                    onChange={(e) => setBillingSameAsShipping(e.target.checked)}
+                                                />
+                                                Billing address same as shipping address
+                                            </label>
+                                        </div>
+
+                                        {!billingSameAsShipping && (
+                                            <div className="billing-address-form">
+                                                <h4>Billing Address</h4>
+                                                <div className="form-group">
+                                                    <label>Full Name *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={billingAddress.fullName}
+                                                        onChange={(e) => setBillingAddress({
+                                                            ...billingAddress,
+                                                            fullName: e.target.value
+                                                        })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Address *</label>
+                                                    <textarea
+                                                        value={billingAddress.address}
+                                                        onChange={(e) => setBillingAddress({
+                                                            ...billingAddress,
+                                                            address: e.target.value
+                                                        })}
+                                                        rows="2"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>City *</label>
+                                                        <input
+                                                            type="text"
+                                                            value={billingAddress.city}
+                                                            onChange={(e) => setBillingAddress({
+                                                                ...billingAddress,
+                                                                city: e.target.value
+                                                            })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>State *</label>
+                                                        <input
+                                                            type="text"
+                                                            value={billingAddress.state}
+                                                            onChange={(e) => setBillingAddress({
+                                                                ...billingAddress,
+                                                                state: e.target.value
+                                                            })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>Postal Code *</label>
+                                                        <input
+                                                            type="text"
+                                                            value={billingAddress.postalCode}
+                                                            onChange={(e) => setBillingAddress({
+                                                                ...billingAddress,
+                                                                postalCode: e.target.value
+                                                            })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Country</label>
+                                                        <select
+                                                            value={billingAddress.country}
+                                                            onChange={(e) => setBillingAddress({
+                                                                ...billingAddress,
+                                                                country: e.target.value
+                                                            })}
+                                                        >
+                                                            <option value="India">India</option>
+                                                            <option value="USA">USA</option>
+                                                            <option value="UK">UK</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="form-actions">
+                                        {savedAddresses.length > 0 && (
+                                            <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                onClick={() => {
+                                                    setIsAddingNewAddress(false);
+                                                    if (savedAddresses.length > 0) {
+                                                        const defaultAddress = savedAddresses.find(addr => addr.isDefault) || savedAddresses[0];
+                                                        handleSavedAddressSelect(defaultAddress);
+                                                    }
                                                 }}
-                                                placeholder="yourname@upi"
-                                            />
-                                        </div>
-                                        <p className="pankhudi-upi-note">You'll be redirected to your UPI app to complete the payment</p>
+                                            >
+                                                Use Saved Address
+                                            </button>
+                                        )}
+                                        <button type="submit" className="btn-primary">
+                                            Continue to Payment
+                                        </button>
                                     </div>
-                                )}
+                                </form>
+                            )}
+                        </div>
+                    )}
 
-                                {paymentMethod === 'netbanking' && (
-                                    <div className="pankhudi-netbanking-details">
-                                        <h3>Select Bank</h3>
-                                        <select
-                                            value={selectedBank}
-                                            onChange={(e) => {
-                                                setSelectedBank(e.target.value);
-                                                localStorage.setItem('selectedBank', e.target.value);
-                                            }}
-                                        >
-                                            <option value="">Select your bank</option>
-                                            <option value="sbi">State Bank of India</option>
-                                            <option value="hdfc">HDFC Bank</option>
-                                            <option value="icici">ICICI Bank</option>
-                                            <option value="axis">Axis Bank</option>
-                                            <option value="kotak">Kotak Mahindra Bank</option>
-                                        </select>
-                                        <p className="pankhudi-netbanking-note">You'll be redirected to your bank's website to complete the payment</p>
+                    {step === 2 && (
+                        <div className="payment-section">
+                            <h2>Select Payment Method</h2>
+
+                            <div className="payment-options">
+                                <div
+                                    className={`payment-option ${paymentMethod === "cod" ? "selected" : ""}`}
+                                    onClick={() => handlePaymentSelect("cod")}
+                                >
+                                    <div className="payment-icon">💵</div>
+                                    <div className="payment-details">
+                                        <h4>Cash on Delivery</h4>
+                                        <p>Pay when you receive the product</p>
+                                        <p className="payment-note">Available for all orders</p>
                                     </div>
-                                )}
+                                </div>
 
-                                <div className="pankhudi-payment-actions">
-                                    <button
-                                        className="pankhudi-back-btn"
-                                        onClick={() => setExpandedSection('shipping')}
-                                    >
-                                        ← Back to Shipping
-                                    </button>
-                                    <button
-                                        className="pankhudi-place-order-btn"
-                                        onClick={redirectToDummyPayment}
-                                        disabled={isProcessingPayment}
-                                    >
-                                        {isProcessingPayment ? 'Processing...' : 'Proceed to Payment'}
-                                    </button>
+                                <div
+                                    className={`payment-option ${paymentMethod === "card" ? "selected" : ""}`}
+                                    onClick={() => handlePaymentSelect("card")}
+                                >
+                                    <div className="payment-icon">💳</div>
+                                    <div className="payment-details">
+                                        <h4>Credit/Debit Card</h4>
+                                        <p>Pay securely with your card</p>
+                                        <p className="payment-note">Visa, Mastercard, RuPay accepted</p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    className={`payment-option ${paymentMethod === "upi" ? "selected" : ""}`}
+                                    onClick={() => handlePaymentSelect("upi")}
+                                >
+                                    <div className="payment-icon">📱</div>
+                                    <div className="payment-details">
+                                        <h4>UPI</h4>
+                                        <p>Pay using UPI apps</p>
+                                        <p className="payment-note">Google Pay, PhonePe, Paytm</p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    className={`payment-option ${paymentMethod === "netbanking" ? "selected" : ""}`}
+                                    onClick={() => handlePaymentSelect("netbanking")}
+                                >
+                                    <div className="payment-icon">🏦</div>
+                                    <div className="payment-details">
+                                        <h4>Net Banking</h4>
+                                        <p>Pay via online banking</p>
+                                        <p className="payment-note">All major banks supported</p>
+                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
 
-                <div className="pankhudi-order-summary">
-                    <h2>Order Summary</h2>
-                    <div className="pankhudi-summary-items">
-                        {cartItems.map(item => (
-                            <div key={item.id} className="pankhudi-summary-item">
-                                <div className="pankhudi-item-image">
-                                    <img src={item.image} alt={item.name} />
-                                    <span className="pankhudi-item-quantity">{item.quantity || 1}</span>
-                                </div>
-                                <div className="pankhudi-item-details">
-                                    <h4>{item.name}</h4>
-                                    {item.selectedColor && <p>Color: {item.selectedColor}</p>}
-                                    {item.selectedSize && <p>Size: {item.selectedSize}</p>}
-                                    <p className="pankhudi-item-price">₹{item.price.toLocaleString()}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="pankhudi-coupon-section">
-                        <h3>Apply Coupon</h3>
-                        {couponApplied ? (
-                            <div className="pankhudi-coupon-applied">
-                                <p>Coupon: {couponCode} (-₹{discount.toLocaleString()})</p>
-                                <button onClick={removeCoupon}>
-                                    <FiX />
+                            <div className="form-actions">
+                                <button
+                                    className="btn-secondary"
+                                    onClick={() => setStep(1)}
+                                >
+                                    Back to Address
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => setStep(3)}
+                                >
+                                    Review Order
                                 </button>
                             </div>
-                        ) : (
-                            <div className="pankhudi-coupon-input">
-                                <input
-                                    type="text"
-                                    placeholder="Enter coupon code"
-                                    value={couponCode}
-                                    onChange={(e) => setCouponCode(e.target.value)}
-                                />
-                                <button onClick={applyCoupon}>Apply</button>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="review-section">
+                            <h2>Review Your Order</h2>
+
+                            <div className="review-section-grid">
+                                <div className="review-address">
+                                    <div className="review-section-header">
+                                        <h3>Shipping Address</h3>
+                                        <button
+                                            className="btn-edit"
+                                            onClick={() => setStep(1)}
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                    <div className="review-content">
+                                        <p><strong>{shippingAddress.fullName}</strong></p>
+                                        <p>{shippingAddress.address}</p>
+                                        <p>{shippingAddress.city}, {shippingAddress.state} - {shippingAddress.postalCode}</p>
+                                        <p>{shippingAddress.country}</p>
+                                        <p>📞 {shippingAddress.phone}</p>
+                                        <p>✉️ {shippingAddress.email}</p>
+                                    </div>
+                                </div>
+
+                                {!billingSameAsShipping && (
+                                    <div className="review-address">
+                                        <div className="review-section-header">
+                                            <h3>Billing Address</h3>
+                                            <button
+                                                className="btn-edit"
+                                                onClick={() => setStep(1)}
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                        <div className="review-content">
+                                            <p><strong>{billingAddress.fullName}</strong></p>
+                                            <p>{billingAddress.address}</p>
+                                            <p>{billingAddress.city}, {billingAddress.state} - {billingAddress.postalCode}</p>
+                                            <p>{billingAddress.country}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="review-payment">
+                                    <div className="review-section-header">
+                                        <h3>Payment Method</h3>
+                                        <button
+                                            className="btn-edit"
+                                            onClick={() => setStep(2)}
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+                                    <div className="review-content">
+                                        <div className="payment-method-display">
+                                            {paymentMethod === "cod" && "💵 Cash on Delivery"}
+                                            {paymentMethod === "card" && "💳 Credit/Debit Card"}
+                                            {paymentMethod === "upi" && "📱 UPI"}
+                                            {paymentMethod === "netbanking" && "🏦 Net Banking"}
+                                        </div>
+                                        <p className="payment-status">
+                                            Status: {paymentMethod === "cod" ? "Pay on Delivery" : "Pay Now"}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                        )}
+
+                            <div className="order-notes">
+                                <h3>Order Notes (Optional)</h3>
+                                <textarea
+                                    placeholder="Add any special instructions for delivery, packaging, or timing..."
+                                    value={orderNote}
+                                    onChange={(e) => setOrderNote(e.target.value)}
+                                    rows="3"
+                                />
+                            </div>
+
+                            <div className="terms-agreement">
+                                <label>
+                                    <input type="checkbox" required />
+                                    I agree to the <a href="/terms">Terms & Conditions</a> and <a href="/privacy">Privacy Policy</a>
+                                </label>
+                            </div>
+
+                            <div className="form-actions">
+                                <button
+                                    className="btn-secondary"
+                                    onClick={() => setStep(2)}
+                                >
+                                    Back to Payment
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handlePlaceOrder}
+                                    disabled={placingOrder}
+                                >
+                                    {placingOrder ? (
+                                        <>
+                                            <span className="spinner-small"></span>
+                                            Placing Order...
+                                        </>
+                                    ) : (
+                                        "Place Order"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Column: Order Summary */}
+                <div className="checkout-summary-column">
+                    {renderProductSummary()}
+
+                    <div className="checkout-security">
+                        <div className="security-icon">🔒</div>
+                        <div className="security-text">
+                            <strong>100% Secure Checkout</strong>
+                            <p>Your payment information is encrypted and secure</p>
+                        </div>
                     </div>
 
-                    <div className="pankhudi-summary-totals">
-                        <div className="pankhudi-summary-row">
-                            <span>Subtotal</span>
-                            <span>₹{subtotal.toLocaleString()}</span>
-                        </div>
-                        <div className="pankhudi-summary-row">
-                            <span>Shipping</span>
-                            <span>₹{shipping.toLocaleString()}</span>
-                        </div>
-                        {discount > 0 && (
-                            <div className="pankhudi-summary-row pankhudi-discount-row">
-                                <span>Discount</span>
-                                <span>-₹{discount.toLocaleString()}</span>
-                            </div>
-                        )}
-                        <div className="pankhudi-summary-row pankhudi-total-row">
-                            <span>Total</span>
-                            <span>₹{total.toLocaleString()}</span>
+                    <div className="checkout-help">
+                        <p>Need help with your order?</p>
+                        <div className="help-contacts">
+                            <p>📞 Call: <a href="tel:+911234567890">+91 12345 67890</a></p>
+                            <p>✉️ Email: <a href="mailto:support@pankhudi.com">support@pankhudi.com</a></p>
                         </div>
                     </div>
                 </div>
