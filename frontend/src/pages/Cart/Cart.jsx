@@ -1625,7 +1625,7 @@ const CartPage = () => {
                                         <div className="pankhudi-product-infos">
                                             <div
                                                 className="pankhudi-product-images"
-                                                onClick={() => navigate(`/product/${item.product_id}`)}
+                                                onClick={() => navigate(`/ProductDetail/${item.product_id}`)}
                                                 style={{ cursor: "pointer" }}
                                             >
                                                 <img
@@ -1644,7 +1644,7 @@ const CartPage = () => {
                                             <div className="pankhudi-product-details">
                                                 <h3
                                                     className="pankhudi-product-names"
-                                                    onClick={() => navigate(`/product/${item.product_id}`)}
+                                                    onClick={() => navigate(`/ProductDetail/${item.product_id}`)}
                                                     style={{ cursor: "pointer" }}
                                                 >
                                                     {item.product_name}

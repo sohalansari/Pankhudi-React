@@ -825,6 +825,12 @@ const reviewRoutes = require("./routes/reviews");
 const searchRoutes = require("./routes/searchRoutes");
 const categoryRoutes = require("./routes/categories");
 const bannerRoutes = require("./routes/banner");
+// Import the addresses routes
+const addressRoutes = require("./routes/address");
+// const settingsRoutes = require("./routes/settings");
+// const securityRoutes = require("./routes/security");
+
+
 
 // ✅ NEW CHECKOUT-RELATED ROUTES
 const orderRoutes = require("./routes/orderRoutes");
@@ -955,8 +961,23 @@ app.use((err, req, res, next) => {
 });
 
 /* ================= STATIC FILES ================= */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res) => {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    }
+}));
+
+app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads"), {
+    setHeaders: (res) => {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    }
+}));
+
 
 // Serve static images for products
 app.use("/product-images", express.static(path.join(__dirname, "uploads/products")));
@@ -984,6 +1005,10 @@ app.use("/api/banners", bannerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes); // ✅ This will work now with error handling
 app.use("/api/product-details", productDetailRoutes);
+// Add this line in your routes section (after other routes)
+app.use("/api/address", addressRoutes);
+// app.use("/api/settings", settingsRoutes);
+// app.use("/api/security", securityRoutes);
 
 console.log("✅ All routes loaded successfully");
 
