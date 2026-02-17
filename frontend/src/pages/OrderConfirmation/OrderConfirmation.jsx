@@ -1,586 +1,563 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-    FiCheckCircle,
-    FiShoppingBag,
-    FiTruck,
-    FiClock,
-    FiShare2,
-    FiPrinter,
-    FiHome,
-    FiMapPin,
-    FiChevronRight,
-    FiCreditCard,
-    FiDollarSign,
-    FiPocket,
-    FiGift,
-    FiMail,
-    FiPhone,
-    FiUser
-} from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import './OrderConfirmation.css';
 
 const OrderConfirmation = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { orderId: urlOrderId } = useParams();
+
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
-    const [activeTab, setActiveTab] = useState('details');
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [emailStatus, setEmailStatus] = useState('sending');
+    const [estimatedDelivery, setEstimatedDelivery] = useState('');
+    const [pageMode, setPageMode] = useState('details'); // Default 'details'
 
-    // Handle back button and page time limit
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // ✅ Location state से data लें
+    const { orderId: stateOrderId, orderNumber, totalAmount, fromConfirmation, orderData } = location.state || {};
+
     useEffect(() => {
-        const handleBackButton = () => {
-            navigate('/');
-            return false;
-        };
+        // 🔥 IMPORTANT: Page Mode Decide करें
+        const isFromConfirmation = fromConfirmation === true;
+        const hasStateData = !!(stateOrderId || orderNumber || totalAmount || orderData);
 
-        window.history.pushState(null, null, window.location.pathname);
-        window.addEventListener('popstate', handleBackButton);
+        console.log('📍 Page Mode Debug:', {
+            fromConfirmation: isFromConfirmation,
+            hasStateData,
+            urlOrderId,
+            stateOrderId
+        });
 
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    navigate('/');
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => {
-            window.removeEventListener('popstate', handleBackButton);
-            clearInterval(timer);
-        };
-    }, [navigate]);
-
-    // Animation effect for premium feel
-    useEffect(() => {
-        setIsAnimating(true);
-        const timer = setTimeout(() => setIsAnimating(false), 1000);
-        return () => clearTimeout(timer);
-    }, [activeTab]);
-
-    // Load order data
-    useEffect(() => {
-        const loadOrderData = () => {
-            try {
-                // First try to get from location state
-                const orderFromState = location.state?.order;
-                if (orderFromState) {
-                    setOrder(orderFromState);
-                    setLoading(false);
-                    return;
-                }
-
-                // If not in state, check localStorage for orderHistory
-                const orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
-
-                // Get the most recent order
-                const mostRecentOrder = orderHistory.length > 0 ? orderHistory[orderHistory.length - 1] : null;
-
-                if (mostRecentOrder) {
-                    setOrder(mostRecentOrder);
-                } else {
-                    // If no order history, check for currentOrder or cart
-                    const savedOrder = JSON.parse(localStorage.getItem('currentOrder')) ||
-                        JSON.parse(localStorage.getItem('pankhudiCart'))?.[0];
-
-                    if (savedOrder) {
-                        // Create complete order object with defaults
-                        const orderDetails = {
-                            orderId: `PANKH${Date.now()}`,
-                            date: new Date().toISOString(),
-                            items: Array.isArray(savedOrder) ? savedOrder : [savedOrder],
-                            shippingAddress: savedOrder.shippingAddress || {
-                                type: 'home',
-                                name: 'John Doe',
-                                street: '123 Fashion Street',
-                                city: 'Mumbai',
-                                state: 'Maharashtra',
-                                zip: '400001',
-                                phone: '9876543210'
-                            },
-                            billingAddress: savedOrder.billingAddress || savedOrder.shippingAddress || {
-                                type: 'home',
-                                name: 'John Doe',
-                                street: '123 Fashion Street',
-                                city: 'Mumbai',
-                                state: 'Maharashtra',
-                                zip: '400001',
-                                phone: '9876543210'
-                            },
-                            paymentMethod: savedOrder.paymentMethod || 'cod',
-                            subtotal: savedOrder.price || savedOrder.product?.price || 0,
-                            shipping: (savedOrder.price || savedOrder.product?.price || 0) > 5000 ? 0 : 150,
-                            discount: savedOrder.discount || 0,
-                            couponCode: savedOrder.couponCode || null,
-                            status: 'confirmed',
-                            trackingNumber: `TRACK${Math.floor(100000 + Math.random() * 900000)}`,
-                            estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
-                        };
-
-                        // Calculate total
-                        orderDetails.total = orderDetails.subtotal + orderDetails.shipping - orderDetails.discount;
-
-                        setOrder(orderDetails);
-
-                        // Save to order history
-                        localStorage.setItem('orderHistory', JSON.stringify([...orderHistory, orderDetails]));
-                    } else {
-                        navigate('/');
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading order data:', error);
-                navigate('/');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadOrderData();
-        window.scrollTo(0, 0);
-    }, [location, navigate]);
-
-    const printOrder = () => {
-        window.print();
-    };
-
-    const shareOrder = () => {
-        if (navigator.share) {
-            navigator.share({
-                title: `My Pankhudi Order #${order.orderId || ''}`,
-                text: `I just placed an order on Pankhudi for ₹${(order.totalAmount || order.total || 0).toLocaleString()}`,
-                url: window.location.href,
-            }).catch(console.error);
-        } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(window.location.href);
-            alert('Order link copied to clipboard!');
+        // ✅ Mode set करें
+        if (isFromConfirmation) {
+            setPageMode('confirmation');
+            document.title = 'Order Confirmed - Pankhudi';
         } else {
-            alert('Sharing not supported in your browser');
+            setPageMode('details');
+            document.title = `Order #${urlOrderId || stateOrderId} - Pankhudi`;
+        }
+
+        // ✅ Order ID decide करें
+        const finalOrderId = urlOrderId || stateOrderId;
+
+        if (!finalOrderId) {
+            console.error('❌ No order ID found');
+            navigate('/orders');
+            return;
+        }
+
+        // ✅ Agar state में पूरा order data है तो पहले से set करें
+        if (orderData) {
+            console.log('📦 Setting order from state data');
+            setOrder(orderData);
+            setEmailStatus('sent');
+        }
+
+        // ✅ Order details fetch करें
+        fetchOrderDetails(finalOrderId);
+
+        // ✅ Estimated delivery date set करें
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 5);
+        setEstimatedDelivery(deliveryDate.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }));
+
+        // ✅ Scroll to top
+        window.scrollTo(0, 0);
+
+    }, [urlOrderId, stateOrderId, fromConfirmation, orderData]);
+
+    const fetchOrderDetails = async (orderId) => {
+        // ✅ Agar already data है तो fetch न करें
+        if (order && order.id === orderId) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            console.log('🔍 Fetching order details for ID:', orderId);
+
+            const response = await axios.get(
+                `http://localhost:5000/api/orders/${orderId}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            if (response.data.success) {
+                console.log('✅ Order fetched successfully');
+                setOrder(response.data.order);
+                setEmailStatus('sent');
+            }
+        } catch (error) {
+            console.error('❌ Error fetching order:', error);
+            setEmailStatus('failed');
+
+            // ✅ Agar 5 सेकंड में data नहीं आया तो orders page पर भेजें
+            setTimeout(() => {
+                if (!order) {
+                    navigate('/orders');
+                }
+            }, 5000);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const formatPrice = (price) => {
-        return price?.toLocaleString?.('en-IN') || '0';
+    const getStatusIcon = (status) => {
+        const icons = {
+            'pending': '⏳',
+            'confirmed': '✅',
+            'processing': '🔄',
+            'shipped': '📦',
+            'delivered': '🎉',
+            'cancelled': '❌',
+            'refunded': '💰'
+        };
+        return icons[status?.toLowerCase()] || '📋';
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        const options = { day: 'numeric', month: 'short', year: 'numeric' };
-        return new Date(dateString).toLocaleDateString('en-IN', options);
+    const getStatusColor = (status) => {
+        const colors = {
+            'pending': '#ff9800',
+            'confirmed': '#4caf50',
+            'processing': '#2196f3',
+            'shipped': '#9c27b0',
+            'delivered': '#4caf50',
+            'cancelled': '#f44336',
+            'refunded': '#607d8b'
+        };
+        return colors[status?.toLowerCase()] || '#757575';
     };
 
-    const getItemsToDisplay = () => {
-        if (order.items) {
-            return order.items;
-        }
-        if (order.product) {
-            return [order];
-        }
-        return [];
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2
+        }).format(amount || 0);
     };
 
-    const renderPaymentMethodIcon = () => {
-        switch (order.paymentMethod) {
-            case 'credit-card':
-                return <FiCreditCard className="payment-icon" />;
-            case 'upi':
-                return <FiPocket className="payment-icon" />;
-            case 'netbanking':
-                return <FiDollarSign className="payment-icon" />;
-            default:
-                return <FiDollarSign className="payment-icon" />;
-        }
-    };
-
-    const renderStatusBadge = () => {
-        let statusClass = '';
-        let statusText = '';
-
-        switch (order.status) {
-            case 'confirmed':
-                statusClass = 'status-confirmed';
-                statusText = 'Confirmed';
-                break;
-            case 'shipped':
-                statusClass = 'status-shipped';
-                statusText = 'Shipped';
-                break;
-            case 'delivered':
-                statusClass = 'status-delivered';
-                statusText = 'Delivered';
-                break;
-            case 'cancelled':
-                statusClass = 'status-cancelled';
-                statusText = 'Cancelled';
-                break;
-            default:
-                statusClass = 'status-processing';
-                statusText = 'Processing';
-        }
-
-        return <span className={`status-badge ${statusClass}`}>{statusText}</span>;
-    };
-
+    // ✅ Loading State
     if (loading) {
         return (
-            <div className="pankhudi-loading-screen">
-                <div className="pankhudi-loading-spinner"></div>
-                <p>Loading your order details...</p>
+            <div className="confirmation-loading">
+                <div className="spinner">
+                    <div className="double-bounce1"></div>
+                    <div className="double-bounce2"></div>
+                </div>
+                <p>Loading order details...</p>
+                <p className="loading-subtitle">Please wait while we fetch your order information</p>
             </div>
         );
     }
 
+    // ✅ Error State
     if (!order) {
         return (
-            <div className="pankhudi-error-screen">
-                <h2>No order found</h2>
-                <p>Redirecting you to the homepage...</p>
-                <Link to="/" className="pankhudi-home-link">Go Home Now</Link>
+            <div className="confirmation-error">
+                <div className="error-icon">❌</div>
+                <h2>Order Not Found</h2>
+                <p>We couldn't find your order. The order may have been deleted or you don't have permission to view it.</p>
+                <div className="error-actions">
+                    <button
+                        className="btn-primary"
+                        onClick={() => navigate('/orders')}
+                    >
+                        View My Orders
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        onClick={() => navigate('/products')}
+                    >
+                        Continue Shopping
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="pankhudi-confirmation-container">
-            {/* Header Section */}
-            <div className={`pankhudi-confirmation-header ${isAnimating ? 'animate' : ''}`}>
-                <div className="pankhudi-confirmation-success">
-                    <div className="pankhudi-success-icon-container">
-                        <FiCheckCircle className="pankhudi-success-icon" />
-                        <div className="pankhudi-icon-pulse"></div>
-                    </div>
-                    <div>
-                        <h1>Order Confirmed!</h1>
-                        <p className="pankhudi-order-id">Order #: {order.orderId || 'N/A'}</p>
-                    </div>
-                </div>
+        <div className="order-confirmation-wrapper">
+            <div className="order-confirmation-container">
 
-                <div className="pankhudi-order-meta">
-                    <div className="pankhudi-meta-item">
-                        <span>Order Date</span>
-                        <strong>{formatDate(order.date)}</strong>
-                    </div>
-                    <div className="pankhudi-meta-item">
-                        <span>Status</span>
-                        {renderStatusBadge()}
-                    </div>
-                    <div className="pankhudi-meta-item">
-                        <span>Total Amount</span>
-                        <strong className="pankhudi-total-amount">₹{formatPrice(order.totalAmount || order.total)}</strong>
-                    </div>
-                </div>
-
-                <div className="pankhudi-order-actions">
-                    <button onClick={printOrder} className="pankhudi-action-btn print">
-                        <FiPrinter /> Print Invoice
-                    </button>
-                    <button onClick={shareOrder} className="pankhudi-action-btn share">
-                        <FiShare2 /> Share Order
-                    </button>
-                    <div className="pankhudi-timer">
-                        <FiClock /> Page closes in: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-                    </div>
-                </div>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="pankhudi-tab-nav">
-                <button
-                    className={`pankhudi-tab-btn ${activeTab === 'details' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('details')}
-                >
-                    Order Details
-                </button>
-                <button
-                    className={`pankhudi-tab-btn ${activeTab === 'shipping' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('shipping')}
-                >
-                    Shipping & Billing
-                </button>
-                <button
-                    className={`pankhudi-tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('timeline')}
-                >
-                    Order Timeline
-                </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className={`pankhudi-tab-content ${isAnimating ? 'animate' : ''}`}>
-                {activeTab === 'details' && (
-                    <div className="pankhudi-order-details">
-                        <div className="pankhudi-payment-method">
-                            <h3>
-                                {renderPaymentMethodIcon()}
-                                Payment Method
-                            </h3>
-                            <div className="pankhudi-payment-details">
-                                <p>
-                                    {order.paymentMethod === 'credit-card' ? 'Credit/Debit Card' :
-                                        order.paymentMethod === 'upi' ? 'UPI Payment' :
-                                            order.paymentMethod === 'netbanking' ? 'Net Banking' :
-                                                'Cash on Delivery'}
-                                </p>
-                                {order.transactionId && (
-                                    <p className="pankhudi-transaction-id">
-                                        Transaction ID: <span>{order.transactionId}</span>
-                                    </p>
-                                )}
-                                {order.paymentStatus && (
-                                    <p className="pankhudi-payment-status">
-                                        Status: <span className={order.paymentStatus.toLowerCase()}>{order.paymentStatus}</span>
-                                    </p>
-                                )}
-                            </div>
+                {/* 🎉 Confirmation Mode Header - New Order */}
+                {pageMode === 'confirmation' ? (
+                    <div className="success-header">
+                        <div className="success-animation">
+                            <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                            </svg>
                         </div>
 
-                        <div className="pankhudi-order-items-section">
-                            <h3>Order Items ({getItemsToDisplay().length})</h3>
-                            <div className="pankhudi-order-items-list">
-                                {getItemsToDisplay().map((item, index) => {
-                                    const product = item.product || item;
-                                    return (
-                                        <div key={index} className="pankhudi-confirmation-item">
-                                            <div className="pankhudi-item-image-container">
-                                                <img
-                                                    src={product.image || '/default-product-image.jpg'}
-                                                    alt={product.name}
-                                                    onError={(e) => {
-                                                        e.target.src = '/default-product-image.jpg';
-                                                    }}
-                                                />
-                                                <span className="pankhudi-item-quantity">Qty: {product.quantity || 1}</span>
-                                            </div>
-                                            <div className="pankhudi-item-details">
-                                                <h4>{product.name}</h4>
-                                                {product.selectedColor && (
-                                                    <p className="pankhudi-item-attribute">
-                                                        <span>Color:</span> {product.selectedColor}
-                                                    </p>
-                                                )}
-                                                {product.selectedSize && (
-                                                    <p className="pankhudi-item-attribute">
-                                                        <span>Size:</span> {product.selectedSize}
-                                                    </p>
-                                                )}
-                                                <div className="pankhudi-item-price-row">
-                                                    <span className="pankhudi-item-price">
-                                                        ₹{formatPrice(product.price)}
-                                                    </span>
-                                                    {product.originalPrice > product.price && (
-                                                        <span className="pankhudi-original-price">
-                                                            <del>₹{formatPrice(product.originalPrice)}</del>
-                                                            <span className="discount-percent">
-                                                                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                                                            </span>
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {product.inStock && (
-                                                    <p className="pankhudi-stock-status in-stock">In Stock</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
+                        <h1>Order Confirmed! 🎉</h1>
+                        <p className="confirmation-message">
+                            Thank you for shopping with <span className="brand-highlight">Pankhudi</span>!
+                        </p>
+                        <p className="order-success-message">
+                            Your order has been placed successfully and is being processed.
+                        </p>
+
+                        {/* Email Status Badge */}
+                        <div className={`email-status-badge ${emailStatus}`}>
+                            {emailStatus === 'sending' && (
+                                <>
+                                    <span className="status-icon">📧</span>
+                                    <span>Sending confirmation email...</span>
+                                    <span className="loading-dots"></span>
+                                </>
+                            )}
+                            {emailStatus === 'sent' && (
+                                <>
+                                    <span className="status-icon">✅</span>
+                                    <span>Confirmation email sent to </span>
+                                    <strong>{order?.shipping_email || user.email}</strong>
+                                </>
+                            )}
+                            {emailStatus === 'failed' && (
+                                <>
+                                    <span className="status-icon">⚠️</span>
+                                    <span>Email delivery failed. You can view order details below.</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    /* 📋 Details Mode Header - View Existing Order */
+                    <div className="details-header">
+                        <div className="back-navigation">
+                            <button
+                                className="back-button"
+                                onClick={() => {
+                                    // ✅ Check karo ki kahan se aaye hain
+                                    if (window.history.length > 2) {
+                                        navigate(-1);
+                                    } else {
+                                        navigate('/orders');
+                                    }
+                                }}
+                            >
+                                ← Back to Orders
+                            </button>
+                        </div>
+                        <div className="details-title">
+                            <h1>Order Details</h1>
+                            <span className="order-number-badge">#{order?.order_number}</span>
+                        </div>
+                        <p className="order-placed-date">
+                            Placed on {new Date(order?.order_date).toLocaleDateString('en-IN', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            })}
+                        </p>
+                    </div>
+                )}
+
+                {/* 📋 Main Order Details Card - Common for both modes */}
+                <div className="order-main-card">
+                    <div className="order-header-grid">
+                        <div className="order-number-section">
+                            <span className="label">Order Number</span>
+                            <h2 className="order-number">#{order?.order_number}</h2>
+                            <span className="order-date">
+                                {new Date(order?.order_date).toLocaleString('en-IN', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
                                 })}
-                            </div>
+                            </span>
                         </div>
 
-                        <div className="pankhudi-order-summary">
-                            <h3>Order Summary</h3>
-                            <div className="pankhudi-summary-grid">
-                                <div className="pankhudi-summary-row">
-                                    <span>Subtotal</span>
-                                    <span>₹{formatPrice(order.subtotal || (order.amount && (order.amount - (order.tax || 0))))}</span>
-                                </div>
-                                {order.tax && (
-                                    <div className="pankhudi-summary-row">
-                                        <span>Tax</span>
-                                        <span>₹{formatPrice(order.tax)}</span>
-                                    </div>
-                                )}
-                                <div className="pankhudi-summary-row">
-                                    <span>Shipping</span>
-                                    <span>₹{formatPrice(order.shipping || 0)}</span>
-                                </div>
-                                {order.discount > 0 && (
-                                    <div className="pankhudi-summary-row discount">
-                                        <span>Discount</span>
-                                        <span>-₹{formatPrice(order.discount)}</span>
-                                    </div>
-                                )}
-                                {order.couponCode && (
-                                    <div className="pankhudi-summary-row coupon">
-                                        <span>Coupon Applied ({order.couponCode})</span>
-                                        <span>-₹{formatPrice(order.discount)}</span>
-                                    </div>
-                                )}
-                                <div className="pankhudi-summary-row total">
-                                    <span>Total Amount</span>
-                                    <span>₹{formatPrice(order.totalAmount || order.total)}</span>
-                                </div>
+                        <div className="order-status-section">
+                            <div
+                                className="current-status"
+                                style={{ backgroundColor: getStatusColor(order?.order_status) }}
+                            >
+                                {getStatusIcon(order?.order_status)} {order?.order_status?.toUpperCase()}
+                            </div>
+                            <div className="estimated-delivery">
+                                <span className="label">Estimated Delivery</span>
+                                <span className="date">{estimatedDelivery}</span>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {activeTab === 'shipping' && (
-                    <div className="pankhudi-address-section">
-                        <div className="pankhudi-address-card shipping">
-                            <h3>
-                                <FiTruck className="address-icon" />
-                                Shipping Address
-                            </h3>
-                            <div className="pankhudi-address-details">
-                                <p className="pankhudi-address-type">
-                                    {order.shippingAddress.type === 'home' ? <FiHome /> : <FiMapPin />}
-                                    <span>{order.shippingAddress.type === 'home' ? 'Home Address' : 'Work Address'}</span>
-                                </p>
-                                <p className="pankhudi-address-name">
-                                    <FiUser /> {order.shippingAddress.name}
-                                </p>
-                                <p className="pankhudi-address-street">{order.shippingAddress.street}</p>
-                                <p className="pankhudi-address-city">
-                                    {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.zip}
-                                </p>
-                                <p className="pankhudi-address-phone">
-                                    <FiPhone /> {order.shippingAddress.phone}
-                                </p>
-                                {order.shippingAddress.email && (
-                                    <p className="pankhudi-address-email">
-                                        <FiMail /> {order.shippingAddress.email}
-                                    </p>
-                                )}
+                    {/* Order Status Tracker */}
+                    <div className="order-status-tracker">
+                        <div className={`status-step ${['confirmed', 'processing', 'shipped', 'delivered'].includes(order?.order_status) ? 'completed' : ''} ${order?.order_status === 'confirmed' ? 'active' : ''}`}>
+                            <div className="step-icon">✓</div>
+                            <span className="step-label">Confirmed</span>
+                            {order?.order_status === 'confirmed' && <span className="step-date">Just now</span>}
+                        </div>
+                        <div className={`status-step ${['processing', 'shipped', 'delivered'].includes(order?.order_status) ? 'completed' : ''} ${order?.order_status === 'processing' ? 'active' : ''}`}>
+                            <div className="step-icon">🔄</div>
+                            <span className="step-label">Processing</span>
+                        </div>
+                        <div className={`status-step ${['shipped', 'delivered'].includes(order?.order_status) ? 'completed' : ''} ${order?.order_status === 'shipped' ? 'active' : ''}`}>
+                            <div className="step-icon">📦</div>
+                            <span className="step-label">Shipped</span>
+                        </div>
+                        <div className={`status-step ${order?.order_status === 'delivered' ? 'completed active' : ''}`}>
+                            <div className="step-icon">✅</div>
+                            <span className="step-label">Delivered</span>
+                        </div>
+                    </div>
+
+                    {/* Payment & Total Summary */}
+                    <div className="payment-summary-grid">
+                        <div className="payment-method-card">
+                            <div className="card-icon">💳</div>
+                            <div className="card-content">
+                                <span className="label">Payment Method</span>
+                                <span className="value">
+                                    {order?.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment (Razorpay)'}
+                                </span>
+                                <span className="payment-status" style={{
+                                    color: order?.payment_status === 'completed' ? '#4caf50' : '#ff9800'
+                                }}>
+                                    {order?.payment_status === 'completed' ? '✓ Paid' : '⏳ Pending'}
+                                </span>
                             </div>
                         </div>
 
-                        <div className="pankhudi-address-card billing">
-                            <h3>
-                                <FiCreditCard className="address-icon" />
-                                Billing Address
-                            </h3>
-                            <div className="pankhudi-address-details">
-                                {order.billingAddress ? (
-                                    <>
-                                        <p className="pankhudi-address-type">
-                                            {order.billingAddress.type === 'home' ? <FiHome /> : <FiMapPin />}
-                                            <span>{order.billingAddress.type === 'home' ? 'Home Address' : 'Work Address'}</span>
-                                        </p>
-                                        <p className="pankhudi-address-name">
-                                            <FiUser /> {order.billingAddress.name}
-                                        </p>
-                                        <p className="pankhudi-address-street">{order.billingAddress.street}</p>
-                                        <p className="pankhudi-address-city">
-                                            {order.billingAddress.city}, {order.billingAddress.state} - {order.billingAddress.zip}
-                                        </p>
-                                        <p className="pankhudi-address-phone">
-                                            <FiPhone /> {order.billingAddress.phone}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p className="pankhudi-same-address">Same as shipping address</p>
+                        <div className="total-amount-card">
+                            <div className="card-icon">💰</div>
+                            <div className="card-content">
+                                <span className="label">Total Amount</span>
+                                <span className="value amount">{formatCurrency(order?.total_amount)}</span>
+                                {order?.payment_method === 'cod' && (
+                                    <span className="payment-note">Pay on delivery</span>
                                 )}
                             </div>
                         </div>
                     </div>
-                )}
-
-                {activeTab === 'timeline' && (
-                    <div className="pankhudi-timeline-section">
-                        <div className="pankhudi-timeline-progress">
-                            <div className="pankhudi-progress-bar">
-                                <div className="pankhudi-progress-fill" style={{
-                                    width: order.status === 'confirmed' ? '25%' :
-                                        order.status === 'processing' ? '50%' :
-                                            order.status === 'shipped' ? '75%' : '100%'
-                                }}></div>
-                            </div>
-                            <div className="pankhudi-timeline-steps">
-                                <div className={`pankhudi-timeline-step ${order.status === 'confirmed' ? 'active' : ''}`}>
-                                    <div className="pankhudi-step-marker"></div>
-                                    <div className="pankhudi-step-details">
-                                        <h4>Order Confirmed</h4>
-                                        <p>{formatDate(order.date)}</p>
-                                        <p>Your order has been received</p>
-                                    </div>
-                                </div>
-                                <div className={`pankhudi-timeline-step ${order.status === 'processing' ? 'active' : ''}`}>
-                                    <div className="pankhudi-step-marker"></div>
-                                    <div className="pankhudi-step-details">
-                                        <h4>Processing</h4>
-                                        {order.status === 'processing' && <p>{formatDate(order.processingDate)}</p>}
-                                        <p>We're preparing your order</p>
-                                    </div>
-                                </div>
-                                <div className={`pankhudi-timeline-step ${order.status === 'shipped' ? 'active' : ''}`}>
-                                    <div className="pankhudi-step-marker"></div>
-                                    <div className="pankhudi-step-details">
-                                        <h4>Shipped</h4>
-                                        {order.status === 'shipped' && <p>{formatDate(order.shippedDate)}</p>}
-                                        <p>Your order is on the way</p>
-                                        {order.trackingNumber && (
-                                            <p className="pankhudi-tracking">
-                                                Tracking #: <span>{order.trackingNumber}</span>
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className={`pankhudi-timeline-step ${order.status === 'delivered' ? 'active' : ''}`}>
-                                    <div className="pankhudi-step-marker"></div>
-                                    <div className="pankhudi-step-details">
-                                        <h4>Delivered</h4>
-                                        {order.status === 'delivered' ? (
-                                            <>
-                                                <p>{formatDate(order.deliveredDate)}</p>
-                                                <p>Your order has been delivered</p>
-                                            </>
-                                        ) : (
-                                            <p>Expected by {formatDate(order.estimatedDelivery)}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pankhudi-delivery-estimate">
-                            <FiClock className="estimate-icon" />
-                            <div>
-                                <h4>Estimated Delivery</h4>
-                                <p>{formatDate(order.estimatedDelivery)} (5-7 business days)</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Footer CTA */}
-            <div className="pankhudi-confirmation-footer">
-                <Link to="/products" className="pankhudi-footer-btn continue-shopping">
-                    <FiShoppingBag /> Continue Shopping
-                </Link>
-                <Link to="/orders" className="pankhudi-footer-btn view-orders">
-                    View Order History <FiChevronRight />
-                </Link>
-                {order.status === 'confirmed' && (
-                    <button className="pankhudi-footer-btn cancel-order">
-                        Cancel Order
-                    </button>
-                )}
-            </div>
-
-            {/* Special Offer Banner */}
-            <div className="pankhudi-offer-banner">
-                <FiGift className="offer-icon" />
-                <div className="pankhudi-offer-content">
-                    <h4>Special Offer for You!</h4>
-                    <p>Get 15% off on your next order. Use code: PANKH15</p>
                 </div>
-                <button className="pankhudi-offer-btn">Copy Code</button>
+
+                {/* 🛍️ Order Items Section */}
+                <div className="order-items-section">
+                    <div className="section-header">
+                        <h3>Order Items ({order?.items?.length || 0})</h3>
+                    </div>
+
+                    <div className="items-list">
+                        {order?.items?.map((item, index) => (
+                            <div key={index} className="order-item-card">
+                                <div className="item-image-wrapper">
+                                    <img
+                                        src={item.product_image || '/uploads/products/default-product.jpg'}
+                                        alt={item.product_name}
+                                        className="item-image"
+                                        onError={(e) => {
+                                            e.target.src = '/uploads/products/default-product.jpg';
+                                        }}
+                                    />
+                                    <span className="item-quantity-badge">x{item.quantity}</span>
+                                </div>
+
+                                <div className="item-details-wrapper">
+                                    <div className="item-info">
+                                        <h4 className="item-name">{item.product_name}</h4>
+                                        <div className="item-specs">
+                                            {item.sku && <span className="sku">SKU: {item.sku}</span>}
+                                            {item.size && <span className="size">Size: {item.size}</span>}
+                                            {item.color && <span className="color">Color: {item.color}</span>}
+                                        </div>
+                                    </div>
+
+                                    <div className="item-pricing">
+                                        <div className="price-breakdown">
+                                            <span className="unit-price">₹{parseFloat(item.price).toFixed(2)}</span>
+                                            <span className="multiply">×</span>
+                                            <span className="quantity">{item.quantity}</span>
+                                            <span className="equals">=</span>
+                                            <span className="total-price">₹{parseFloat(item.total_price).toFixed(2)}</span>
+                                        </div>
+                                        {item.discount_percent > 0 && (
+                                            <span className="discount-badge">
+                                                {item.discount_percent}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Price Summary */}
+                    <div className="price-summary-card">
+                        <h4>Price Summary</h4>
+                        <div className="price-rows">
+                            <div className="price-ro">
+                                <span>Subtotal</span>
+                                <span>{formatCurrency(order?.subtotal)}</span>
+                            </div>
+                            {parseFloat(order?.shipping_charge || 0) > 0 && (
+                                <div className="price-row">
+                                    <span>Shipping Charge</span>
+                                    <span>{formatCurrency(order?.shipping_charge)}</span>
+                                </div>
+                            )}
+                            {parseFloat(order?.tax_amount || 0) > 0 && (
+                                <div className="price-row">
+                                    <span>Tax</span>
+                                    <span>{formatCurrency(order?.tax_amount)}</span>
+                                </div>
+                            )}
+                            {parseFloat(order?.discount_amount || 0) > 0 && (
+                                <div className="price-row discount">
+                                    <span>Discount</span>
+                                    <span>-{formatCurrency(order?.discount_amount)}</span>
+                                </div>
+                            )}
+                            <div className="price-row total">
+                                <span>Total Amount</span>
+                                <span className="total-amount">{formatCurrency(order?.total_amount)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 📦 Shipping Address */}
+                <div className="shipping-address-section">
+                    <div className="section-header">
+                        <h3>📦 Shipping Address</h3>
+                    </div>
+
+                    <div className="address-details-card">
+                        <div className="recipient-info">
+                            <strong>{order?.shipping_full_name}</strong>
+                        </div>
+                        <div className="full-address">
+                            <p>{order?.shipping_address}</p>
+                            <p>{order?.shipping_city}, {order?.shipping_state} - {order?.shipping_postal_code}</p>
+                            <p>{order?.shipping_country}</p>
+                        </div>
+                        <div className="contact-info">
+                            <div className="contact-item">
+                                <span className="icon">📞</span>
+                                <span>{order?.shipping_phone}</span>
+                            </div>
+                            <div className="contact-item">
+                                <span className="icon">✉️</span>
+                                <span>{order?.shipping_email}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 📱 Order Actions - Mode based */}
+                <div className="order-actions-section">
+                    {pageMode === 'confirmation' ? (
+                        <>
+                            <div className="track-order-card">
+                                <div className="track-icon">📍</div>
+                                <div className="track-content">
+                                    <h4>Track Your Order</h4>
+                                    <p>Get real-time updates on your order status</p>
+                                    <button
+                                        className="btn-track"
+                                        onClick={() => navigate(`/order-confirmation/${order?.id}`)}
+                                    >
+                                        Track Order →
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="action-buttons">
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => navigate('/orders')}
+                                >
+                                    <span className="btn-icon">📋</span>
+                                    View All Orders
+                                </button>
+                                <button
+                                    className="btn-secondary"
+                                    onClick={() => navigate('/products')}
+                                >
+                                    <span className="btn-icon">🛍️</span>
+                                    Continue Shopping
+                                </button>
+                                <button
+                                    className="btn-outline"
+                                    onClick={() => window.print()}
+                                >
+                                    <span className="btn-icon">🖨️</span>
+                                    Print Invoice
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="action-buttons details-mode">
+                            <button
+                                className="btn-primary"
+                                onClick={() => navigate('/orders')}
+                            >
+                                <span className="btn-icon">📋</span>
+                                Back to Orders
+                            </button>
+                            <button
+                                className="btn-secondary"
+                                onClick={() => navigate('/products')}
+                            >
+                                <span className="btn-icon">🛍️</span>
+                                Continue Shopping
+                            </button>
+                            <button
+                                className="btn-outline"
+                                onClick={() => window.print()}
+                            >
+                                <span className="btn-icon">🖨️</span>
+                                Print Invoice
+                            </button>
+                            {order?.order_status === 'shipped' && (
+                                <button
+                                    className="btn-track-order"
+                                    onClick={() => window.open(`/track-order/${order?.id}`, '_blank')}
+                                >
+                                    <span className="btn-icon">📍</span>
+                                    Track Shipment
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* ❓ Need Help */}
+                <div className="need-help-section">
+                    <div className="help-content">
+                        <span className="help-icon">❓</span>
+                        <div className="help-text">
+                            <h4>Need help with your order?</h4>
+                            <p>Our support team is available 24/7</p>
+                        </div>
+                        <div className="help-actions">
+                            <a href="/contact" className="help-link">Contact Support</a>
+                            <span className="separator">•</span>
+                            <a href="/faq" className="help-link">FAQ</a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 📝 Order Notes */}
+                {order?.order_note && (
+                    <div className="order-notes-section">
+                        <h4>📝 Order Notes</h4>
+                        <p>{order.order_note}</p>
+                    </div>
+                )}
             </div>
         </div>
     );

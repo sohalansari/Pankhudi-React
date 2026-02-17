@@ -995,13 +995,6 @@ const CartPage = () => {
     const token = localStorage.getItem("token");
     const storedUser = JSON.parse(localStorage.getItem("user"));
     const userId = storedUser?.id;
-
-    // ✅ DEBUG: Log user info
-    useEffect(() => {
-        console.log("User ID:", userId);
-        console.log("Token:", token ? "Available" : "Not available");
-    }, [userId, token]);
-
     // ✅ Fetch cart items - FIXED VERSION
     const fetchCart = useCallback(async () => {
         if (!userId || !token) {
@@ -1015,8 +1008,6 @@ const CartPage = () => {
             setLoading(true);
             setError("");
 
-            console.log("Fetching cart from API...");
-
             // ✅ FIXED: First try to fetch from database API
             const cartResponse = await axios.get(
                 `http://localhost:5000/api/cart/user/${userId}`,
@@ -1026,17 +1017,10 @@ const CartPage = () => {
                 }
             );
 
-            console.log("Cart API Response:", cartResponse.data);
-
             if (cartResponse.data.success) {
                 const items = cartResponse.data.items || cartResponse.data.cart || [];
 
-                // ✅ DEBUG: Log what we received
-                console.log("Items received from API:", items.length, "items");
-                console.log("Sample item:", items[0]);
-
                 setCartItems(items);
-
                 // ✅ Calculate summary
                 calculateCartSummary(items);
 
@@ -1056,8 +1040,6 @@ const CartPage = () => {
             }
 
         } catch (err) {
-            console.error("Error fetching cart from API:", err);
-
             let errorMessage = "Failed to fetch cart items";
             if (err.response?.data?.message) {
                 errorMessage = err.response.data.message;
@@ -1511,7 +1493,6 @@ const CartPage = () => {
 
     // ✅ Initialize cart - FIXED
     useEffect(() => {
-        console.log("Initializing cart...");
         if (userId && token) {
             fetchCart();
         } else {

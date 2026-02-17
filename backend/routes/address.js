@@ -3,13 +3,24 @@ const router = express.Router();
 const authenticate = require("../middleware/auth");
 
 // ===============================
-// @desc    Get all addresses for user
-// @route   GET /api/address
+// @desc    Get all addresses for a specific user
+// @route   GET /api/users/:userId/addresses
 // @access  Private
 // ===============================
-router.get("/", authenticate, (req, res) => {
+router.get("/:userId/addresses", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
+    const userId = req.params.userId;
+    const authenticatedUserId = req.user.id;
+
+    console.log("GET /api/users/:userId/addresses - userId:", userId, "authUserId:", authenticatedUserId);
+
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to access this user's addresses"
+        });
+    }
 
     const sql = `
         SELECT
@@ -43,227 +54,128 @@ router.get("/", authenticate, (req, res) => {
             });
         }
 
-        return res.json({
-            success: true,
-            addresses: rows
-        });
-    });
-});
-
-// ===============================
-// @desc    Get single address by ID
-// @route   GET /api/address/:id
-// @access  Private
-// ===============================
-router.get("/:id", authenticate, (req, res) => {
-    const db = req.db;
-    const userId = req.user.id;
-    const addressId = req.params.id;
-
-    const sql = `
-        SELECT * FROM user_addresses
-        WHERE id = ? AND user_id = ? AND is_active = 1
-    `;
-
-    db.query(sql, [addressId, userId], (err, rows) => {
-        if (err) {
-            console.error("Error fetching address:", err);
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-
-        if (!rows.length) {
-            return res.status(404).json({
-                success: false,
-                message: "Address not found or unauthorized"
-            });
-        }
+        // Convert snake_case to camelCase for frontend
+        const addresses = rows.map(addr => ({
+            id: addr.id,
+            userId: addr.user_id,
+            addressType: addr.address_type,
+            fullName: addr.full_name,
+            addressLine: addr.address_line,
+            city: addr.city,
+            state: addr.state,
+            postalCode: addr.postal_code,
+            country: addr.country,
+            phone: addr.phone,
+            isDefault: addr.is_default === 1,
+            isActive: addr.is_active === 1,
+            createdAt: addr.created_at,
+            updatedAt: addr.updated_at
+        }));
 
         return res.json({
             success: true,
-            address: rows[0]
+            addresses: addresses
         });
     });
 });
 
 // ===============================
-// @desc    Add new address
-// @route   POST /api/address
+// @desc    Add new address for a specific user
+// @route   POST /api/users/:userId/addresses
 // @access  Private
 // ===============================
-router.post("/", authenticate, (req, res) => {
+router.post("/:userId/addresses", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
+    const userId = req.params.userId;
+    const authenticatedUserId = req.user.id;
 
-    const {
-        address_type = "home",
-        full_name,
-        phone,
-        address_line,
-        city,
-        state,
-        postal_code,
-        country = "India",
-        is_default = 0
-    } = req.body;
+    console.log("POST /api/users/:userId/addresses - userId:", userId, "authUserId:", authenticatedUserId);
+    console.log("Request body:", req.body);
 
-    // Validation
-    if (!full_name || !phone || !address_line || !city || !state || !postal_code) {
-        return res.status(400).json({
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
             success: false,
-            message: "Please fill all required fields"
+            message: "Unauthorized to add address for this user"
         });
     }
 
-    if (!/^\d{10}$/.test(phone)) {
+    // Accept both camelCase and snake_case
+    const full_name = req.body.full_name || req.body.fullName;
+    const address_line = req.body.address_line || req.body.address || req.body.addressLine;
+    const city = req.body.city;
+    const state = req.body.state;
+    const postal_code = req.body.postal_code || req.body.postalCode;
+    const country = req.body.country || "India";
+    const phone = req.body.phone;
+    const address_type = req.body.address_type || req.body.addressType || "home";
+    const is_default = req.body.is_default || req.body.isDefault || false;
+
+    // Validation - Check all required fields
+    const missingFields = [];
+    if (!full_name) missingFields.push("fullName");
+    if (!address_line) missingFields.push("address");
+    if (!city) missingFields.push("city");
+    if (!state) missingFields.push("state");
+    if (!postal_code) missingFields.push("postalCode");
+    if (!phone) missingFields.push("phone");
+
+    if (missingFields.length > 0) {
+        console.log("Missing fields:", missingFields);
         return res.status(400).json({
             success: false,
-            message: "Phone must be 10 digits"
+            message: `Please fill all required fields: ${missingFields.join(", ")}`
         });
     }
 
-    // Reset other addresses' default status if this is set as default
-    const resetDefault = (callback) => {
-        if (is_default == 1) {
-            const resetSql = `
-                UPDATE user_addresses
-                SET is_default = 0
-                WHERE user_id = ? AND is_active = 1
-            `;
-            db.query(resetSql, [userId], (err) => {
-                if (err) {
-                    console.error("Error resetting default addresses:", err);
-                    return callback(err);
-                }
-                callback(null);
-            });
-        } else {
-            callback(null);
-        }
-    };
-
-    resetDefault((err) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-
-        const sql = `
-            INSERT INTO user_addresses (
-                user_id, address_type, full_name, phone,
-                address_line, city, state,
-                postal_code, country, is_default
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const values = [
-            userId, address_type, full_name, phone,
-            address_line, city, state, postal_code,
-            country, is_default
-        ];
-
-        db.query(sql, values, (err, result) => {
-            if (err) {
-                console.error("Error adding address:", err);
-                return res.status(500).json({
-                    success: false,
-                    message: "Error adding address"
-                });
-            }
-
-            // Fetch the newly created address
-            const fetchSql = `
-                SELECT * FROM user_addresses
-                WHERE id = ?
-            `;
-
-            db.query(fetchSql, [result.insertId], (fetchErr, rows) => {
-                if (fetchErr) {
-                    console.error("Error fetching new address:", fetchErr);
-                    return res.status(500).json({
-                        success: false,
-                        message: "Address added but could not retrieve details"
-                    });
-                }
-
-                return res.json({
-                    success: true,
-                    message: "Address added successfully",
-                    address: rows[0]
-                });
-            });
+    // Validate phone (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+        return res.status(400).json({
+            success: false,
+            message: "Phone number must be 10 digits"
         });
-    });
-});
+    }
 
-// ===============================
-// @desc    Update address
-// @route   PUT /api/address/:id
-// @access  Private
-// ===============================
-router.put("/:id", authenticate, (req, res) => {
-    const db = req.db;
-    const userId = req.user.id;
-    const addressId = req.params.id;
+    // Validate postal code (6 digits for India)
+    const pincodeRegex = /^\d{6}$/;
+    if (!pincodeRegex.test(postal_code.replace(/\D/g, ''))) {
+        return res.status(400).json({
+            success: false,
+            message: "Postal code must be 6 digits"
+        });
+    }
 
-    const {
-        address_type,
-        full_name,
-        phone,
-        address_line,
-        city,
-        state,
-        postal_code,
-        country,
-        is_default
-    } = req.body;
-
-    // Check if address exists and belongs to user
-    const checkSql = `
-        SELECT id FROM user_addresses
-        WHERE id = ? AND user_id = ? AND is_active = 1
+    // Check if this is the first address
+    const checkFirstSql = `
+        SELECT COUNT(*) as count FROM user_addresses 
+        WHERE user_id = ? AND is_active = 1
     `;
 
-    db.query(checkSql, [addressId, userId], (checkErr, rows) => {
+    db.query(checkFirstSql, [userId], (checkErr, checkResult) => {
         if (checkErr) {
-            console.error("Error checking address:", checkErr);
+            console.error("Error checking existing addresses:", checkErr);
             return res.status(500).json({
                 success: false,
                 message: "Server error"
             });
         }
 
-        if (!rows.length) {
-            return res.status(404).json({
-                success: false,
-                message: "Address not found or unauthorized"
-            });
-        }
+        const isFirstAddress = checkResult[0].count === 0;
+        const shouldBeDefault = is_default || isFirstAddress;
 
-        // Validate phone if provided
-        if (phone && !/^\d{10}$/.test(phone)) {
-            return res.status(400).json({
-                success: false,
-                message: "Phone must be 10 digits"
-            });
-        }
-
-        // Reset other addresses' default status if this is set as default
-        const resetDefault = (callback) => {
-            if (is_default == 1) {
+        // If this address should be default, reset other addresses
+        const processDefault = (callback) => {
+            if (shouldBeDefault) {
                 const resetSql = `
                     UPDATE user_addresses
                     SET is_default = 0
-                    WHERE user_id = ? AND id != ? AND is_active = 1
+                    WHERE user_id = ? AND is_active = 1
                 `;
-                db.query(resetSql, [userId, addressId], (err) => {
-                    if (err) {
-                        console.error("Error resetting default addresses:", err);
-                        return callback(err);
+                db.query(resetSql, [userId], (resetErr) => {
+                    if (resetErr) {
+                        console.error("Error resetting default addresses:", resetErr);
+                        return callback(resetErr);
                     }
                     callback(null);
                 });
@@ -272,7 +184,7 @@ router.put("/:id", authenticate, (req, res) => {
             }
         };
 
-        resetDefault((err) => {
+        processDefault((err) => {
             if (err) {
                 return res.status(500).json({
                     success: false,
@@ -280,65 +192,90 @@ router.put("/:id", authenticate, (req, res) => {
                 });
             }
 
-            // Build update query dynamically
-            const updateFields = [];
-            const updateValues = [];
-
-            if (address_type !== undefined) updateFields.push("address_type = ?"), updateValues.push(address_type);
-            if (full_name !== undefined) updateFields.push("full_name = ?"), updateValues.push(full_name);
-            if (phone !== undefined) updateFields.push("phone = ?"), updateValues.push(phone);
-            if (address_line !== undefined) updateFields.push("address_line = ?"), updateValues.push(address_line);
-            if (city !== undefined) updateFields.push("city = ?"), updateValues.push(city);
-            if (state !== undefined) updateFields.push("state = ?"), updateValues.push(state);
-            if (postal_code !== undefined) updateFields.push("postal_code = ?"), updateValues.push(postal_code);
-            if (country !== undefined) updateFields.push("country = ?"), updateValues.push(country);
-            if (is_default !== undefined) updateFields.push("is_default = ?"), updateValues.push(is_default);
-
-            // Update timestamp
-            updateFields.push("updated_at = CURRENT_TIMESTAMP");
-
-            if (updateFields.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "No fields to update"
-                });
-            }
-
-            updateValues.push(addressId);
-            const updateSql = `
-                UPDATE user_addresses
-                SET ${updateFields.join(", ")}
-                WHERE id = ?
+            const sql = `
+                INSERT INTO user_addresses (
+                    user_id, address_type, full_name, phone,
+                    address_line, city, state,
+                    postal_code, country, is_default
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
-            db.query(updateSql, updateValues, (updateErr, result) => {
-                if (updateErr) {
-                    console.error("Error updating address:", updateErr);
+            const values = [
+                userId,
+                address_type,
+                full_name,
+                phone,
+                address_line,
+                city,
+                state,
+                postal_code,
+                country,
+                shouldBeDefault ? 1 : 0
+            ];
+
+            db.query(sql, values, (insertErr, result) => {
+                if (insertErr) {
+                    console.error("Error adding address:", insertErr);
                     return res.status(500).json({
                         success: false,
-                        message: "Error updating address"
+                        message: "Error adding address to database"
                     });
                 }
 
-                // Fetch updated address
+                // Fetch the newly created address
                 const fetchSql = `
-                    SELECT * FROM user_addresses
+                    SELECT 
+                        id,
+                        user_id,
+                        address_type,
+                        full_name,
+                        address_line,
+                        city,
+                        state,
+                        postal_code,
+                        country,
+                        phone,
+                        is_default,
+                        is_active,
+                        created_at,
+                        updated_at
+                    FROM user_addresses
                     WHERE id = ?
                 `;
 
-                db.query(fetchSql, [addressId], (fetchErr, rows) => {
+                db.query(fetchSql, [result.insertId], (fetchErr, rows) => {
                     if (fetchErr) {
-                        console.error("Error fetching updated address:", fetchErr);
-                        return res.status(500).json({
-                            success: false,
-                            message: "Address updated but could not retrieve details"
+                        console.error("Error fetching new address:", fetchErr);
+                        return res.status(201).json({
+                            success: true,
+                            message: "Address added successfully",
+                            addressId: result.insertId
                         });
                     }
 
-                    return res.json({
+                    // Convert to camelCase for frontend
+                    const address = rows[0] ? {
+                        id: rows[0].id,
+                        userId: rows[0].user_id,
+                        addressType: rows[0].address_type,
+                        fullName: rows[0].full_name,
+                        addressLine: rows[0].address_line,
+                        city: rows[0].city,
+                        state: rows[0].state,
+                        postalCode: rows[0].postal_code,
+                        country: rows[0].country,
+                        phone: rows[0].phone,
+                        isDefault: rows[0].is_default === 1,
+                        isActive: rows[0].is_active === 1,
+                        createdAt: rows[0].created_at,
+                        updatedAt: rows[0].updated_at
+                    } : null;
+
+                    return res.status(201).json({
                         success: true,
-                        message: "Address updated successfully",
-                        address: rows[0]
+                        message: "Address added successfully",
+                        address: address,
+                        isFirstAddress: isFirstAddress
                     });
                 });
             });
@@ -347,14 +284,37 @@ router.put("/:id", authenticate, (req, res) => {
 });
 
 // ===============================
-// @desc    Soft delete address (set is_active = 0)
-// @route   DELETE /api/address/:id
+// @desc    Update address for a specific user
+// @route   PUT /api/users/:userId/addresses/:addressId
 // @access  Private
 // ===============================
-router.delete("/:id", authenticate, (req, res) => {
+router.put("/:userId/addresses/:addressId", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
-    const addressId = req.params.id;
+    const userId = req.params.userId;
+    const addressId = req.params.addressId;
+    const authenticatedUserId = req.user.id;
+
+    console.log("PUT /api/users/:userId/addresses/:addressId - userId:", userId, "addressId:", addressId, "authUserId:", authenticatedUserId);
+    console.log("Update address data:", req.body);
+
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to update address for this user"
+        });
+    }
+
+    // Accept both camelCase and snake_case
+    const full_name = req.body.full_name || req.body.fullName;
+    const address_line = req.body.address_line || req.body.address || req.body.addressLine;
+    const city = req.body.city;
+    const state = req.body.state;
+    const postal_code = req.body.postal_code || req.body.postalCode;
+    const country = req.body.country;
+    const phone = req.body.phone;
+    const address_type = req.body.address_type || req.body.addressType;
+    const is_default = req.body.is_default !== undefined ? req.body.is_default : req.body.isDefault;
 
     // Check if address exists and belongs to user
     const checkSql = `
@@ -378,84 +338,214 @@ router.delete("/:id", authenticate, (req, res) => {
             });
         }
 
-        const isDefault = rows[0].is_default;
-
-        // Soft delete the address (set is_active = 0)
-        const deleteSql = `
-            UPDATE user_addresses
-            SET is_active = 0, is_default = 0
-            WHERE id = ? AND user_id = ?
-        `;
-
-        db.query(deleteSql, [addressId, userId], (deleteErr, result) => {
-            if (deleteErr) {
-                console.error("Error deleting address:", deleteErr);
-                return res.status(500).json({
+        // Validate phone if provided
+        if (phone) {
+            const phoneRegex = /^\d{10}$/;
+            if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+                return res.status(400).json({
                     success: false,
-                    message: "Error deleting address"
+                    message: "Phone number must be 10 digits"
                 });
             }
+        }
 
-            // If deleted address was default, set another as default
-            if (isDefault == 1) {
-                const findNewDefaultSql = `
-                    SELECT id FROM user_addresses
-                    WHERE user_id = ? AND is_active = 1
-                    ORDER BY created_at DESC
-                    LIMIT 1
+        // Validate postal code if provided
+        if (postal_code) {
+            const pincodeRegex = /^\d{6}$/;
+            if (!pincodeRegex.test(postal_code.replace(/\D/g, ''))) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Postal code must be 6 digits"
+                });
+            }
+        }
+
+        // Handle default address logic
+        const processDefault = (callback) => {
+            if (is_default === true || is_default === 1 || is_default === "1") {
+                const resetSql = `
+                    UPDATE user_addresses
+                    SET is_default = 0
+                    WHERE user_id = ? AND id != ? AND is_active = 1
                 `;
-
-                db.query(findNewDefaultSql, [userId], (findErr, defaultRows) => {
-                    if (findErr) {
-                        console.error("Error finding new default address:", findErr);
-                        return res.json({
-                            success: true,
-                            message: "Address deleted successfully"
-                        });
+                db.query(resetSql, [userId, addressId], (resetErr) => {
+                    if (resetErr) {
+                        console.error("Error resetting default addresses:", resetErr);
+                        return callback(resetErr);
                     }
-
-                    if (defaultRows.length > 0) {
-                        const updateDefaultSql = `
-                            UPDATE user_addresses
-                            SET is_default = 1
-                            WHERE id = ?
-                        `;
-
-                        db.query(updateDefaultSql, [defaultRows[0].id], (updateErr) => {
-                            if (updateErr) {
-                                console.error("Error setting new default address:", updateErr);
-                            }
-                            return res.json({
-                                success: true,
-                                message: "Address deleted successfully"
-                            });
-                        });
-                    } else {
-                        return res.json({
-                            success: true,
-                            message: "Address deleted successfully"
-                        });
-                    }
+                    callback(null);
                 });
             } else {
-                return res.json({
-                    success: true,
-                    message: "Address deleted successfully"
+                callback(null);
+            }
+        };
+
+        processDefault((err) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Server error"
                 });
             }
+
+            // Build update query dynamically
+            const updateFields = [];
+            const updateValues = [];
+
+            if (full_name !== undefined) {
+                updateFields.push("full_name = ?");
+                updateValues.push(full_name);
+            }
+            if (address_line !== undefined) {
+                updateFields.push("address_line = ?");
+                updateValues.push(address_line);
+            }
+            if (city !== undefined) {
+                updateFields.push("city = ?");
+                updateValues.push(city);
+            }
+            if (state !== undefined) {
+                updateFields.push("state = ?");
+                updateValues.push(state);
+            }
+            if (postal_code !== undefined) {
+                updateFields.push("postal_code = ?");
+                updateValues.push(postal_code);
+            }
+            if (country !== undefined) {
+                updateFields.push("country = ?");
+                updateValues.push(country);
+            }
+            if (phone !== undefined) {
+                updateFields.push("phone = ?");
+                updateValues.push(phone);
+            }
+            if (address_type !== undefined) {
+                updateFields.push("address_type = ?");
+                updateValues.push(address_type);
+            }
+            if (is_default !== undefined) {
+                updateFields.push("is_default = ?");
+                updateValues.push(is_default === true || is_default === 1 || is_default === "1" ? 1 : 0);
+            }
+
+            // Add updated_at timestamp
+            updateFields.push("updated_at = CURRENT_TIMESTAMP");
+
+            if (updateFields.length === 1) { // Only timestamp was added
+                return res.status(400).json({
+                    success: false,
+                    message: "No fields to update"
+                });
+            }
+
+            // Add addressId to values array
+            updateValues.push(addressId);
+
+            const updateSql = `
+                UPDATE user_addresses
+                SET ${updateFields.join(", ")}
+                WHERE id = ? AND user_id = ?
+            `;
+
+            // Add userId to values array
+            updateValues.push(userId);
+
+            db.query(updateSql, updateValues, (updateErr, result) => {
+                if (updateErr) {
+                    console.error("Error updating address:", updateErr);
+                    return res.status(500).json({
+                        success: false,
+                        message: "Error updating address"
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Address not found"
+                    });
+                }
+
+                // Fetch updated address
+                const fetchSql = `
+                    SELECT 
+                        id,
+                        user_id,
+                        address_type,
+                        full_name,
+                        address_line,
+                        city,
+                        state,
+                        postal_code,
+                        country,
+                        phone,
+                        is_default,
+                        is_active,
+                        created_at,
+                        updated_at
+                    FROM user_addresses
+                    WHERE id = ?
+                `;
+
+                db.query(fetchSql, [addressId], (fetchErr, rows) => {
+                    if (fetchErr) {
+                        console.error("Error fetching updated address:", fetchErr);
+                        return res.json({
+                            success: true,
+                            message: "Address updated successfully"
+                        });
+                    }
+
+                    // Convert to camelCase for frontend
+                    const address = rows[0] ? {
+                        id: rows[0].id,
+                        userId: rows[0].user_id,
+                        addressType: rows[0].address_type,
+                        fullName: rows[0].full_name,
+                        addressLine: rows[0].address_line,
+                        city: rows[0].city,
+                        state: rows[0].state,
+                        postalCode: rows[0].postal_code,
+                        country: rows[0].country,
+                        phone: rows[0].phone,
+                        isDefault: rows[0].is_default === 1,
+                        isActive: rows[0].is_active === 1,
+                        createdAt: rows[0].created_at,
+                        updatedAt: rows[0].updated_at
+                    } : null;
+
+                    return res.json({
+                        success: true,
+                        message: "Address updated successfully",
+                        address: address
+                    });
+                });
+            });
         });
     });
 });
 
 // ===============================
-// @desc    Set address as default
-// @route   PUT /api/address/:id/set-default
+// @desc    Set address as default for a specific user
+// @route   PUT /api/users/:userId/addresses/:addressId/default
 // @access  Private
 // ===============================
-router.put("/:id/set-default", authenticate, (req, res) => {
+router.put("/:userId/addresses/:addressId/default", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
-    const addressId = req.params.id;
+    const userId = req.params.userId;
+    const addressId = req.params.addressId;
+    const authenticatedUserId = req.user.id;
+
+    console.log("PUT /api/users/:userId/addresses/:addressId/default - userId:", userId, "addressId:", addressId, "authUserId:", authenticatedUserId);
+
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to modify this user's addresses"
+        });
+    }
 
     // Check if address exists and belongs to user
     const checkSql = `
@@ -498,7 +588,7 @@ router.put("/:id/set-default", authenticate, (req, res) => {
             // Set this address as default
             const setDefaultSql = `
                 UPDATE user_addresses
-                SET is_default = 1
+                SET is_default = 1, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND user_id = ?
             `;
 
@@ -528,47 +618,154 @@ router.put("/:id/set-default", authenticate, (req, res) => {
 });
 
 // ===============================
-// @desc    Reset all addresses default status
-// @route   PUT /api/address/reset-default
+// @desc    Delete address (soft delete) for a specific user
+// @route   DELETE /api/users/:userId/addresses/:addressId
 // @access  Private
 // ===============================
-router.put("/reset-default", authenticate, (req, res) => {
+router.delete("/:userId/addresses/:addressId", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
+    const userId = req.params.userId;
+    const addressId = req.params.addressId;
+    const authenticatedUserId = req.user.id;
 
-    const sql = `
-        UPDATE user_addresses
-        SET is_default = 0
-        WHERE user_id = ? AND is_active = 1
+    console.log("DELETE /api/users/:userId/addresses/:addressId - userId:", userId, "addressId:", addressId, "authUserId:", authenticatedUserId);
+
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to delete this user's addresses"
+        });
+    }
+
+    // Check if address exists and belongs to user
+    const checkSql = `
+        SELECT id, is_default FROM user_addresses
+        WHERE id = ? AND user_id = ? AND is_active = 1
     `;
 
-    db.query(sql, [userId], (err, result) => {
-        if (err) {
-            console.error("Error resetting default addresses:", err);
+    db.query(checkSql, [addressId, userId], (checkErr, rows) => {
+        if (checkErr) {
+            console.error("Error checking address:", checkErr);
             return res.status(500).json({
                 success: false,
                 message: "Server error"
             });
         }
 
-        return res.json({
-            success: true,
-            message: "Default addresses reset successfully"
+        if (!rows.length) {
+            return res.status(404).json({
+                success: false,
+                message: "Address not found or unauthorized"
+            });
+        }
+
+        const isDefault = rows[0].is_default;
+
+        // Soft delete the address
+        const deleteSql = `
+            UPDATE user_addresses
+            SET is_active = 0, is_default = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `;
+
+        db.query(deleteSql, [addressId, userId], (deleteErr, result) => {
+            if (deleteErr) {
+                console.error("Error deleting address:", deleteErr);
+                return res.status(500).json({
+                    success: false,
+                    message: "Error deleting address"
+                });
+            }
+
+            // If deleted address was default, set another as default
+            if (isDefault === 1) {
+                const findNewDefaultSql = `
+                    SELECT id FROM user_addresses
+                    WHERE user_id = ? AND is_active = 1
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                `;
+
+                db.query(findNewDefaultSql, [userId], (findErr, defaultRows) => {
+                    if (findErr) {
+                        console.error("Error finding new default address:", findErr);
+                        return res.json({
+                            success: true,
+                            message: "Address deleted successfully"
+                        });
+                    }
+
+                    if (defaultRows.length > 0) {
+                        const updateDefaultSql = `
+                            UPDATE user_addresses
+                            SET is_default = 1, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                        `;
+
+                        db.query(updateDefaultSql, [defaultRows[0].id], (updateErr) => {
+                            if (updateErr) {
+                                console.error("Error setting new default address:", updateErr);
+                            }
+                            return res.json({
+                                success: true,
+                                message: "Address deleted successfully"
+                            });
+                        });
+                    } else {
+                        return res.json({
+                            success: true,
+                            message: "Address deleted successfully"
+                        });
+                    }
+                });
+            } else {
+                return res.json({
+                    success: true,
+                    message: "Address deleted successfully"
+                });
+            }
         });
     });
 });
 
 // ===============================
-// @desc    Get default address
-// @route   GET /api/address/default
+// @desc    Get default address for a specific user
+// @route   GET /api/users/:userId/addresses/default
 // @access  Private
 // ===============================
-router.get("/default", authenticate, (req, res) => {
+router.get("/:userId/addresses/default", authenticate, (req, res) => {
     const db = req.db;
-    const userId = req.user.id;
+    const userId = req.params.userId;
+    const authenticatedUserId = req.user.id;
+
+    console.log("GET /api/users/:userId/addresses/default - userId:", userId, "authUserId:", authenticatedUserId);
+
+    // Verify authorization
+    if (parseInt(userId) !== authenticatedUserId) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to access this user's addresses"
+        });
+    }
 
     const sql = `
-        SELECT * FROM user_addresses
+        SELECT 
+            id,
+            user_id,
+            address_type,
+            full_name,
+            address_line,
+            city,
+            state,
+            postal_code,
+            country,
+            phone,
+            is_default,
+            is_active,
+            created_at,
+            updated_at
+        FROM user_addresses
         WHERE user_id = ? AND is_default = 1 AND is_active = 1
         LIMIT 1
     `;
@@ -583,9 +780,24 @@ router.get("/default", authenticate, (req, res) => {
         }
 
         if (!rows.length) {
-            // Try to get any address
+            // Try to get any address as fallback
             const fallbackSql = `
-                SELECT * FROM user_addresses
+                SELECT 
+                    id,
+                    user_id,
+                    address_type,
+                    full_name,
+                    address_line,
+                    city,
+                    state,
+                    postal_code,
+                    country,
+                    phone,
+                    is_default,
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM user_addresses
                 WHERE user_id = ? AND is_active = 1
                 ORDER BY created_at DESC
                 LIMIT 1
@@ -609,67 +821,53 @@ router.get("/default", authenticate, (req, res) => {
                     });
                 }
 
+                // Convert to camelCase
+                const address = {
+                    id: fallbackRows[0].id,
+                    userId: fallbackRows[0].user_id,
+                    addressType: fallbackRows[0].address_type,
+                    fullName: fallbackRows[0].full_name,
+                    addressLine: fallbackRows[0].address_line,
+                    city: fallbackRows[0].city,
+                    state: fallbackRows[0].state,
+                    postalCode: fallbackRows[0].postal_code,
+                    country: fallbackRows[0].country,
+                    phone: fallbackRows[0].phone,
+                    isDefault: fallbackRows[0].is_default === 1,
+                    isActive: fallbackRows[0].is_active === 1,
+                    createdAt: fallbackRows[0].created_at,
+                    updatedAt: fallbackRows[0].updated_at
+                };
+
                 return res.json({
                     success: true,
-                    address: fallbackRows[0]
+                    address: address
                 });
             });
         } else {
+            // Convert to camelCase
+            const address = {
+                id: rows[0].id,
+                userId: rows[0].user_id,
+                addressType: rows[0].address_type,
+                fullName: rows[0].full_name,
+                addressLine: rows[0].address_line,
+                city: rows[0].city,
+                state: rows[0].state,
+                postalCode: rows[0].postal_code,
+                country: rows[0].country,
+                phone: rows[0].phone,
+                isDefault: rows[0].is_default === 1,
+                isActive: rows[0].is_active === 1,
+                createdAt: rows[0].created_at,
+                updatedAt: rows[0].updated_at
+            };
+
             return res.json({
                 success: true,
-                address: rows[0]
+                address: address
             });
         }
-    });
-});
-
-// ===============================
-// @desc    Get all addresses including inactive (for admin)
-// @route   GET /api/address/all
-// @access  Private
-// ===============================
-router.get("/all", authenticate, (req, res) => {
-    const db = req.db;
-    const userId = req.user.id;
-
-    // Check if user is admin (you can add your own logic here)
-    const sql = `
-        SELECT
-            id,
-            user_id,
-            address_type,
-            full_name,
-            address_line,
-            city,
-            state,
-            postal_code,
-            country,
-            phone,
-            is_default,
-            is_active,
-            created_at,
-            updated_at
-        FROM user_addresses
-        WHERE user_id = ?
-        ORDER BY
-            is_active DESC,
-            is_default DESC,
-            created_at DESC
-    `;
-
-    db.query(sql, [userId], (err, rows) => {
-        if (err) {
-            console.error("Error fetching all addresses:", err);
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-
-        return res.json({
-            success: true,
-            addresses: rows
-        });
     });
 });
 

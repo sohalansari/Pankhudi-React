@@ -26,15 +26,6 @@
     --transition: all 0.3s ease;
 }
 
-/* Dark Mode Variables */
-[data-theme="dark"] {
-    --light-bg: #1A1A2E;
-    --dark-text: #F0F0F0;
-    --gray-light: #2A2A3E;
-    --gray-medium: #3A3A4E;
-    --gray-dark: #A0A0B0;
-}
-
 /* Base Styles */
 .chatbot {
     display: flex;

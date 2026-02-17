@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 // ------------------ Helper: Parse Product with Sub-Category Support ------------------
 const parseProduct = (r, req) => {
     let imgs = [];
@@ -27,16 +28,23 @@ const parseProduct = (r, req) => {
         }
     }
 
-    // ✅ FIXED: Correct discount price calculation
+    // ✅ EXACT PRICE CALCULATION
     const originalPrice = parseFloat(r.price) || 0;
     const discountPercentage = parseFloat(r.discount) || 0;
 
-    let discountPrice = null;
+    let discountPrice = originalPrice; // Default to original price
+
     if (discountPercentage > 0 && discountPercentage <= 100) {
-        discountPrice = Math.round(originalPrice * (1 - discountPercentage / 100));
+        // ✅ EXACT CALCULATION: No rounding here
+        const discountAmount = originalPrice * (discountPercentage / 100);
+        discountPrice = originalPrice - discountAmount;
+
+        // ✅ Keep 2 decimal places for exact amount
+        discountPrice = parseFloat(discountPrice.toFixed(2));
+
         // Ensure discount price is not higher than original price
         if (discountPrice >= originalPrice) {
-            discountPrice = null;
+            discountPrice = originalPrice;
         }
     }
 
@@ -119,7 +127,7 @@ const parseProduct = (r, req) => {
         short_description: r.short_description,
         price: originalPrice, // ✅ Original price
         discount: discountPercentage, // ✅ Discount percentage
-        discountPrice: discountPrice, // ✅ Correct discounted price
+        discountPrice: discountPrice, // ✅ EXACT discounted price with 2 decimal places
         rating: parseFloat(r.rating) || 0,
         stock: parseInt(r.stock) || 0,
         category_id: r.category_id,
@@ -201,6 +209,7 @@ const parseProduct = (r, req) => {
         updated_at: r.updated_at
     };
 };
+
 // ------------------ Get All Products with Sub-Category Support ------------------
 router.get("/", (req, res) => {
     const db = req.db;

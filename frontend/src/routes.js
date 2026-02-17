@@ -10,9 +10,8 @@ import TermsAndConditions from "./pages/Terms/Tearm";
 import NotFound from "./pages/404/NotFound";
 import Checkout from "./pages/Checkout/Checkout"; // ✅ UPDATED PATH
 import Profile from "./pages/Profile/Profile";
-import DummyPayment from "./pages/Payment/DummyPayment";
 import OrderConfirmation from "./pages/OrderConfirmation/OrderConfirmation";
-import OrderHistory from "./pages/OrderHistory/OrderHistory";
+import OrderHistory from "./pages/OrderHistory/MyOrders";
 import AIChatbot from "./pages/AIChatbot/AIChatbot";
 import Collections from "./pages/Collection/Collections";
 import About from "./pages/About/About";
@@ -50,8 +49,8 @@ const AppRoutes = () => {
 
                 {/* Protected Routes */}
                 <Route path="/profile/:id" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
-                <Route path="/dummy-payment" element={<ProtectedRoute> <DummyPayment /> </ProtectedRoute>} />
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
+                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
 
                 {/* 404 */}

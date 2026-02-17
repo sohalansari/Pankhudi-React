@@ -23,7 +23,6 @@
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--dark-bg);
   min-height: 100vh;
 }
 
@@ -349,7 +348,7 @@ body {
 }
 
 .rule.invalid {
-  color: var(--text-light);
+  color: black;
 }
 
 .rule svg {

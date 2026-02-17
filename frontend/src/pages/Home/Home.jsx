@@ -445,7 +445,6 @@ const Home = () => {
         fetchFeaturedCategories();
     }, [API]);
 
-
     // Show scroll to top button
     useEffect(() => {
         const handleScroll = () => {
@@ -528,53 +527,132 @@ const Home = () => {
         return getFallbackProductImage(product.category);
     }, [API]);
 
-    // ✅ Discount Calculation
+    // ✅ **UPDATED: Calculate Discount Percentage with exact calculation**
     const calculateDiscountPercentage = useCallback((product) => {
-        const originalPrice = Number(product.price) || 0;
-        const discountPrice = Number(product.discountPrice) || 0;
+        const originalPrice = parseFloat(product.price) || 0;
+        const discountPrice = parseFloat(product.discountPrice) || 0;
+        const discountPercent = parseFloat(product.discount) || 0;
 
-        if (discountPrice > 0 && discountPrice < originalPrice) {
+        // Method 1: If discount percentage is directly provided
+        if (discountPercent > 0 && discountPercent <= 100) {
+            return parseFloat(discountPercent.toFixed(2));
+        }
+
+        // Method 2: Calculate from discount price
+        if (discountPrice > 0 && discountPrice < originalPrice && originalPrice > 0) {
             const percentage = ((originalPrice - discountPrice) / originalPrice) * 100;
-            const roundedPercentage = parseFloat(percentage.toFixed(1));
+            const roundedPercentage = parseFloat(percentage.toFixed(2));
             return roundedPercentage;
         }
+
         return 0;
     }, []);
 
-    // ✅ Get Display Price
+    // ✅ **UPDATED: Get Display Price with EXACT calculation**
     const getDisplayPrice = useCallback((product) => {
-        const originalPrice = Number(product.price) || 0;
-        const discountPrice = Number(product.discountPrice) || 0;
-        const discountPercentage = calculateDiscountPercentage(product);
-        const hasValidDiscount = discountPercentage > 0;
+        const originalPrice = parseFloat(product.price) || 0;
+        const discountPercent = parseFloat(product.discount) || 0;
+        const discountPrice = parseFloat(product.discountPrice) || 0;
 
-        return {
-            originalPrice,
-            discountPrice: hasValidDiscount ? discountPrice : originalPrice,
-            discountPercentage,
-            hasDiscount: hasValidDiscount
+        let finalDiscountPrice = originalPrice;
+        let finalDiscountPercent = 0;
+        let hasValidDiscount = false;
+
+        // ✅ CASE 1: If we already have discountPrice from backend (pre-calculated)
+        if (discountPrice > 0 && discountPrice < originalPrice) {
+            finalDiscountPrice = discountPrice;
+            // Calculate percentage from discount price
+            const calculatedPercent = ((originalPrice - discountPrice) / originalPrice) * 100;
+            finalDiscountPercent = parseFloat(calculatedPercent.toFixed(2));
+            hasValidDiscount = true;
+        }
+        // ✅ CASE 2: If only discount percentage is provided
+        else if (discountPercent > 0 && discountPercent <= 100 && originalPrice > 0) {
+            const discountAmount = originalPrice * (discountPercent / 100);
+            finalDiscountPrice = originalPrice - discountAmount;
+            // Keep 2 decimal places for exact amount
+            finalDiscountPrice = parseFloat(finalDiscountPrice.toFixed(2));
+            finalDiscountPercent = discountPercent;
+            hasValidDiscount = true;
+
+            console.log('✅ Calculated discount from percentage:', {
+                discountPercent,
+                discountAmount,
+                finalDiscountPrice
+            });
+        }
+
+        // ✅ EXACT formatting - show exact amounts with 2 decimal places
+        const formatExactPrice = (price) => {
+            const numPrice = parseFloat(price);
+            if (isNaN(numPrice) || numPrice <= 0) return '₹0';
+
+            // Always show with 2 decimal places for exact amounts
+            const formatted = numPrice.toFixed(2);
+
+            // Remove .00 if it's whole number
+            if (formatted.endsWith('.00')) {
+                return `₹${parseInt(numPrice)}`;
+            }
+
+            // Remove trailing zeros after decimal
+            const cleaned = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+            return `₹${cleaned}`;
         };
-    }, [calculateDiscountPercentage]);
 
-    // ✅ Product Data Sanitization
+        // ✅ Rounded price for display (only for UI, calculations use exact)
+        const formatPriceRounded = (price) => {
+            const numPrice = parseFloat(price);
+            if (isNaN(numPrice) || numPrice <= 0) return '₹0';
+            return `₹${Math.round(numPrice)}`;
+        };
+
+        const result = {
+            originalPrice,
+            discountPrice: finalDiscountPrice, // Exact price with decimals
+            discountPercentage: parseFloat(finalDiscountPercent.toFixed(2)), // Percentage with 2 decimals
+            hasDiscount: hasValidDiscount,
+
+            // ✅ EXACT prices (with decimals if needed)
+            formattedOriginalPrice: formatExactPrice(originalPrice),
+            formattedDiscountPrice: formatExactPrice(finalDiscountPrice),
+
+            // Rounded prices for display
+            roundedDiscountPrice: formatPriceRounded(finalDiscountPrice),
+
+            // Exact discount amount
+            discountAmount: parseFloat((originalPrice - finalDiscountPrice).toFixed(2)),
+
+            // Additional info for debugging
+            exactCalculation: `${originalPrice} - ${finalDiscountPercent}% = ${finalDiscountPrice}`
+        };
+        return result;
+    }, []);
+
+    // ✅ **UPDATED: Product Data Sanitization - Keep exact prices**
     const sanitizeProductData = useCallback((products) => {
         return products.map((product, index) => {
-            const originalPrice = Number(product.price) || 0;
-            const discountPrice = Number(product.discountPrice) || 0;
-            const discountPercentage = calculateDiscountPercentage(product);
+            const originalPrice = parseFloat(product.price) || 0;
+            const discountPercent = parseFloat(product.discount) || 0;
+            const discountPrice = parseFloat(product.discountPrice) || 0;
+
+            // Get display price info
+            const priceInfo = getDisplayPrice(product);
 
             return {
                 id: product.id || product._id || `api-${index}`,
                 name: product.name || "No Name",
-                stock: Number(product.stock) || 0,
+                stock: parseInt(product.stock) || 0,
                 price: originalPrice,
-                discountPrice: discountPrice,
+                discount: discountPercent,
+                // ✅ Keep the exact discount price from backend
+                discountPrice: discountPrice || priceInfo.discountPrice,
                 category: (product.category || "general").toLowerCase(),
                 sub_category: product.sub_category || '',
                 category_id: product.category_id || null,
                 sub_category_id: product.sub_category_id || null,
-                rating: product.rating || 0,
-                discount: discountPercentage,
+                rating: parseFloat(product.rating) || 0,
+                discountPercentage: priceInfo.discountPercentage,
                 image: getProductImage(product),
                 images: product.images || [],
                 createdAt: product.created_at || product.createdAt || new Date().toISOString(),
@@ -582,12 +660,22 @@ const Home = () => {
                 description: product.description || 'No description available',
                 sizes: product.sizes || ['S', 'M', 'L', 'XL'],
                 colors: product.colors || ['Black', 'White', 'Red', 'Blue'],
-                hasDiscount: discountPercentage > 0,
+                hasDiscount: priceInfo.hasDiscount,
                 isTrending: product.isTrending || false,
-                isDailyDeal: product.isDailyDeal || false
+                isDailyDeal: product.isDailyDeal || false,
+
+                // ✅ Store EXACT calculated values
+                calculatedDiscount: priceInfo.discountPercentage,
+                calculatedDiscountPrice: priceInfo.discountPrice,
+
+                // Debug fields
+                _originalPrice: originalPrice,
+                _backendDiscountPercent: discountPercent,
+                _backendDiscountPrice: discountPrice,
+                _exactPrice: priceInfo.formattedDiscountPrice
             };
         });
-    }, [calculateDiscountPercentage, getProductImage]);
+    }, [getDisplayPrice, getProductImage]);
 
     // ✅ Fetch Products
     useEffect(() => {
@@ -608,63 +696,68 @@ const Home = () => {
             } catch (err) {
                 console.error('Error fetching products:', err);
 
-                // Fallback demo products
+                // Fallback demo products with EXACT decimal prices
                 const demoProducts = [
                     {
                         id: 'demo-1',
-                        name: 'Floral Print Maxi Dress',
+                        name: 'DEELMO Men\'s Regular Fit Button Down Dress Shirts',
                         stock: 10,
                         price: 1999,
-                        discountPrice: 1499,
-                        category: 'Women\'s Fashion',
-                        sub_category: 'Dresses',
-                        category_id: 1,
-                        sub_category_id: 4,
+                        discount: 77,
+                        discountPrice: 459.77, // ✅ EXACT amount: 1999 - 77% = 459.77
+                        category: 'Men\'s Fashion',
+                        sub_category: 'Shirts',
+                        category_id: 2,
+                        sub_category_id: 5,
                         rating: 4.5,
-                        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop&q=80',
+                        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop&q=80',
                         isNew: true,
-                        isTrending: true
+                        isTrending: true,
+                        isDailyDeal: true
                     },
                     {
                         id: 'demo-2',
-                        name: 'Designer Silk Saree',
+                        name: 'TADKEE Women\'s Solid Regular Fit Tunic Top',
                         stock: 5,
-                        price: 3500,
-                        discountPrice: 2800,
+                        price: 1999,
+                        discount: 75,
+                        discountPrice: 499.75, // ✅ EXACT amount: 1999 - 75% = 499.75
                         category: 'Women\'s Fashion',
-                        sub_category: 'Sarees',
+                        sub_category: 'Tunics',
                         category_id: 1,
-                        sub_category_id: 1,
+                        sub_category_id: 2,
                         rating: 4.8,
-                        image: 'https://images.unsplash.com/photo-1585487000127-1a3b9e13980c?w=500&auto=format&fit=crop&q=80',
+                        image: 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=500&auto=format&fit=crop&q=80',
                         isDailyDeal: true
                     },
                     {
                         id: 'demo-3',
-                        name: 'Premium Cotton T-Shirt',
-                        stock: 20,
-                        price: 899,
-                        discountPrice: 699,
-                        category: 'Men\'s Fashion',
-                        sub_category: 'T-Shirts',
-                        category_id: 2,
-                        sub_category_id: 6,
-                        rating: 4.3,
-                        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=80',
-                        isTrending: true
+                        name: 'KLOSIA Women\'s Rayon Printed Anarkali Kurta',
+                        stock: 8,
+                        price: 2999,
+                        discount: 73,
+                        discountPrice: 809.73, // ✅ EXACT amount: 2999 - 73% = 809.73
+                        category: 'Women\'s Fashion',
+                        sub_category: 'Kurtas',
+                        category_id: 1,
+                        sub_category_id: 2,
+                        rating: 4.6,
+                        image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&auto=format&fit=crop&q=80',
+                        isDailyDeal: true
                     },
                     {
                         id: 'demo-4',
-                        name: 'Designer Jeans',
+                        name: 'Pankhudi Essentials Mens Pullover Sweatshirt',
                         stock: 15,
-                        price: 2499,
-                        discountPrice: 1999,
+                        price: 1907.86,
+                        discount: 35,
+                        discountPrice: 1240.11, // ✅ EXACT amount: 1907.86 - 35% = 1240.11
                         category: 'Men\'s Fashion',
-                        sub_category: 'Jeans',
+                        sub_category: 'Sweatshirts',
                         category_id: 2,
-                        sub_category_id: 7,
-                        rating: 4.6,
-                        image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop&q=80',
+                        sub_category_id: 6,
+                        rating: 4.4,
+                        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=80',
                         isDailyDeal: true
                     }
                 ];
@@ -789,8 +882,6 @@ const Home = () => {
     const navigateTo = (path) => navigate(path);
     const toggleShowAllCategories = () => setShowAllCategories(!showAllCategories);
 
-
-
     // ✅ Handle Newsletter Subscription
     const handleNewsletterSubscribe = async (e) => {
         e.preventDefault();
@@ -809,6 +900,47 @@ const Home = () => {
     // ✅ Format time for display
     const formatTime = (time) => {
         return time.toString().padStart(2, '0');
+    };
+
+    // ✅ **Format Price Display - UPDATED for exact amounts**
+    const formatPriceDisplay = (price) => {
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice) || numPrice <= 0) return '₹0';
+
+        // Show with 2 decimal places
+        const formatted = numPrice.toFixed(2);
+
+        // Remove .00 if it's whole number
+        if (formatted.endsWith('.00')) {
+            return `₹${parseInt(numPrice)}`;
+        }
+
+        // Remove trailing zeros after decimal
+        const cleaned = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+        return `₹${cleaned}`;
+    };
+
+    // ✅ **Format Price Rounded to nearest rupee**
+    const formatPriceRounded = (price) => {
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice) || numPrice <= 0) return '₹0';
+        return `₹${Math.round(numPrice)}`;
+    };
+
+    // ✅ **Calculate Discount Price from Percentage - UPDATED for exact calculation**
+    const calculatePriceFromDiscount = (originalPrice, discountPercent) => {
+        const price = parseFloat(originalPrice) || 0;
+        const discount = parseFloat(discountPercent) || 0;
+
+        if (price <= 0 || discount <= 0 || discount > 100) {
+            return price;
+        }
+
+        const discountAmount = price * (discount / 100);
+        const finalPrice = price - discountAmount;
+
+        // Return with 2 decimal places
+        return parseFloat(finalPrice.toFixed(2));
     };
 
     if (isLoading) return (
@@ -1219,7 +1351,7 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Daily Deals Section with Working Timer */}
+                {/* Daily Deals Section with Working Timer - UPDATED for exact prices */}
                 {dailyDeals.length > 0 && (
                     <section className="deals-section">
                         <div className="section-header">
@@ -1283,10 +1415,12 @@ const Home = () => {
                                         <div className="product-info">
                                             <h3 className="product-name">{product.name}</h3>
                                             <div className="price-container">
-                                                <span className="original-price">₹{priceInfo.originalPrice}</span>
-                                                <span className="current-price">₹{priceInfo.discountPrice}</span>
+                                                {/* ✅ UPDATED: Using EXACT formatted prices */}
+                                                <span className="original-price">{priceInfo.formattedOriginalPrice}</span>
+                                                <span className="current-price">{priceInfo.formattedDiscountPrice}</span>
                                                 <span className="discount-percent">-{priceInfo.discountPercentage}%</span>
                                             </div>
+
                                             <button
                                                 className="add-to-cart square-btn"
                                                 onClick={() => handleAddToCart(product)}
@@ -1384,11 +1518,11 @@ const Home = () => {
                                             <div className="trending-price">
                                                 {priceInfo.hasDiscount ? (
                                                     <>
-                                                        <span className="original-price">₹{priceInfo.originalPrice}</span>
-                                                        <span className="current-price">₹{priceInfo.discountPrice}</span>
+                                                        <span className="original-price">{priceInfo.formattedOriginalPrice}</span>
+                                                        <span className="current-price">{priceInfo.formattedDiscountPrice}</span>
                                                     </>
                                                 ) : (
-                                                    <span className="current-price">₹{priceInfo.originalPrice}</span>
+                                                    <span className="current-price">{priceInfo.formattedOriginalPrice}</span>
                                                 )}
                                             </div>
                                             <div className="trending-rating">
@@ -1475,11 +1609,11 @@ const Home = () => {
                                                 <div className="price-container">
                                                     {priceInfo.hasDiscount ? (
                                                         <>
-                                                            <span className="original-price">₹{priceInfo.originalPrice}</span>
-                                                            <span className="current-price">₹{priceInfo.discountPrice}</span>
+                                                            <span className="original-price">{priceInfo.formattedOriginalPrice}</span>
+                                                            <span className="current-price">{priceInfo.formattedDiscountPrice}</span>
                                                         </>
                                                     ) : (
-                                                        <span className="current-price">₹{priceInfo.originalPrice}</span>
+                                                        <span className="current-price">{priceInfo.formattedOriginalPrice}</span>
                                                     )}
                                                 </div>
                                                 <div className="product-rating">
@@ -1535,12 +1669,12 @@ const Home = () => {
                                 <div className="quick-view-price">
                                     {getDisplayPrice(quickViewProduct).hasDiscount ? (
                                         <>
-                                            <span className="original">₹{getDisplayPrice(quickViewProduct).originalPrice}</span>
-                                            <span className="current">₹{getDisplayPrice(quickViewProduct).discountPrice}</span>
+                                            <span className="original">{getDisplayPrice(quickViewProduct).formattedOriginalPrice}</span>
+                                            <span className="current">{getDisplayPrice(quickViewProduct).formattedDiscountPrice}</span>
                                             <span className="discount-percent">-{getDisplayPrice(quickViewProduct).discountPercentage}% OFF</span>
                                         </>
                                     ) : (
-                                        <span className="current">₹{getDisplayPrice(quickViewProduct).originalPrice}</span>
+                                        <span className="current">{getDisplayPrice(quickViewProduct).formattedOriginalPrice}</span>
                                     )}
                                 </div>
                                 <p className="quick-view-description">{quickViewProduct.description}</p>

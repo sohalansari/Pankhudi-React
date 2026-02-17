@@ -4,6 +4,25 @@
 // const bodyParser = require("body-parser");
 // const cors = require("cors");
 // const path = require("path");
+// const fs = require('fs');
+
+// /* ================= EMAIL SERVICE ================= */
+// // Create email service directory if it doesn't exist
+// const emailServiceDir = path.join(__dirname, 'services');
+// if (!fs.existsSync(emailServiceDir)) {
+//     fs.mkdirSync(emailServiceDir, { recursive: true });
+// }
+
+// // Import email service
+// let emailService;
+// try {
+//     emailService = require("./services/emailService");
+//     console.log("✅ Email service loaded successfully");
+// } catch (error) {
+//     console.error("❌ Error loading email service:", error.message);
+//     console.log("⚠️ Email service will be created on server start");
+//     emailService = null;
+// }
 
 // /* ================= ROUTES ================= */
 // const authRoutes = require("./routes/auth");
@@ -15,140 +34,29 @@
 // const searchRoutes = require("./routes/searchRoutes");
 // const categoryRoutes = require("./routes/categories");
 // const bannerRoutes = require("./routes/banner");
-
-
-
-// const app = express();
-
-// /* ================= BODY & CORS ================= */
-// app.use(bodyParser.json({ limit: "5mb" }));
-// app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(
-//     cors({
-//         origin: "http://localhost:3000",
-//         credentials: true,
-//     })
-// );
-
-// /* ================= DB POOL ================= */
-// const db = mysql.createPool({
-//     host: process.env.DB_HOST || "localhost",
-//     user: process.env.DB_USER || "root",
-//     password: process.env.DB_PASSWORD || "",
-//     database: process.env.DB_NAME || "pankhudi", // ✅ one fixed DB
-//     port: process.env.DB_PORT || 3306,
-//     connectionLimit: 10,
-// });
-
-// /* ================= DB TEST ================= */
-// db.getConnection((err, connection) => {
-//     if (err) {
-//         console.error("❌ Database connection failed:", err.message);
-//     } else {
-//         console.log("✅ Database connected successfully");
-//         connection.release();
-//     }
-// });
-
-// /* ================= DB MIDDLEWARE ================= */
-// app.use((req, res, next) => {
-//     req.db = db;
-//     next();
-// });
-
-// /* ================= STATIC FILES ================= */
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
-
-// /* ================= ROUTES ================= */
-// app.use("/api", authRoutes);
-// app.use("/api", profileRoutes);
-// app.use("/api/products", productsRoutes);
-// app.use("/api/chat", chatRoutes);
-// app.use("/api/cart", cartRoutes);
-// app.use("/api/reviews", reviewRoutes);
-// app.use("/api/search", searchRoutes);
-// app.use("/api/categories", categoryRoutes);
-// app.use("/api/banners", bannerRoutes);
-
-// /* ================= EXTRA CATEGORY APIs ================= */
-
-// // ✅ Sub Categories
-// app.get("/api/subcategories", (req, res) => {
-//     const sql = "SELECT * FROM sub_categories ORDER BY id DESC";
-//     req.db.query(sql, (err, results) => {
-//         if (err) {
-//             console.error("❌ Subcategories SQL Error:", err.sqlMessage);
-//             return res.status(500).json({
-//                 message: "Subcategories fetch failed",
-//                 error: err.sqlMessage,
-//             });
-//         }
-//         res.json(results);
-//     });
-// });
-
-// // ✅ Sub Sub Categories (FIXED TABLE NAME)
-// app.get("/api/subsubcategories", (req, res) => {
-//     const sql = "SELECT * FROM sub_sub_categories ORDER BY id DESC";
-//     req.db.query(sql, (err, results) => {
-//         if (err) {
-//             console.error("❌ SubSubCategories SQL Error:", err.sqlMessage);
-//             return res.status(500).json({
-//                 message: "SubSubCategories fetch failed",
-//                 error: err.sqlMessage,
-//             });
-//         }
-//         res.json(results);
-//     });
-// });
-
-// /* ================= HEALTH CHECK ================= */
-// app.get("/health", (req, res) => {
-//     res.json({ status: "ok" });
-// });
-
-// /* ================= FALLBACK ================= */
-// app.use((req, res) => {
-//     res.status(404).json({ message: "Not found" });
-// });
-
-// /* ================= START SERVER ================= */
-// const port = process.env.PORT || 5000;
-// app.listen(port, () => {
-//     console.log(`🚀 Server running on http://localhost:${port}`);
-//     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
-// });
-
-// /* ================= SAFETY ================= */
-// process.on("unhandledRejection", (reason) => {
-//     console.error("❌ Unhandled Rejection:", reason);
-// });
-
-
-
-// require("dotenv").config();
-// const express = require("express");
-// const mysql = require("mysql");
-// const bodyParser = require("body-parser");
-// const cors = require("cors");
-// const path = require("path");
-
-// /* ================= ROUTES ================= */
-// const authRoutes = require("./routes/auth");
-// const profileRoutes = require("./routes/profile");
-// const productsRoutes = require("./routes/products");
-// const chatRoutes = require("./routes/chat");
-// const cartRoutes = require("./routes/cart");
-// const reviewRoutes = require("./routes/reviews");
-// const searchRoutes = require("./routes/searchRoutes");
-// const categoryRoutes = require("./routes/categories");
-// const bannerRoutes = require("./routes/banner");
+// const addressRoutes = require("./routes/address");
+// const paymentRoutes = require("./routes/paymentRoutes");
 
 // // ✅ NEW CHECKOUT-RELATED ROUTES
 // const orderRoutes = require("./routes/orderRoutes");
-// const userRoutes = require("./routes/userRoutes");
 // const productDetailRoutes = require("./routes/productDetailRoutes");
+
+// // ✅ IMPORT USER ROUTES WITH ERROR HANDLING
+// let userRoutes;
+// try {
+//     userRoutes = require("./routes/userRoutes");
+//     console.log("✅ userRoutes loaded successfully");
+// } catch (error) {
+//     console.error("❌ Error loading userRoutes:", error.message);
+//     const express = require("express");
+//     userRoutes = express.Router();
+//     userRoutes.get("*", (req, res) => {
+//         res.status(500).json({
+//             success: false,
+//             message: "User routes are currently unavailable. Please check server configuration."
+//         });
+//     });
+// }
 
 // const app = express();
 
@@ -204,6 +112,30 @@
 //                 }
 //                 connection.release();
 //             });
+
+//             // ✅ Create email_logs table if not exists
+//             connection.query(`
+//                 CREATE TABLE IF NOT EXISTS email_logs (
+//                     id INT AUTO_INCREMENT PRIMARY KEY,
+//                     order_id INT,
+//                     recipient VARCHAR(255) NOT NULL,
+//                     subject VARCHAR(255) NOT NULL,
+//                     message_id VARCHAR(255),
+//                     status ENUM('pending', 'sent', 'failed', 'logged') DEFAULT 'pending',
+//                     error TEXT,
+//                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//                     sent_at DATETIME,
+//                     INDEX idx_order_id (order_id),
+//                     INDEX idx_status (status),
+//                     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+//                 )
+//             `, (tableErr) => {
+//                 if (tableErr) {
+//                     console.error("⚠️ Email logs table creation error:", tableErr.message);
+//                 } else {
+//                     console.log("✅ Email logs table ready");
+//                 }
+//             });
 //         }
 //     });
 // };
@@ -228,6 +160,13 @@
 //         });
 //     };
 
+//     next();
+// });
+
+// /* ================= EMAIL SERVICE MIDDLEWARE ================= */
+// // Make email service available to all routes
+// app.use((req, res, next) => {
+//     req.emailService = emailService;
 //     next();
 // });
 
@@ -257,8 +196,19 @@
 // });
 
 // /* ================= STATIC FILES ================= */
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+//     setHeaders: (res) => {
+//         res.setHeader("Access-Control-Allow-Origin", "*");
+//         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+//     }
+// }));
+
+// app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads"), {
+//     setHeaders: (res) => {
+//         res.setHeader("Access-Control-Allow-Origin", "*");
+//         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+//     }
+// }));
 
 // // Serve static images for products
 // app.use("/product-images", express.static(path.join(__dirname, "uploads/products")));
@@ -286,6 +236,8 @@
 // app.use("/api/orders", orderRoutes);
 // app.use("/api/users", userRoutes);
 // app.use("/api/product-details", productDetailRoutes);
+// app.use("/api/address", addressRoutes);
+// app.use("/api/payment", paymentRoutes);
 
 // console.log("✅ All routes loaded successfully");
 
@@ -330,7 +282,7 @@
 //     });
 // });
 
-// // ✅ Get All Categories with Hierarchy (NEW)
+// // ✅ Get All Categories with Hierarchy
 // app.get("/api/categories/hierarchy", (req, res) => {
 //     const sql = `
 //         SELECT 
@@ -359,7 +311,6 @@
 //             });
 //         }
 
-//         // Organize into hierarchical structure
 //         const categories = {};
 //         results.forEach(row => {
 //             if (!categories[row.category_id]) {
@@ -445,25 +396,11 @@
 //             icon: "💵"
 //         },
 //         {
-//             id: "card",
-//             name: "Credit/Debit Card",
-//             description: "Pay securely with your card",
+//             id: "razorpay",
+//             name: "Razorpay",
+//             description: "Pay via Card, UPI, Net Banking, Wallet",
 //             available: true,
-//             icon: "💳"
-//         },
-//         {
-//             id: "upi",
-//             name: "UPI",
-//             description: "Pay using UPI apps",
-//             available: true,
-//             icon: "📱"
-//         },
-//         {
-//             id: "netbanking",
-//             name: "Net Banking",
-//             description: "Pay via online banking",
-//             available: true,
-//             icon: "🏦"
+//             icon: "🟣"
 //         }
 //     ];
 
@@ -477,7 +414,6 @@
 // app.post("/api/promo/validate", (req, res) => {
 //     const { promoCode } = req.body;
 
-//     // Mock promo codes - in production, query from database
 //     const validPromoCodes = {
 //         "WELCOME10": { discount: 10, minOrder: 0, maxDiscount: 500, type: "percentage" },
 //         "SAVE20": { discount: 20, minOrder: 1000, maxDiscount: 1000, type: "percentage" },
@@ -503,7 +439,7 @@
 //     }
 // });
 
-// // ✅ Get Checkout Summary (for cart validation)
+// // ✅ Get Checkout Summary
 // app.post("/api/checkout/summary", async (req, res) => {
 //     try {
 //         const { items, shippingMethod = "standard" } = req.body;
@@ -515,7 +451,6 @@
 //             });
 //         }
 
-//         // Calculate totals
 //         let subtotal = 0;
 //         let discountTotal = 0;
 //         let hasFreeShipping = false;
@@ -537,13 +472,12 @@
 //             }
 //         }
 
-//         // Calculate shipping
 //         let shipping = 0;
 //         if (!hasFreeShipping) {
 //             shipping = shippingMethod === "express" ? 100 : 50;
 //         }
 
-//         const tax = subtotal * 0.18; // 18% GST
+//         const tax = subtotal * 0.18;
 //         const total = subtotal + shipping + tax - discountTotal;
 
 //         res.json({
@@ -570,12 +504,137 @@
 
 // console.log("✅ Checkout helper APIs loaded");
 
+// // ✅ FALLBACK USER ROUTES
+// app.get("/api/users/:id/details", (req, res) => {
+//     const userId = req.params.id;
+//     const db = req.db;
+
+//     db.query(`
+//         SELECT id, name, email, phone, address, city, state, 
+//                postal_code as postalCode, country, avatar, is_verified as isVerified
+//         FROM users 
+//         WHERE id = ? AND is_active = 1 AND is_deleted = 0
+//     `, [userId], (err, results) => {
+//         if (err) {
+//             console.error("Get user error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch user details"
+//             });
+//         }
+
+//         if (results.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "User not found"
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             user: results[0]
+//         });
+//     });
+// });
+
+// app.get("/api/users/:id/addresses", (req, res) => {
+//     const userId = req.params.id;
+//     const db = req.db;
+
+//     db.query(`
+//         SELECT 
+//             id, user_id as userId, 
+//             address_type as addressType,
+//             full_name as fullName,
+//             address_line as addressLine,
+//             city, state, 
+//             postal_code as postalCode,
+//             country, phone, 
+//             is_default as isDefault
+//         FROM user_addresses 
+//         WHERE user_id = ? AND is_active = 1
+//         ORDER BY is_default DESC, created_at DESC
+//     `, [userId], (err, results) => {
+//         if (err) {
+//             console.error("Get addresses error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch addresses"
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             addresses: results
+//         });
+//     });
+// });
+
+// /* ================= 📧 EMAIL TEST ENDPOINT ================= */
+// app.get("/api/test-email", async (req, res) => {
+//     console.log("========== 📧 TEST EMAIL ENDPOINT ==========");
+
+//     if (!emailService) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "Email service not loaded",
+//             solution: "Please check if backend/services/emailService.js exists"
+//         });
+//     }
+
+//     try {
+//         const testResult = await emailService.testEmailConfig();
+//         res.json({
+//             success: testResult.success,
+//             message: testResult.message || "Email test completed",
+//             details: testResult,
+//             env: {
+//                 EMAIL_USER: process.env.EMAIL_USER ? "✅ Set" : "❌ Missing",
+//                 EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Missing",
+//                 FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000"
+//             }
+//         });
+//     } catch (error) {
+//         console.error("❌ Test email error:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Email test failed",
+//             error: error.message
+//         });
+//     }
+// });
+
+// /* ================= EMAIL LOGS ENDPOINT ================= */
+// app.get("/api/email-logs", (req, res) => {
+//     const db = req.db;
+//     const { limit = 20 } = req.query;
+
+//     db.query(`
+//         SELECT * FROM email_logs 
+//         ORDER BY created_at DESC 
+//         LIMIT ?
+//     `, [parseInt(limit)], (err, results) => {
+//         if (err) {
+//             console.error("❌ Email logs fetch error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch email logs"
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             logs: results || []
+//         });
+//     });
+// });
+
 // /* ================= DATABASE HEALTH CHECK ================= */
 // app.get("/api/db-health", (req, res) => {
 //     const requiredTables = [
 //         'users', 'products', 'cart', 'orders', 'order_items',
 //         'categories', 'sub_categories', 'sub_sub_categories',
-//         'user_addresses'
+//         'user_addresses', 'email_logs'
 //     ];
 
 //     const checkPromises = requiredTables.map(table => {
@@ -583,7 +642,7 @@
 //             req.db.query(`SHOW TABLES LIKE '${table}'`, (err, results) => {
 //                 resolve({
 //                     table,
-//                     exists: results.length > 0,
+//                     exists: results && results.length > 0,
 //                     error: err ? err.message : null
 //                 });
 //             });
@@ -615,7 +674,6 @@
 
 // /* ================= HEALTH CHECK ================= */
 // app.get("/health", (req, res) => {
-//     // Test database connection
 //     req.db.getConnection((err, connection) => {
 //         if (err) {
 //             return res.status(503).json({
@@ -640,6 +698,7 @@
 //             res.json({
 //                 status: "healthy",
 //                 database: "connected",
+//                 email: emailService ? "✅ Ready" : "❌ Not configured",
 //                 timestamp: new Date().toISOString(),
 //                 uptime: process.uptime(),
 //                 memory: process.memoryUsage()
@@ -655,8 +714,13 @@
 //         timestamp: new Date().toISOString(),
 //         services: {
 //             database: "checking...",
+//             email: emailService ? "loaded" : "not loaded",
 //             api: "running",
 //             memory: process.memoryUsage()
+//         },
+//         env: {
+//             NODE_ENV: process.env.NODE_ENV || 'development',
+//             EMAIL_CONFIGURED: !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD)
 //         }
 //     };
 
@@ -702,6 +766,10 @@
 //                 shippingMethods: "GET /api/shipping-methods",
 //                 paymentMethods: "GET /api/payment-methods",
 //                 promoValidation: "POST /api/promo/validate"
+//             },
+//             email: {
+//                 test: "GET /api/test-email",
+//                 logs: "GET /api/email-logs"
 //             }
 //         },
 //         health: {
@@ -720,7 +788,7 @@
 //         success: false,
 //         message: "Route not found",
 //         requestedUrl: req.originalUrl,
-//         availableRoutes: ["/api", "/health", "/api/health/detailed"]
+//         availableRoutes: ["/api", "/health", "/api/health/detailed", "/api/test-email", "/api/email-logs"]
 //     });
 // });
 
@@ -734,7 +802,29 @@
 //     console.log(`🛒 Checkout API: http://localhost:${port}/api/orders`);
 //     console.log(`🛍️  Cart API: http://localhost:${port}/api/cart`);
 //     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
-//     console.log(`\n✅ Ready for checkout implementation!\n`);
+//     console.log(`👤 User API: http://localhost:${port}/api/users`);
+//     console.log(`📧 Email API: http://localhost:${port}/api/test-email`);
+//     console.log(`📋 Email Logs: http://localhost:${port}/api/email-logs`);
+
+//     // Test email configuration on startup
+//     if (emailService) {
+//         emailService.testEmailConfig().then(result => {
+//             if (result.success) {
+//                 console.log("✅ Email service is ready");
+//             } else {
+//                 console.warn("⚠️ Email service not configured properly");
+//                 console.warn("   Please set EMAIL_USER and EMAIL_PASSWORD in .env file");
+//                 console.warn("   Or check backend/services/emailService.js");
+//             }
+//         }).catch(err => {
+//             console.error("❌ Email service test failed:", err.message);
+//         });
+//     } else {
+//         console.warn("⚠️ Email service not loaded");
+//         console.warn("   Please create backend/services/emailService.js");
+//     }
+
+//     console.log(`\n✅ Server is fully operational!\n`);
 // });
 
 // /* ================= GRACEFUL SHUTDOWN ================= */
@@ -754,7 +844,6 @@
 //         });
 //     });
 
-//     // Force shutdown after 10 seconds
 //     setTimeout(() => {
 //         console.error("💥 Forcing shutdown after timeout");
 //         process.exit(1);
@@ -801,19 +890,31 @@
 
 
 
-
-
-
-
-
-
-
 require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const fs = require('fs');
+
+/* ================= EMAIL SERVICE ================= */
+// Create email service directory if it doesn't exist
+const emailServiceDir = path.join(__dirname, 'services');
+if (!fs.existsSync(emailServiceDir)) {
+    fs.mkdirSync(emailServiceDir, { recursive: true });
+}
+
+// Import email service
+let emailService;
+try {
+    emailService = require("./services/emailService");
+    console.log("✅ Email service loaded successfully");
+} catch (error) {
+    console.error("❌ Error loading email service:", error.message);
+    console.log("⚠️ Email service will be created on server start");
+    emailService = null;
+}
 
 /* ================= ROUTES ================= */
 const authRoutes = require("./routes/auth");
@@ -825,16 +926,17 @@ const reviewRoutes = require("./routes/reviews");
 const searchRoutes = require("./routes/searchRoutes");
 const categoryRoutes = require("./routes/categories");
 const bannerRoutes = require("./routes/banner");
-// Import the addresses routes
 const addressRoutes = require("./routes/address");
-// const settingsRoutes = require("./routes/settings");
-// const securityRoutes = require("./routes/security");
-
-
+const paymentRoutes = require("./routes/paymentRoutes");
+const promoRoutes = require("./routes/promoRoutes");
 
 // ✅ NEW CHECKOUT-RELATED ROUTES
 const orderRoutes = require("./routes/orderRoutes");
 const productDetailRoutes = require("./routes/productDetailRoutes");
+const userAddressRoutes = require("./routes/address");
+
+// email logs route
+const emailRoutes = require("./routes/emailRoutes");
 
 // ✅ IMPORT USER ROUTES WITH ERROR HANDLING
 let userRoutes;
@@ -843,7 +945,6 @@ try {
     console.log("✅ userRoutes loaded successfully");
 } catch (error) {
     console.error("❌ Error loading userRoutes:", error.message);
-    // Create a simple router as fallback
     const express = require("express");
     userRoutes = express.Router();
     userRoutes.get("*", (req, res) => {
@@ -908,6 +1009,60 @@ const testDatabaseConnection = (retries = 3, delay = 2000) => {
                 }
                 connection.release();
             });
+
+            // ✅ Create email_logs table if not exists
+            connection.query(`
+                CREATE TABLE IF NOT EXISTS email_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id INT,
+                    recipient VARCHAR(255) NOT NULL,
+                    subject VARCHAR(255) NOT NULL,
+                    message_id VARCHAR(255),
+                    status ENUM('pending', 'sent', 'failed', 'logged') DEFAULT 'pending',
+                    error TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    sent_at DATETIME,
+                    INDEX idx_order_id (order_id),
+                    INDEX idx_status (status),
+                    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+                )
+            `, (tableErr) => {
+                if (tableErr) {
+                    console.error("⚠️ Email logs table creation error:", tableErr.message);
+                } else {
+                    console.log("✅ Email logs table ready");
+                }
+            });
+
+            // ✅ Create user_addresses table if not exists (important for addresses)
+            connection.query(`
+                CREATE TABLE IF NOT EXISTS user_addresses (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    address_type ENUM('home', 'office', 'other') DEFAULT 'home',
+                    full_name VARCHAR(255) NOT NULL,
+                    phone VARCHAR(20) NOT NULL,
+                    address_line TEXT NOT NULL,
+                    city VARCHAR(100) NOT NULL,
+                    state VARCHAR(100) NOT NULL,
+                    postal_code VARCHAR(20) NOT NULL,
+                    country VARCHAR(100) DEFAULT 'India',
+                    is_default TINYINT(1) DEFAULT 0,
+                    is_active TINYINT(1) DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_is_default (is_default),
+                    INDEX idx_is_active (is_active),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `, (tableErr) => {
+                if (tableErr) {
+                    console.error("⚠️ User addresses table creation error:", tableErr.message);
+                } else {
+                    console.log("✅ User addresses table ready");
+                }
+            });
         }
     });
 };
@@ -932,6 +1087,13 @@ app.use((req, res, next) => {
         });
     };
 
+    next();
+});
+
+/* ================= EMAIL SERVICE MIDDLEWARE ================= */
+// Make email service available to all routes
+app.use((req, res, next) => {
+    req.emailService = emailService;
     next();
 });
 
@@ -961,9 +1123,6 @@ app.use((err, req, res, next) => {
 });
 
 /* ================= STATIC FILES ================= */
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res) => {
         res.setHeader("Access-Control-Allow-Origin", "*");
@@ -977,7 +1136,6 @@ app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/up
         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     }
 }));
-
 
 // Serve static images for products
 app.use("/product-images", express.static(path.join(__dirname, "uploads/products")));
@@ -1003,12 +1161,16 @@ app.use("/api/banners", bannerRoutes);
 
 // ✅ NEW CHECKOUT-RELATED ROUTES
 app.use("/api/orders", orderRoutes);
-app.use("/api/users", userRoutes); // ✅ This will work now with error handling
 app.use("/api/product-details", productDetailRoutes);
-// Add this line in your routes section (after other routes)
 app.use("/api/address", addressRoutes);
-// app.use("/api/settings", settingsRoutes);
-// app.use("/api/security", securityRoutes);
+app.use("/api/payment", paymentRoutes);
+
+
+
+app.use("/api/users", userAddressRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/email", emailRoutes);
+app.use("/api/promo", promoRoutes);
 
 console.log("✅ All routes loaded successfully");
 
@@ -1053,7 +1215,7 @@ app.get("/api/subsubcategories", (req, res) => {
     });
 });
 
-// ✅ Get All Categories with Hierarchy (NEW)
+// ✅ Get All Categories with Hierarchy
 app.get("/api/categories/hierarchy", (req, res) => {
     const sql = `
         SELECT 
@@ -1082,7 +1244,6 @@ app.get("/api/categories/hierarchy", (req, res) => {
             });
         }
 
-        // Organize into hierarchical structure
         const categories = {};
         results.forEach(row => {
             if (!categories[row.category_id]) {
@@ -1168,25 +1329,11 @@ app.get("/api/payment-methods", (req, res) => {
             icon: "💵"
         },
         {
-            id: "card",
-            name: "Credit/Debit Card",
-            description: "Pay securely with your card",
+            id: "razorpay",
+            name: "Razorpay",
+            description: "Pay via Card, UPI, Net Banking, Wallet",
             available: true,
-            icon: "💳"
-        },
-        {
-            id: "upi",
-            name: "UPI",
-            description: "Pay using UPI apps",
-            available: true,
-            icon: "📱"
-        },
-        {
-            id: "netbanking",
-            name: "Net Banking",
-            description: "Pay via online banking",
-            available: true,
-            icon: "🏦"
+            icon: "🟣"
         }
     ];
 
@@ -1200,7 +1347,6 @@ app.get("/api/payment-methods", (req, res) => {
 app.post("/api/promo/validate", (req, res) => {
     const { promoCode } = req.body;
 
-    // Mock promo codes - in production, query from database
     const validPromoCodes = {
         "WELCOME10": { discount: 10, minOrder: 0, maxDiscount: 500, type: "percentage" },
         "SAVE20": { discount: 20, minOrder: 1000, maxDiscount: 1000, type: "percentage" },
@@ -1226,7 +1372,7 @@ app.post("/api/promo/validate", (req, res) => {
     }
 });
 
-// ✅ Get Checkout Summary (for cart validation)
+// ✅ Get Checkout Summary
 app.post("/api/checkout/summary", async (req, res) => {
     try {
         const { items, shippingMethod = "standard" } = req.body;
@@ -1238,7 +1384,6 @@ app.post("/api/checkout/summary", async (req, res) => {
             });
         }
 
-        // Calculate totals
         let subtotal = 0;
         let discountTotal = 0;
         let hasFreeShipping = false;
@@ -1260,13 +1405,12 @@ app.post("/api/checkout/summary", async (req, res) => {
             }
         }
 
-        // Calculate shipping
         let shipping = 0;
         if (!hasFreeShipping) {
             shipping = shippingMethod === "express" ? 100 : 50;
         }
 
-        const tax = subtotal * 0.18; // 18% GST
+        const tax = subtotal * 0.18;
         const total = subtotal + shipping + tax - discountTotal;
 
         res.json({
@@ -1293,7 +1437,7 @@ app.post("/api/checkout/summary", async (req, res) => {
 
 console.log("✅ Checkout helper APIs loaded");
 
-// ✅ FALLBACK USER ROUTES (in case userRoutes.js fails)
+// ✅ FALLBACK USER ROUTES (ये तब use होंगे जब userAddressRoutes में न हों)
 app.get("/api/users/:id/details", (req, res) => {
     const userId = req.params.id;
     const db = req.db;
@@ -1326,35 +1470,61 @@ app.get("/api/users/:id/details", (req, res) => {
     });
 });
 
-app.get("/api/users/:id/addresses", (req, res) => {
-    const userId = req.params.id;
+/* ================= 📧 EMAIL TEST ENDPOINT ================= */
+app.get("/api/test-email", async (req, res) => {
+    console.log("========== 📧 TEST EMAIL ENDPOINT ==========");
+
+    if (!emailService) {
+        return res.status(500).json({
+            success: false,
+            message: "Email service not loaded",
+            solution: "Please check if backend/services/emailService.js exists"
+        });
+    }
+
+    try {
+        const testResult = await emailService.testEmailConfig();
+        res.json({
+            success: testResult.success,
+            message: testResult.message || "Email test completed",
+            details: testResult,
+            env: {
+                EMAIL_USER: process.env.EMAIL_USER ? "✅ Set" : "❌ Missing",
+                EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Missing",
+                FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000"
+            }
+        });
+    } catch (error) {
+        console.error("❌ Test email error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Email test failed",
+            error: error.message
+        });
+    }
+});
+
+/* ================= EMAIL LOGS ENDPOINT ================= */
+app.get("/api/email-logs", (req, res) => {
     const db = req.db;
+    const { limit = 20 } = req.query;
 
     db.query(`
-        SELECT 
-            id, user_id as userId, 
-            address_type as addressType,
-            full_name as fullName,
-            address_line as addressLine,
-            city, state, 
-            postal_code as postalCode,
-            country, phone, 
-            is_default as isDefault
-        FROM user_addresses 
-        WHERE user_id = ? AND is_active = 1
-        ORDER BY is_default DESC, created_at DESC
-    `, [userId], (err, results) => {
+        SELECT * FROM email_logs 
+        ORDER BY created_at DESC 
+        LIMIT ?
+    `, [parseInt(limit)], (err, results) => {
         if (err) {
-            console.error("Get addresses error:", err);
+            console.error("❌ Email logs fetch error:", err);
             return res.status(500).json({
                 success: false,
-                message: "Failed to fetch addresses"
+                message: "Failed to fetch email logs"
             });
         }
 
         res.json({
             success: true,
-            addresses: results
+            logs: results || []
         });
     });
 });
@@ -1364,7 +1534,7 @@ app.get("/api/db-health", (req, res) => {
     const requiredTables = [
         'users', 'products', 'cart', 'orders', 'order_items',
         'categories', 'sub_categories', 'sub_sub_categories',
-        'user_addresses'
+        'user_addresses', 'email_logs'
     ];
 
     const checkPromises = requiredTables.map(table => {
@@ -1372,7 +1542,7 @@ app.get("/api/db-health", (req, res) => {
             req.db.query(`SHOW TABLES LIKE '${table}'`, (err, results) => {
                 resolve({
                     table,
-                    exists: results.length > 0,
+                    exists: results && results.length > 0,
                     error: err ? err.message : null
                 });
             });
@@ -1404,7 +1574,6 @@ app.get("/api/db-health", (req, res) => {
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {
-    // Test database connection
     req.db.getConnection((err, connection) => {
         if (err) {
             return res.status(503).json({
@@ -1429,6 +1598,7 @@ app.get("/health", (req, res) => {
             res.json({
                 status: "healthy",
                 database: "connected",
+                email: emailService ? "✅ Ready" : "❌ Not configured",
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime(),
                 memory: process.memoryUsage()
@@ -1444,8 +1614,13 @@ app.get("/api/health/detailed", (req, res) => {
         timestamp: new Date().toISOString(),
         services: {
             database: "checking...",
+            email: emailService ? "loaded" : "not loaded",
             api: "running",
             memory: process.memoryUsage()
+        },
+        env: {
+            NODE_ENV: process.env.NODE_ENV || 'development',
+            EMAIL_CONFIGURED: !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD)
         }
     };
 
@@ -1485,12 +1660,17 @@ app.get("/api", (req, res) => {
             cart: "/api/cart/*",
             orders: "/api/orders/*",
             users: "/api/users/*",
+            addresses: "/api/users/:userId/addresses", // नया endpoint
             categories: "/api/categories/*",
             checkout: {
                 summary: "POST /api/checkout/summary",
                 shippingMethods: "GET /api/shipping-methods",
                 paymentMethods: "GET /api/payment-methods",
                 promoValidation: "POST /api/promo/validate"
+            },
+            email: {
+                test: "GET /api/test-email",
+                logs: "GET /api/email-logs"
             }
         },
         health: {
@@ -1503,13 +1683,41 @@ app.get("/api", (req, res) => {
     res.json(apiDocs);
 });
 
+// Route debugging endpoint - सभी registered routes दिखाने के लिए
+app.get("/api/debug/routes", (req, res) => {
+    const routes = [];
+
+    function print(path, layer) {
+        if (layer.route) {
+            layer.route.stack.forEach(print.bind(null, path + layer.route.path));
+        } else if (layer.name === 'router' && layer.handle.stack) {
+            layer.handle.stack.forEach(print.bind(null, path + layer.regexp.source));
+        } else if (layer.method) {
+            routes.push({
+                method: layer.method.toUpperCase(),
+                path: path,
+                name: layer.name
+            });
+        }
+    }
+
+    app._router.stack.forEach(print.bind(null, ''));
+
+    res.json({
+        success: true,
+        totalRoutes: routes.length,
+        routes: routes.sort((a, b) => a.path.localeCompare(b.path))
+    });
+});
+
 /* ================= FALLBACK ================= */
 app.use((req, res) => {
+    console.log("❌ 404 - Route not found:", req.method, req.url);
     res.status(404).json({
         success: false,
         message: "Route not found",
         requestedUrl: req.originalUrl,
-        availableRoutes: ["/api", "/health", "/api/health/detailed"]
+        availableRoutes: ["/api", "/health", "/api/health/detailed", "/api/test-email", "/api/email-logs", "/api/debug/routes"]
     });
 });
 
@@ -1524,6 +1732,29 @@ const server = app.listen(port, () => {
     console.log(`🛍️  Cart API: http://localhost:${port}/api/cart`);
     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
     console.log(`👤 User API: http://localhost:${port}/api/users`);
+    console.log(`🏠 Address API: http://localhost:${port}/api/users/:userId/addresses`);
+    console.log(`📧 Email API: http://localhost:${port}/api/test-email`);
+    console.log(`📋 Email Logs: http://localhost:${port}/api/email-logs`);
+    console.log(`🔧 Debug Routes: http://localhost:${port}/api/debug/routes`);
+
+    // Test email configuration on startup
+    if (emailService) {
+        emailService.testEmailConfig().then(result => {
+            if (result.success) {
+                console.log("✅ Email service is ready");
+            } else {
+                console.warn("⚠️ Email service not configured properly");
+                console.warn("   Please set EMAIL_USER and EMAIL_PASSWORD in .env file");
+                console.warn("   Or check backend/services/emailService.js");
+            }
+        }).catch(err => {
+            console.error("❌ Email service test failed:", err.message);
+        });
+    } else {
+        console.warn("⚠️ Email service not loaded");
+        console.warn("   Please create backend/services/emailService.js");
+    }
+
     console.log(`\n✅ Server is fully operational!\n`);
 });
 
@@ -1544,7 +1775,6 @@ const gracefulShutdown = () => {
         });
     });
 
-    // Force shutdown after 10 seconds
     setTimeout(() => {
         console.error("💥 Forcing shutdown after timeout");
         process.exit(1);
