@@ -1777,7 +1777,7 @@ body.menu-open {
 /* ===== ALERT DIALOGS ===== */
 .custom-alert-overlay {
     position: fixed;
-    top: 0;
+    top: 500%;
     left: 0;
     right: 0;
     bottom: 0;
@@ -1786,7 +1786,7 @@ body.menu-open {
     justify-content: center;
     z-index: var(--z-tooltip);
     padding: var(--space-lg);
-    background: rgba(0, 0, 0, 0.5);
+
 }
 
 .custom-alert-box {

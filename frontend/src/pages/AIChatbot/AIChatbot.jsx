@@ -560,7 +560,7 @@ function AIChatbot() {
                         <FaBars />
                     </button>
                     <FaTshirt className="brand-icon" />
-                    <h1 > Pankhudi</h1>
+                    <h1 className='brand-name' > Pankhudi</h1>
                 </div>
 
                 {/* Header */}
@@ -591,7 +591,7 @@ function AIChatbot() {
                     </div>
 
                     <div className="header-actions">
-                        <div className="search-container">
+                        <div className="search-containe">
                             <FaSearch className="search-icon" />
                             <input
                                 type="text"

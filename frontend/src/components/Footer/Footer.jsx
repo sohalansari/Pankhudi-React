@@ -122,7 +122,7 @@ const Footer = () => {
                         {/* Contact Info Column */}
                         <div className="footer-column">
                             <h3 className="footer-title">Contact Us</h3>
-                            <ul className="contact-info">
+                            <ul className="contact-in">
                                 <li>
                                     <FiMapPin className="contact-icon" />
                                     <span>123 Heritage Lane, Kurla, Maharashtra 400072, India</span>

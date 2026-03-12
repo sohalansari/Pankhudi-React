@@ -150,13 +150,13 @@
 }
 
 /* Contact info */
-.contact-info {
+.contact-in {
     list-style: none;
     padding: 0;
     margin: 0 0 25px 0;
 }
 
-.contact-info li {
+.contact-in li {
     display: flex;
     align-items: flex-start;
     margin-bottom: 15px;
