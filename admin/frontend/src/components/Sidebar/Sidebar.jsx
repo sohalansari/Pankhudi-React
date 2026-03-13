@@ -10,14 +10,17 @@ import {
     MdSettings,
     MdHelp,
     MdAssessment,
-    MdImage, // ✅ Banner के लिए सही icon
-    MdCollections
+    MdImage,
+    MdCollections,
+    MdPayment,
+    MdLocalOffer,
+    MdRateReview
 } from "react-icons/md";
 
 function Sidebar({ isCollapsed, onToggleCollapse }) {
     const location = useLocation();
 
-    // ✅ Organized menu items by category
+    // ✅ Complete menu for ALL pages & SQL tables
     const menuItems = [
         // Dashboard Section
         {
@@ -33,7 +36,7 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
             category: "main"
         },
 
-        // Users Section
+        // Users & Addresses
         {
             path: "/users",
             name: "Users",
@@ -47,7 +50,7 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
             category: "users"
         },
 
-        // Products Section
+        // Products & Categories (ALL levels)
         {
             path: "/products",
             name: "Manage Products",
@@ -62,32 +65,47 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
         },
         {
             path: "/categories",
-            name: "Manage Categories",
+            name: "Categories",
             icon: <MdCategory />,
             category: "products"
         },
+        // Orders & Payments
+        {
+            path: "/orders",
+            name: "Orders",
+            icon: <MdShoppingCart />,
+            category: "orders"
+        },
+        {
+            path: "/payments",
+            name: "Payments",
+            icon: <MdPayment />,
+            category: "orders"
+        },
 
-        // ✅ Banners Section (New)
+        // Content Management
         {
             path: "/banners",
-            name: "Manage Banners",
-            icon: <MdImage />, // ✅ Correct icon for banners
+            name: "Banners",
+            icon: <MdImage />,
             category: "content"
         },
         {
-            path: "/banner/create",
-            name: "Create Banner",
-            icon: <MdAddBox />,
-            category: "content"
-        },
-        {
-            path: "/banner-slider",
-            name: "Banner Slider",
-            icon: <MdCollections />,
+            path: "/promocodes",
+            name: "Promo Codes",
+            icon: <MdLocalOffer />,
             category: "content"
         },
 
-        // Settings Section
+        // Reviews
+        {
+            path: "/reviews",
+            name: "Reviews",
+            icon: <MdRateReview />,
+            category: "content"
+        },
+
+        // Settings
         {
             path: "/settings",
             name: "Settings",
@@ -96,7 +114,7 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
         },
         {
             path: "/help",
-            name: "Help & Support",
+            name: "Help",
             icon: <MdHelp />,
             category: "settings"
         }
@@ -114,9 +132,10 @@ function Sidebar({ isCollapsed, onToggleCollapse }) {
     // Category labels
     const categoryLabels = {
         main: "Dashboard",
-        users: "Users Management",
-        products: "Products Management",
-        content: "Content Management", // ✅ New category
+        users: "Users & Carts",
+        products: "Products & Categories",
+        orders: "Orders & Payments",
+        content: "Content & Reviews",
         settings: "Settings"
     };
 
