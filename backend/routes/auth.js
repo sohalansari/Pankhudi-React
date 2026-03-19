@@ -1537,6 +1537,143 @@ router.post('/resend-2fa', (req, res) => {
 // GOOGLE AUTH ROUTE (Unchanged)
 // ============================================
 
+// router.post('/auth/google', async (req, res) => {
+//     const db = getDb(req);
+//     try {
+//         const { token } = req.body;
+//         if (!token) return res.status(400).json({ success: false, message: 'Token required' });
+
+//         const ticket = await client.verifyIdToken({
+//             idToken: token,
+//             audience: process.env.GOOGLE_CLIENT_ID
+//         });
+
+//         const payload = ticket.getPayload();
+//         const googleId = payload.sub;
+//         const email = payload.email?.toLowerCase();
+//         const name = payload.name;
+//         const picture = payload.picture;
+
+//         // Check if user exists
+//         const existing = await new Promise((resolve, reject) =>
+//             db.query('SELECT * FROM users WHERE google_id = ? OR email = ?', [googleId, email],
+//                 (err, rows) => err ? reject(err) : resolve(rows)
+//             )
+//         );
+
+//         let user;
+//         if (existing.length === 0) {
+//             // Create new user
+//             const result = await new Promise((resolve, reject) =>
+//                 db.query(
+//                     'INSERT INTO users (name, email, google_id, avatar, auth_method, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+//                     [name, email, googleId, picture, 'google', 1, 1],
+//                     (err, r) => err ? reject(err) : resolve(r)
+//                 )
+//             );
+//             user = {
+//                 id: result.insertId,
+//                 name,
+//                 email,
+//                 google_id: googleId,
+//                 avatar: picture,
+//                 auth_method: 'google',
+//                 is_verified: 1,
+//                 is_premium: 0
+//             };
+
+//             // Log successful registration/login
+//             logLoginActivity(db, user.id, 'success', req);
+
+//             // ✅ FIXED: Create session with UUID
+//             createSession(db, user.id, req);
+
+//             const authToken = generateJWT({ userId: user.id, email: user.email });
+
+//             return res.json({
+//                 success: true,
+//                 token: authToken,
+//                 user: {
+//                     id: user.id,
+//                     name: user.name,
+//                     email: user.email,
+//                     avatar: user.avatar,
+//                     is_premium: user.is_premium || 0
+//                 }
+//             });
+//         } else {
+//             user = existing[0];
+//             // ✅ UPDATE AVATAR IF EMPTY OR CHANGED
+//             if (!user.avatar && picture) {
+//                 await new Promise((resolve, reject) =>
+//                     db.query(
+//                         'UPDATE users SET avatar = ? WHERE id = ?',
+//                         [picture, user.id],
+//                         (err, r) => err ? reject(err) : resolve(r)
+//                     )
+//                 );
+//                 user.avatar = picture;
+//             }
+
+//             // Check if user has 2FA enabled
+//             checkTwoFAStatus(db, user.id, (err, twoFAEnabled) => {
+//                 if (err) {
+//                     console.error('Error checking 2FA status:', err);
+//                 }
+
+//                 if (twoFAEnabled) {
+//                     // User has 2FA enabled - generate temporary token
+//                     const tempToken = generateTempToken(user.id);
+
+//                     // Log login attempt (pending verification)
+//                     logLoginActivity(db, user.id, 'pending_2fa', req);
+
+//                     return res.json({
+//                         success: true,
+//                         requiresTwoFA: true,
+//                         tempToken: tempToken,
+//                         message: '2FA verification required',
+//                         user: {
+//                             id: user.id,
+//                             name: user.name,
+//                             email: user.email,
+//                             hasTwoFA: true
+//                         }
+//                     });
+//                 } else {
+//                     // No 2FA - complete login normally
+//                     const authToken = generateJWT({ userId: user.id, email: user.email });
+
+//                     // Log successful login
+//                     logLoginActivity(db, user.id, 'success', req);
+
+//                     // ✅ FIXED: Create session with UUID
+//                     createSession(db, user.id, req);
+
+//                     return res.json({
+//                         success: true,
+//                         token: authToken,
+//                         user: {
+//                             id: user.id,
+//                             name: user.name,
+//                             email: user.email,
+//                             avatar: user.avatar,
+//                             is_premium: user.is_premium || 0
+//                         }
+//                     });
+//                 }
+//             });
+//         }
+
+//     } catch (err) {
+//         console.error('Google auth error:', err);
+//         return res.status(401).json({
+//             success: false,
+//             message: 'Google authentication failed'
+//         });
+//     }
+// });
+
 router.post('/auth/google', async (req, res) => {
     const db = getDb(req);
     try {
@@ -1552,9 +1689,9 @@ router.post('/auth/google', async (req, res) => {
         const googleId = payload.sub;
         const email = payload.email?.toLowerCase();
         const name = payload.name;
-        const picture = payload.picture;
+        const picture = payload.picture; // This is the Google profile image URL
 
-        // Check if user exists
+        // Check if user exists - include avatar in SELECT
         const existing = await new Promise((resolve, reject) =>
             db.query('SELECT * FROM users WHERE google_id = ? OR email = ?', [googleId, email],
                 (err, rows) => err ? reject(err) : resolve(rows)
@@ -1563,7 +1700,7 @@ router.post('/auth/google', async (req, res) => {
 
         let user;
         if (existing.length === 0) {
-            // Create new user
+            // Create new user with Google profile image
             const result = await new Promise((resolve, reject) =>
                 db.query(
                     'INSERT INTO users (name, email, google_id, avatar, auth_method, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -1571,88 +1708,94 @@ router.post('/auth/google', async (req, res) => {
                     (err, r) => err ? reject(err) : resolve(r)
                 )
             );
-            user = {
-                id: result.insertId,
-                name,
-                email,
-                google_id: googleId,
-                avatar: picture,
-                auth_method: 'google',
-                is_verified: 1,
-                is_premium: 0
-            };
 
-            // Log successful registration/login
+            // Fetch the newly created user to get all fields
+            user = await new Promise((resolve, reject) =>
+                db.query('SELECT * FROM users WHERE id = ?', [result.insertId],
+                    (err, rows) => err ? reject(err) : resolve(rows[0])
+                )
+            );
+
             logLoginActivity(db, user.id, 'success', req);
-
-            // ✅ FIXED: Create session with UUID
             createSession(db, user.id, req);
-
-            const authToken = generateJWT({ userId: user.id, email: user.email });
-
-            return res.json({
-                success: true,
-                token: authToken,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    avatar: user.avatar,
-                    is_premium: user.is_premium || 0
-                }
-            });
         } else {
             user = existing[0];
 
-            // Check if user has 2FA enabled
-            checkTwoFAStatus(db, user.id, (err, twoFAEnabled) => {
-                if (err) {
-                    console.error('Error checking 2FA status:', err);
-                }
+            // ALWAYS update Google profile image if available
+            // This ensures the latest Google profile picture is saved
+            if (picture) {
+                await new Promise((resolve, reject) =>
+                    db.query(
+                        'UPDATE users SET avatar = ?, google_id = ? WHERE id = ?',
+                        [picture, googleId, user.id],
+                        (err) => err ? reject(err) : resolve(true)
+                    )
+                );
+                user.avatar = picture;
+            }
 
-                if (twoFAEnabled) {
-                    // User has 2FA enabled - generate temporary token
-                    const tempToken = generateTempToken(user.id);
-
-                    // Log login attempt (pending verification)
-                    logLoginActivity(db, user.id, 'pending_2fa', req);
-
-                    return res.json({
-                        success: true,
-                        requiresTwoFA: true,
-                        tempToken: tempToken,
-                        message: '2FA verification required',
-                        user: {
-                            id: user.id,
-                            name: user.name,
-                            email: user.email,
-                            hasTwoFA: true
-                        }
-                    });
-                } else {
-                    // No 2FA - complete login normally
-                    const authToken = generateJWT({ userId: user.id, email: user.email });
-
-                    // Log successful login
-                    logLoginActivity(db, user.id, 'success', req);
-
-                    // ✅ FIXED: Create session with UUID
-                    createSession(db, user.id, req);
-
-                    return res.json({
-                        success: true,
-                        token: authToken,
-                        user: {
-                            id: user.id,
-                            name: user.name,
-                            email: user.email,
-                            avatar: user.avatar,
-                            is_premium: user.is_premium || 0
-                        }
-                    });
-                }
-            });
+            // Update google_id if not set (for users who registered with email first)
+            if (!user.google_id && googleId) {
+                await new Promise((resolve, reject) =>
+                    db.query(
+                        'UPDATE users SET google_id = ? WHERE id = ?',
+                        [googleId, user.id],
+                        (err) => err ? reject(err) : resolve(true)
+                    )
+                );
+                user.google_id = googleId;
+            }
         }
+
+        // Check if user has 2FA enabled
+        checkTwoFAStatus(db, user.id, (err, twoFAEnabled) => {
+            if (err) {
+                console.error('Error checking 2FA status:', err);
+            }
+
+            if (twoFAEnabled) {
+                const tempToken = generateTempToken(user.id);
+                logLoginActivity(db, user.id, 'pending_2fa', req);
+
+                return res.json({
+                    success: true,
+                    requiresTwoFA: true,
+                    tempToken: tempToken,
+                    message: '2FA verification required',
+                    user: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        avatar: user.avatar, // Include avatar in response
+                        hasTwoFA: true
+                    }
+                });
+            } else {
+                const authToken = generateJWT({ userId: user.id, email: user.email });
+                logLoginActivity(db, user.id, 'success', req);
+                createSession(db, user.id, req);
+
+                // Format avatar URL properly
+                let avatarUrl = user.avatar;
+                if (avatarUrl && !avatarUrl.startsWith('http')) {
+                    avatarUrl = `http://localhost:5000/uploads/avatars/${path.basename(avatarUrl)}`;
+                }
+
+                return res.json({
+                    success: true,
+                    token: authToken,
+                    user: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone || '',
+                        avatar: avatarUrl, // Send formatted avatar URL
+                        is_premium: user.is_premium || 0,
+                        auth_method: user.auth_method || 'google'
+                    }
+                });
+            }
+        });
 
     } catch (err) {
         console.error('Google auth error:', err);
@@ -1662,7 +1805,6 @@ router.post('/auth/google', async (req, res) => {
         });
     }
 });
-
 // ============================================
 // FORGOT PASSWORD ROUTES (Your existing code)
 // ============================================

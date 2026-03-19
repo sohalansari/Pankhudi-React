@@ -311,8 +311,65 @@
 // };
 
 // // ============================================
-// // 2FA MODAL COMPONENT
+// // 2FA MODAL COMPONENT - COMPLETE USER GUIDE
 // // ============================================
+// /**
+//  * TWO-FACTOR AUTHENTICATION (2FA) SETUP GUIDE
+//  * --------------------------------------------
+//  * 
+//  * STEP 1: SCAN QR CODE
+//  * ---------------------
+//  * What to do:
+//  * 1. Download Google Authenticator app on your phone (iOS/Android)
+//  * 2. Open the app and tap "+" to add a new account
+//  * 3. Select "Scan QR code" and scan the QR code shown below
+//  * 4. If you can't scan, click "Copy Secret" and enter manually in the app
+//  * 
+//  * What happens:
+//  * - The app will now show a 6-digit code that changes every 30 seconds
+//  * - This code is synchronized with our server
+//  * 
+//  * 
+//  * STEP 2: VERIFY CODE
+//  * --------------------
+//  * What to do:
+//  * 1. Open Google Authenticator app on your phone
+//  * 2. Look for "Pankhudi" entry
+//  * 3. Enter the current 6-digit code shown in the app
+//  * 4. Click "Verify & Enable"
+//  * 
+//  * Important:
+//  * - Code changes every 30 seconds, enter it quickly
+//  * - If code expires, wait for new one
+//  * 
+//  * 
+//  * STEP 3: SAVE BACKUP CODES
+//  * --------------------------
+//  * What to do:
+//  * 1. You will see 8 backup codes on screen
+//  * 2. COPY THESE CODES and save them SAFELY:
+//  *    - Write them on paper and keep in safe place
+//  *    - Save in password manager (LastPass, 1Password)
+//  *    - Take a screenshot and store securely
+//  * 3. Click "Copy All Codes" to copy to clipboard
+//  * 4. Click "Done" to finish setup
+//  * 
+//  * Why backup codes are important:
+//  * - If you lose your phone, you CANNOT login without these
+//  * - Each code can be used ONLY ONCE
+//  * - Keep them safe and accessible
+//  * 
+//  * 
+//  * LOGIN WITH 2FA (After Setup)
+//  * ------------------------------
+//  * When you login next time:
+//  * 1. Enter email/phone and password normally
+//  * 2. You'll see a screen asking for 6-digit code
+//  * 3. Open Google Authenticator on your phone
+//  * 4. Enter the current code shown
+//  * 5. If you lost your phone, click "Use Backup Code"
+//  * 6. Enter one of your saved backup codes
+//  */
 // const TwoFAModal = ({ isOpen, onClose, onEnable2FA, user }) => {
 //   const [step, setStep] = useState(1);
 //   const [qrCode, setQrCode] = useState('');
@@ -432,8 +489,8 @@
 
 //   const copyBackupCodes = () => {
 //     navigator.clipboard.writeText(backupCodes.join('\n'))
-//       .then(() => alert('Backup codes copied to clipboard!'))
-//       .catch(() => alert('Failed to copy codes'));
+//       .then(() => alert('✅ Backup codes copied to clipboard! Store them safely.'))
+//       .catch(() => alert('❌ Failed to copy codes. Please copy manually.'));
 //   };
 
 //   if (!isOpen) return null;
@@ -442,17 +499,31 @@
 //     <div className="profile-modal-overlay active" onClick={onClose}>
 //       <div className="profile-modal-content active profile-security-modal" onClick={e => e.stopPropagation()}>
 //         <div className="profile-modal-header">
-//           <h3><FaShieldAlt /> Two-Factor Authentication</h3>
+//           <h3><FaShieldAlt /> Two-Factor Authentication Setup</h3>
 //           <button className="profile-close-modal" onClick={onClose}>
 //             <FaTimes />
 //           </button>
 //         </div>
 
 //         <div className="profile-modal-body">
+//           {/* STEP 1: QR CODE SCAN */}
 //           {step === 1 && (
 //             <div className="profile-security-step">
-//               <h4>Step 1: Scan QR Code</h4>
-//               <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+//               <div className="step-indicator">
+//                 <span className="step-badge active">Step 1 of 3</span>
+//               </div>
+
+//               <h4>📱 Scan QR Code with Google Authenticator</h4>
+
+//               <div className="instruction-box">
+//                 <p><strong>What to do:</strong></p>
+//                 <ol>
+//                   <li>Download <strong>Google Authenticator</strong> app from Play Store/App Store</li>
+//                   <li>Open the app and tap <strong>"+"</strong> to add new account</li>
+//                   <li>Select <strong>"Scan QR code"</strong> and scan the code below</li>
+//                   <li>If you can't scan, use the secret key below</li>
+//                 </ol>
+//               </div>
 
 //               {loading ? (
 //                 <div className="profile-loading-qr">
@@ -467,18 +538,20 @@
 //                       <div className="profile-loading-qr">Failed to generate QR code</div>
 //                     )}
 //                   </div>
+
 //                   <div className="profile-secret-key">
-//                     <p>Or enter this secret key manually:</p>
+//                     <p><strong>🔑 Manual entry secret key:</strong></p>
 //                     <code className="profile-secret-code">{secret}</code>
 //                     <button
 //                       className="profile-btn profile-btn-sm profile-btn-secondary"
 //                       onClick={() => {
 //                         navigator.clipboard.writeText(secret);
-//                         alert('Secret key copied to clipboard!');
+//                         alert('✅ Secret key copied to clipboard!');
 //                       }}
 //                     >
 //                       <FaCopy /> Copy Secret
 //                     </button>
+//                     <p className="hint-text">Use this if you can't scan the QR code</p>
 //                   </div>
 //                 </>
 //               )}
@@ -489,16 +562,30 @@
 //                   onClick={() => setStep(2)}
 //                   disabled={loading || !qrCode}
 //                 >
-//                   Next: Verify Code
+//                   Next: I've Scanned the Code →
 //                 </button>
 //               </div>
 //             </div>
 //           )}
 
+//           {/* STEP 2: VERIFY CODE */}
 //           {step === 2 && (
 //             <div className="profile-security-step">
-//               <h4>Step 2: Verify Code</h4>
-//               <p>Enter the 6-digit code from your authenticator app:</p>
+//               <div className="step-indicator">
+//                 <span className="step-badge active">Step 2 of 3</span>
+//               </div>
+
+//               <h4>🔢 Enter the 6-digit Code from Authenticator</h4>
+
+//               <div className="instruction-box">
+//                 <p><strong>What to do:</strong></p>
+//                 <ol>
+//                   <li>Open <strong>Google Authenticator</strong> app on your phone</li>
+//                   <li>Find the <strong>"Pankhudi"</strong> entry</li>
+//                   <li>Enter the <strong>6-digit code</strong> shown below</li>
+//                   <li>Code changes every 30 seconds - enter it quickly!</li>
+//                 </ol>
+//               </div>
 
 //               {verificationError && (
 //                 <div className="profile-error-message">
@@ -506,19 +593,22 @@
 //                 </div>
 //               )}
 
-//               <input
-//                 type="text"
-//                 className="profile-form-control"
-//                 placeholder="000000"
-//                 value={verificationCode}
-//                 onChange={(e) => {
-//                   setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-//                   setVerificationError('');
-//                 }}
-//                 maxLength={6}
-//                 disabled={loading}
-//                 autoFocus
-//               />
+//               <div className="verification-code-input">
+//                 <input
+//                   type="text"
+//                   className="profile-form-control large-input"
+//                   placeholder="000000"
+//                   value={verificationCode}
+//                   onChange={(e) => {
+//                     setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+//                     setVerificationError('');
+//                   }}
+//                   maxLength={6}
+//                   disabled={loading}
+//                   autoFocus
+//                 />
+//                 <p className="hint-text">Code from Google Authenticator app</p>
+//               </div>
 
 //               <div className="profile-modal-actions">
 //                 <button
@@ -526,7 +616,7 @@
 //                   onClick={() => setStep(1)}
 //                   disabled={loading}
 //                 >
-//                   Back
+//                   ← Back
 //                 </button>
 //                 <button
 //                   className="profile-btn profile-btn-primary"
@@ -538,32 +628,53 @@
 //                       <FaSpinner className="profile-spin" /> Verifying...
 //                     </>
 //                   ) : (
-//                     'Verify & Enable'
+//                     'Verify & Continue →'
 //                   )}
 //                 </button>
 //               </div>
 
 //               <p className="profile-help-text">
-//                 <FaInfoCircle /> Can't scan the code? Make sure your authenticator app
-//                 shows a 6-digit code that changes every 30 seconds.
+//                 <FaInfoCircle /> <strong>Can't see the code?</strong> Make sure your phone's time is set to automatic (Settings → Date & Time)
 //               </p>
 //             </div>
 //           )}
 
+//           {/* STEP 3: BACKUP CODES */}
 //           {step === 3 && (
 //             <div className="profile-security-step">
-//               <h4>Step 3: Save Backup Codes</h4>
-//               <p className="profile-warning-text">
-//                 <FaExclamationTriangle /> Save these backup codes in a secure place.
-//                 Each code can be used only once to access your account if you lose your phone.
-//               </p>
+//               <div className="step-indicator">
+//                 <span className="step-badge active">Step 3 of 3 - CRITICAL!</span>
+//               </div>
 
-//               <div className="profile-backup-codes">
-//                 {backupCodes.map((code, index) => (
-//                   <div className="profile-backup-code" key={index}>
-//                     {code}
-//                   </div>
-//                 ))}
+//               <h4>⚠️ SAVE THESE BACKUP CODES</h4>
+
+//               <div className="warning-box">
+//                 <FaExclamationTriangle className="warning-icon" />
+//                 <div>
+//                   <strong>If you lose your phone, you CANNOT login without these codes!</strong>
+//                   <p>Each code can be used ONLY ONCE. Store them safely.</p>
+//                 </div>
+//               </div>
+
+//               <div className="backup-codes-container">
+//                 <p><strong>Your 8 backup codes:</strong></p>
+//                 <div className="profile-backup-codes">
+//                   {backupCodes.map((code, index) => (
+//                     <div className="profile-backup-code" key={index}>
+//                       <span className="code-number">{index + 1}.</span> {code}
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               <div className="storage-options">
+//                 <p><strong>📌 Recommended ways to store:</strong></p>
+//                 <ul>
+//                   <li>✍️ Write them on paper and keep in safe place</li>
+//                   <li>🔐 Save in password manager (LastPass, 1Password, Bitwarden)</li>
+//                   <li>📸 Take a screenshot and store in secure folder</li>
+//                   <li>☁️ Save in encrypted cloud storage</li>
+//                 </ul>
 //               </div>
 
 //               <div className="profile-modal-actions">
@@ -577,13 +688,20 @@
 //                   className="profile-btn profile-btn-success"
 //                   onClick={onClose}
 //                 >
-//                   Done
+//                   <FaCheck /> I've Saved My Codes - Done
 //                 </button>
 //               </div>
 
-//               <p className="profile-success-message">
-//                 <FaCheck /> Two-factor authentication has been successfully enabled!
-//               </p>
+//               <div className="success-message">
+//                 <p className="profile-success-message">
+//                   <FaCheck /> Two-factor authentication has been successfully enabled!
+//                 </p>
+//                 <p className="next-steps">
+//                   <strong>Next time you login:</strong> You'll need to enter a code from Google Authenticator.
+//                   <br />
+//                   <strong>Lost your phone?</strong> Use one of your backup codes.
+//                 </p>
+//               </div>
 //             </div>
 //           )}
 //         </div>
@@ -2225,6 +2343,12 @@
 //                       {twoFAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
 //                     </button>
 //                   </div>
+//                   {!twoFAEnabled && (
+//                     <p className="setting-hint">
+//                       <FaInfoCircle /> Enable 2FA to add an extra layer of security to your account.
+//                       You'll need to enter a code from Google Authenticator when logging in.
+//                     </p>
+//                   )}
 //                 </div>
 
 //                 <div className="profile-setting-item">
@@ -2377,7 +2501,8 @@ import {
   FaRedo,
   FaExclamationCircle,
   FaInfoCircle,
-  FaSpinner
+  FaSpinner,
+  FaGoogle
 } from "react-icons/fa";
 import { AiFillEye, AiFillEyeInvisible, AiFillSetting } from "react-icons/ai";
 import { MdPrivacyTip, MdSecurity, MdLocationOn } from "react-icons/md";
@@ -2418,7 +2543,10 @@ const API_CONFIG = {
   TWO_FA_VERIFY: "http://localhost:5000/api/security/two-fa/verify",
   TWO_FA_DISABLE: "http://localhost:5000/api/security/two-fa/disable",
   TWO_FA_BACKUP_CODES: "http://localhost:5000/api/security/two-fa/backup-codes",
-  ACCOUNT_DELETE: "http://localhost:5000/api/account"
+  ACCOUNT_DELETE: "http://localhost:5000/api/account",
+
+  // Auth endpoints
+  GOOGLE_AUTH: "http://localhost:5000/api/auth/google"
 };
 
 // ============================================
@@ -2430,6 +2558,35 @@ const PROFILE_TABS = [
   { id: "privacy", label: "Privacy & Security", icon: MdPrivacyTip },
   { id: "addresses", label: "Addresses", icon: FaMapMarkerAlt }
 ];
+
+// ============================================
+// HELPER FUNCTION TO FORMAT AVATAR URL
+// ============================================
+const formatAvatarUrl = (avatar) => {
+  if (!avatar) return null;
+
+  // If it's already a full URL (starts with http), return as is
+  if (avatar.startsWith('http')) {
+    return avatar;
+  }
+
+  // If it's a Google avatar URL pattern
+  if (avatar.includes('googleusercontent.com') || avatar.includes('lh3.googleusercontent.com')) {
+    return avatar;
+  }
+
+  // If it starts with /uploads/, construct full URL
+  if (avatar.startsWith('/uploads/')) {
+    return API_CONFIG.UPLOADS + avatar.replace(/^\/+/, "");
+  }
+
+  // If it's just a filename
+  if (!avatar.startsWith('/') && !avatar.startsWith('http')) {
+    return API_CONFIG.UPLOADS + 'uploads/avatars/' + avatar;
+  }
+
+  return avatar;
+};
 
 // ============================================
 // ADDRESS FORM MODAL COMPONENT
@@ -2647,65 +2804,8 @@ const AddressFormModal = ({ isOpen, editingAddress, addressForm, onInputChange, 
 };
 
 // ============================================
-// 2FA MODAL COMPONENT - COMPLETE USER GUIDE
+// 2FA MODAL COMPONENT
 // ============================================
-/**
- * TWO-FACTOR AUTHENTICATION (2FA) SETUP GUIDE
- * --------------------------------------------
- * 
- * STEP 1: SCAN QR CODE
- * ---------------------
- * What to do:
- * 1. Download Google Authenticator app on your phone (iOS/Android)
- * 2. Open the app and tap "+" to add a new account
- * 3. Select "Scan QR code" and scan the QR code shown below
- * 4. If you can't scan, click "Copy Secret" and enter manually in the app
- * 
- * What happens:
- * - The app will now show a 6-digit code that changes every 30 seconds
- * - This code is synchronized with our server
- * 
- * 
- * STEP 2: VERIFY CODE
- * --------------------
- * What to do:
- * 1. Open Google Authenticator app on your phone
- * 2. Look for "Pankhudi" entry
- * 3. Enter the current 6-digit code shown in the app
- * 4. Click "Verify & Enable"
- * 
- * Important:
- * - Code changes every 30 seconds, enter it quickly
- * - If code expires, wait for new one
- * 
- * 
- * STEP 3: SAVE BACKUP CODES
- * --------------------------
- * What to do:
- * 1. You will see 8 backup codes on screen
- * 2. COPY THESE CODES and save them SAFELY:
- *    - Write them on paper and keep in safe place
- *    - Save in password manager (LastPass, 1Password)
- *    - Take a screenshot and store securely
- * 3. Click "Copy All Codes" to copy to clipboard
- * 4. Click "Done" to finish setup
- * 
- * Why backup codes are important:
- * - If you lose your phone, you CANNOT login without these
- * - Each code can be used ONLY ONCE
- * - Keep them safe and accessible
- * 
- * 
- * LOGIN WITH 2FA (After Setup)
- * ------------------------------
- * When you login next time:
- * 1. Enter email/phone and password normally
- * 2. You'll see a screen asking for 6-digit code
- * 3. Open Google Authenticator on your phone
- * 4. Enter the current code shown
- * 5. If you lost your phone, click "Use Backup Code"
- * 6. Enter one of your saved backup codes
- */
 const TwoFAModal = ({ isOpen, onClose, onEnable2FA, user }) => {
   const [step, setStep] = useState(1);
   const [qrCode, setQrCode] = useState('');
@@ -2842,7 +2942,6 @@ const TwoFAModal = ({ isOpen, onClose, onEnable2FA, user }) => {
         </div>
 
         <div className="profile-modal-body">
-          {/* STEP 1: QR CODE SCAN */}
           {step === 1 && (
             <div className="profile-security-step">
               <div className="step-indicator">
@@ -2904,7 +3003,6 @@ const TwoFAModal = ({ isOpen, onClose, onEnable2FA, user }) => {
             </div>
           )}
 
-          {/* STEP 2: VERIFY CODE */}
           {step === 2 && (
             <div className="profile-security-step">
               <div className="step-indicator">
@@ -2975,7 +3073,6 @@ const TwoFAModal = ({ isOpen, onClose, onEnable2FA, user }) => {
             </div>
           )}
 
-          {/* STEP 3: BACKUP CODES */}
           {step === 3 && (
             <div className="profile-security-step">
               <div className="step-indicator">
@@ -3438,6 +3535,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [authMethod, setAuthMethod] = useState('local');
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -3596,10 +3694,9 @@ const Profile = () => {
           headers: getAuthHeaders()
         });
         if (sessionsResponse.data.success) {
-          // Mark current session (you'll need to implement logic to identify current session)
           const sessions = (sessionsResponse.data.sessions || []).map(session => ({
             ...session,
-            current: false // You'll need to set this based on some logic
+            current: false
           }));
           setActiveSessions(sessions);
         }
@@ -3615,54 +3712,55 @@ const Profile = () => {
   };
 
   // ============================================
-  // PROFILE FETCH
+  // PROFILE FETCH - UPDATED FOR GOOGLE AVATAR
   // ============================================
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = getAuthToken();
-        if (!token) {
-          setSessionExpired(true);
-          return;
-        }
+  const fetchProfile = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        setSessionExpired(true);
+        return;
+      }
 
-        const response = await axios.get(API_CONFIG.PROFILE, {
-          headers: getAuthHeaders(),
+      const response = await axios.get(API_CONFIG.PROFILE, {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.data.success) {
+        const userData = response.data.user;
+        setUser(userData);
+        setAuthMethod(userData.auth_method || 'local');
+
+        setFormData({
+          name: userData.name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          password: '',
+          is_premium: userData.is_premium || 0
         });
 
-        if (response.data.success) {
-          const userData = response.data.user;
-          setUser(userData);
-          setFormData({
-            name: userData.name || '',
-            email: userData.email || '',
-            phone: userData.phone || '',
-            password: '',
-            is_premium: userData.is_premium || 0
-          });
-
-          if (userData.avatar) {
-            let avatarUrl = userData.avatar;
-            if (!avatarUrl.startsWith("http")) {
-              avatarUrl = API_CONFIG.UPLOADS + avatarUrl.replace(/^\/+/, "");
-            }
-            setAvatarPreview(avatarUrl);
-          }
-        } else {
-          setSessionExpired(true);
+        // Handle avatar URL properly for both Google and local uploads
+        if (userData.avatar) {
+          const formattedAvatar = formatAvatarUrl(userData.avatar);
+          setAvatarPreview(formattedAvatar);
+          console.log('Avatar loaded:', formattedAvatar); // Debug log
         }
-      } catch (err) {
-        if (err.response?.status === 401) {
-          setSessionExpired(true);
-        } else {
-          console.error('Error fetching profile:', err);
-          showStatusMessage('error', 'Failed to load profile');
-        }
-      } finally {
-        setLoading(false);
+      } else {
+        setSessionExpired(true);
       }
-    };
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setSessionExpired(true);
+      } else {
+        console.error('Error fetching profile:', err);
+        showStatusMessage('error', 'Failed to load profile');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -3721,12 +3819,10 @@ const Profile = () => {
           is_premium: updatedUser.is_premium
         }));
 
+        // Update avatar preview
         if (updatedUser.avatar) {
-          let avatarUrl = updatedUser.avatar;
-          if (!avatarUrl.startsWith("http")) {
-            avatarUrl = API_CONFIG.UPLOADS + avatarUrl.replace(/^\/+/, "");
-          }
-          setAvatarPreview(avatarUrl);
+          const formattedAvatar = formatAvatarUrl(updatedUser.avatar);
+          setAvatarPreview(formattedAvatar);
         }
 
         setAvatarFile(null);
@@ -3748,11 +3844,8 @@ const Profile = () => {
     });
     setAvatarFile(null);
     if (user?.avatar) {
-      let avatarUrl = user.avatar;
-      if (!avatarUrl.startsWith("http")) {
-        avatarUrl = API_CONFIG.UPLOADS + avatarUrl.replace(/^\/+/, "");
-      }
-      setAvatarPreview(avatarUrl);
+      const formattedAvatar = formatAvatarUrl(user.avatar);
+      setAvatarPreview(formattedAvatar);
     }
     setEditMode(false);
   };
@@ -4233,6 +4326,11 @@ const Profile = () => {
             <FaArrowLeft /> Back
           </button>
           <h2 className="brand-name">Pankhudi</h2>
+          {authMethod === 'google' && (
+            <span className="auth-method-badge">
+              <FaGoogle /> Google Account
+            </span>
+          )}
         </div>
 
         {saveStatus.message && (
@@ -4258,15 +4356,24 @@ const Profile = () => {
           {/* Profile Tab Content */}
           {activeTab === "profile" && (
             <div className="profile-tab-content">
-              {/* Avatar Section */}
+              {/* Avatar Section - Updated for Google avatar */}
               <div className="profile-avatar-section">
                 <div
-                  className={`profile-avatar ${editMode ? "profile-avatar-editable" : ""}`}
+                  className={`profile-avatar ${editMode ? "profile-avatar-editable" : ""} ${authMethod === 'google' ? 'profile-avatar-google' : ''}`}
                   {...(editMode ? getRootProps() : {})}
                 >
                   <input {...getInputProps()} />
                   {avatarPreview ? (
-                    <img src={avatarPreview} alt="Profile" className="profile-avatar-image" />
+                    <img
+                      src={avatarPreview}
+                      alt="Profile"
+                      className="profile-avatar-image"
+                      onError={(e) => {
+                        console.log('Avatar failed to load:', avatarPreview);
+                        e.target.onerror = null;
+                        setAvatarPreview(null);
+                      }}
+                    />
                   ) : (
                     <div className="profile-avatar-fallback">
                       {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
@@ -4284,6 +4391,11 @@ const Profile = () => {
                     <FaTrash /> Remove Photo
                   </button>
                 )}
+                {authMethod === 'google' && !editMode && (
+                  <p className="profile-google-avatar-note">
+                    <FaInfoCircle /> Profile picture synced from Google
+                  </p>
+                )}
                 <div className="profile-badges">
                   {user.is_premium === 1 && (
                     <div className="profile-badge profile-badge-premium">
@@ -4293,6 +4405,11 @@ const Profile = () => {
                   <div className="profile-badge profile-badge-default">
                     Member since {new Date(user.createdAt || user.registrationDate).toLocaleDateString()}
                   </div>
+                  {authMethod === 'google' && (
+                    <div className="profile-badge profile-badge-google">
+                      <FaGoogle /> Google Account
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -4364,47 +4481,49 @@ const Profile = () => {
                 </div>
               ))}
 
-              {/* Password Field */}
-              <div className="profile-item profile-card">
-                <label><FaLock /> New Password</label>
-                {editMode ? (
-                  <div className="profile-password-wrapper">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="profile-form-control"
-                      value={formData.password || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      placeholder="Enter new password (optional)"
-                    />
-                    <button
-                      type="button"
-                      className="profile-toggle-password"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-                    </button>
-                  </div>
-                ) : (
-                  <p>••••••••</p>
-                )}
-                {editMode && formData.password && (
-                  <div className="profile-password-strength-container">
-                    <div
-                      className="profile-password-strength"
-                      style={{
-                        width: `${(passwordStrength / 4) * 100}%`,
-                        backgroundColor: strengthColor(passwordStrength),
-                      }}
-                    ></div>
-                    <div className="profile-password-strength-labels">
-                      <span>Weak</span>
-                      <span>Strong</span>
+              {/* Password Field - Hide for Google accounts */}
+              {authMethod !== 'google' && (
+                <div className="profile-item profile-card">
+                  <label><FaLock /> New Password</label>
+                  {editMode ? (
+                    <div className="profile-password-wrapper">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="profile-form-control"
+                        value={formData.password || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        placeholder="Enter new password (optional)"
+                      />
+                      <button
+                        type="button"
+                        className="profile-toggle-password"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                      </button>
                     </div>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <p>••••••••</p>
+                  )}
+                  {editMode && formData.password && (
+                    <div className="profile-password-strength-container">
+                      <div
+                        className="profile-password-strength"
+                        style={{
+                          width: `${(passwordStrength / 4) * 100}%`,
+                          backgroundColor: strengthColor(passwordStrength),
+                        }}
+                      ></div>
+                      <div className="profile-password-strength-labels">
+                        <span>Weak</span>
+                        <span>Strong</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Premium Status */}
               <div className="profile-item profile-card profile-premium-item">
