@@ -1,3 +1,2140 @@
+// // require("dotenv").config();
+// // const express = require("express");
+// // const mysql = require("mysql");
+// // const bodyParser = require("body-parser");
+// // const cors = require("cors");
+// // const path = require("path");
+// // const fs = require('fs');
+
+// // /* ================= EMAIL SERVICE ================= */
+// // // Create email service directory if it doesn't exist
+// // const emailServiceDir = path.join(__dirname, 'services');
+// // if (!fs.existsSync(emailServiceDir)) {
+// //     fs.mkdirSync(emailServiceDir, { recursive: true });
+// // }
+
+// // // Import email service
+// // let emailService;
+// // try {
+// //     emailService = require("./services/emailService");
+// //     console.log("✅ Email service loaded successfully");
+// // } catch (error) {
+// //     console.error("❌ Error loading email service:", error.message);
+// //     console.log("⚠️ Email service will be created on server start");
+// //     emailService = null;
+// // }
+
+// // /* ================= ROUTES ================= */
+// // const authRoutes = require("./routes/auth");
+// // const profileRoutes = require("./routes/profile");
+// // const productsRoutes = require("./routes/products");
+// // const chatRoutes = require("./routes/chat");
+// // const cartRoutes = require("./routes/cart");
+// // const reviewRoutes = require("./routes/reviews");
+// // const searchRoutes = require("./routes/searchRoutes");
+// // const categoryRoutes = require("./routes/categories");
+// // const bannerRoutes = require("./routes/banner");
+// // const addressRoutes = require("./routes/address");
+// // const paymentRoutes = require("./routes/paymentRoutes");
+// // const promoRoutes = require("./routes/promoRoutes");
+// // // const userRoutes = require('./routes/user');
+
+// // // ✅ NEW CHECKOUT-RELATED ROUTES
+// // const orderRoutes = require("./routes/orderRoutes");
+// // const productDetailRoutes = require("./routes/productDetailRoutes");
+// // const userAddressRoutes = require("./routes/address");
+
+// // // email logs route
+// // const emailRoutes = require("./routes/emailRoutes");
+
+// // // ✅ IMPORT USER ROUTES WITH ERROR HANDLING
+// // let userRoutes;
+// // try {
+// //     userRoutes = require("./routes/userRoutes");
+// //     console.log("✅ userRoutes loaded successfully");
+// // } catch (error) {
+// //     console.error("❌ Error loading userRoutes:", error.message);
+// //     const express = require("express");
+// //     userRoutes = express.Router();
+// //     userRoutes.get("*", (req, res) => {
+// //         res.status(500).json({
+// //             success: false,
+// //             message: "User routes are currently unavailable. Please check server configuration."
+// //         });
+// //     });
+// // }
+
+// // const app = express();
+
+// // /* ================= BODY & CORS ================= */
+// // app.use(bodyParser.json({ limit: "5mb" }));
+// // app.use(bodyParser.urlencoded({ extended: true }));
+// // app.use(
+// //     cors({
+// //         origin: "http://localhost:3000",
+// //         credentials: true,
+// //         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+// //         allowedHeaders: ["Content-Type", "Authorization"]
+// //     })
+// // );
+
+// // /* ================= DB POOL WITH ENHANCED CONFIG ================= */
+// // const db = mysql.createPool({
+// //     host: process.env.DB_HOST || "localhost",
+// //     user: process.env.DB_USER || "root",
+// //     password: process.env.DB_PASSWORD || "",
+// //     database: process.env.DB_NAME || "pankhudi",
+// //     port: process.env.DB_PORT || 3306,
+// //     connectionLimit: 20,
+// //     waitForConnections: true,
+// //     queueLimit: 0,
+// //     enableKeepAlive: true,
+// //     keepAliveInitialDelay: 0,
+// //     charset: 'utf8mb4',
+// //     timezone: 'local'
+// // });
+
+// // /* ================= DB TEST WITH RETRY LOGIC ================= */
+// // const testDatabaseConnection = (retries = 3, delay = 2000) => {
+// //     db.getConnection((err, connection) => {
+// //         if (err) {
+// //             console.error("❌ Database connection failed:", err.message);
+
+// //             if (retries > 0) {
+// //                 console.log(`🔄 Retrying connection... (${retries} attempts left)`);
+// //                 setTimeout(() => testDatabaseConnection(retries - 1, delay), delay);
+// //             } else {
+// //                 console.error("💥 Failed to connect to database after multiple attempts");
+// //             }
+// //         } else {
+// //             console.log("✅ Database connected successfully");
+
+// //             // Test query to ensure tables exist
+// //             connection.query("SELECT 1", (queryErr) => {
+// //                 if (queryErr) {
+// //                     console.error("⚠️ Database query test failed:", queryErr.message);
+// //                 } else {
+// //                     console.log("✅ Database query test successful");
+// //                 }
+// //                 connection.release();
+// //             });
+
+// //             // ✅ Create email_logs table if not exists
+// //             connection.query(`
+// //                 CREATE TABLE IF NOT EXISTS email_logs (
+// //                     id INT AUTO_INCREMENT PRIMARY KEY,
+// //                     order_id INT,
+// //                     recipient VARCHAR(255) NOT NULL,
+// //                     subject VARCHAR(255) NOT NULL,
+// //                     message_id VARCHAR(255),
+// //                     status ENUM('pending', 'sent', 'failed', 'logged') DEFAULT 'pending',
+// //                     error TEXT,
+// //                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+// //                     sent_at DATETIME,
+// //                     INDEX idx_order_id (order_id),
+// //                     INDEX idx_status (status),
+// //                     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+// //                 )
+// //             `, (tableErr) => {
+// //                 if (tableErr) {
+// //                     console.error("⚠️ Email logs table creation error:", tableErr.message);
+// //                 } else {
+// //                     console.log("✅ Email logs table ready");
+// //                 }
+// //             });
+
+// //             // ✅ Create user_addresses table if not exists (important for addresses)
+// //             connection.query(`
+// //                 CREATE TABLE IF NOT EXISTS user_addresses (
+// //                     id INT AUTO_INCREMENT PRIMARY KEY,
+// //                     user_id INT NOT NULL,
+// //                     address_type ENUM('home', 'office', 'other') DEFAULT 'home',
+// //                     full_name VARCHAR(255) NOT NULL,
+// //                     phone VARCHAR(20) NOT NULL,
+// //                     address_line TEXT NOT NULL,
+// //                     city VARCHAR(100) NOT NULL,
+// //                     state VARCHAR(100) NOT NULL,
+// //                     postal_code VARCHAR(20) NOT NULL,
+// //                     country VARCHAR(100) DEFAULT 'India',
+// //                     is_default TINYINT(1) DEFAULT 0,
+// //                     is_active TINYINT(1) DEFAULT 1,
+// //                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+// //                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+// //                     INDEX idx_user_id (user_id),
+// //                     INDEX idx_is_default (is_default),
+// //                     INDEX idx_is_active (is_active),
+// //                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+// //                 )
+// //             `, (tableErr) => {
+// //                 if (tableErr) {
+// //                     console.error("⚠️ User addresses table creation error:", tableErr.message);
+// //                 } else {
+// //                     console.log("✅ User addresses table ready");
+// //                 }
+// //             });
+// //         }
+// //     });
+// // };
+
+// // testDatabaseConnection();
+
+// // /* ================= ENHANCED DB MIDDLEWARE ================= */
+// // app.use((req, res, next) => {
+// //     req.db = db;
+
+// //     // Add query helper methods
+// //     req.db.queryAsync = (sql, params) => {
+// //         return new Promise((resolve, reject) => {
+// //             db.query(sql, params, (err, results) => {
+// //                 if (err) {
+// //                     console.error("Database Query Error:", err);
+// //                     reject(err);
+// //                 } else {
+// //                     resolve(results);
+// //                 }
+// //             });
+// //         });
+// //     };
+
+// //     next();
+// // });
+
+// // /* ================= EMAIL SERVICE MIDDLEWARE ================= */
+// // // Make email service available to all routes
+// // app.use((req, res, next) => {
+// //     req.emailService = emailService;
+// //     next();
+// // });
+
+// // /* ================= ERROR HANDLING MIDDLEWARE ================= */
+// // app.use((err, req, res, next) => {
+// //     console.error("🚨 Server Error:", err.stack);
+
+// //     if (err.code === 'ECONNREFUSED') {
+// //         return res.status(503).json({
+// //             success: false,
+// //             message: "Database connection failed. Please try again later."
+// //         });
+// //     }
+
+// //     if (err.code === 'ER_NO_SUCH_TABLE') {
+// //         return res.status(500).json({
+// //             success: false,
+// //             message: "Database table not found. Please check your database setup."
+// //         });
+// //     }
+
+// //     res.status(500).json({
+// //         success: false,
+// //         message: "Internal server error",
+// //         error: process.env.NODE_ENV === 'development' ? err.message : undefined
+// //     });
+// // });
+
+// // /* ================= STATIC FILES ================= */
+// // app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+// //     setHeaders: (res) => {
+// //         res.setHeader("Access-Control-Allow-Origin", "*");
+// //         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+// //     }
+// // }));
+
+// // app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads"), {
+// //     setHeaders: (res) => {
+// //         res.setHeader("Access-Control-Allow-Origin", "*");
+// //         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+// //     }
+// // }));
+
+// // // Serve static images for products
+// // app.use("/product-images", express.static(path.join(__dirname, "uploads/products")));
+
+// // // Serve placeholder image
+// // app.get("/images/placeholder-product.jpg", (req, res) => {
+// //     res.sendFile(path.join(__dirname, "public/images/placeholder-product.jpg"));
+// // });
+
+// // /* ================= API ROUTES ================= */
+// // console.log("📦 Loading API routes...");
+
+// // // Existing routes
+// // app.use("/api", authRoutes);
+// // app.use("/api", profileRoutes);
+// // app.use("/api/products", productsRoutes);
+// // app.use("/api/chat", chatRoutes);
+// // app.use("/api/cart", cartRoutes);
+// // app.use("/api/reviews", reviewRoutes);
+// // app.use("/api/search", searchRoutes);
+// // app.use("/api/categories", categoryRoutes);
+// // app.use("/api/banners", bannerRoutes);
+
+// // // ✅ NEW CHECKOUT-RELATED ROUTES
+// // app.use("/api/orders", orderRoutes);
+// // app.use("/api/product-details", productDetailRoutes);
+// // app.use("/api/address", addressRoutes);
+// // app.use("/api/payment", paymentRoutes);
+
+
+
+// // app.use("/api/users", userAddressRoutes);
+// // app.use("/api/users", userRoutes);
+// // app.use("/api/email", emailRoutes);
+// // app.use("/api/promo", promoRoutes);
+// // app.use('/api/user', userRoutes);
+
+// // console.log("✅ All routes loaded successfully");
+
+// // /* ================= EXTRA CATEGORY APIs ================= */
+// // console.log("📂 Loading category APIs...");
+
+// // // ✅ Sub Categories
+// // app.get("/api/subcategories", (req, res) => {
+// //     const sql = "SELECT * FROM sub_categories WHERE status = 'active' ORDER BY id DESC";
+// //     req.db.query(sql, (err, results) => {
+// //         if (err) {
+// //             console.error("❌ Subcategories SQL Error:", err.message);
+// //             return res.status(500).json({
+// //                 success: false,
+// //                 message: "Subcategories fetch failed",
+// //                 error: process.env.NODE_ENV === 'development' ? err.message : undefined
+// //             });
+// //         }
+// //         res.json({
+// //             success: true,
+// //             data: results
+// //         });
+// //     });
+// // });
+
+// // // ✅ Sub Sub Categories
+// // app.get("/api/subsubcategories", (req, res) => {
+// //     const sql = "SELECT * FROM sub_sub_categories WHERE status = 'active' ORDER BY id DESC";
+// //     req.db.query(sql, (err, results) => {
+// //         if (err) {
+// //             console.error("❌ SubSubCategories SQL Error:", err.message);
+// //             return res.status(500).json({
+// //                 success: false,
+// //                 message: "SubSubCategories fetch failed",
+// //                 error: process.env.NODE_ENV === 'development' ? err.message : undefined
+// //             });
+// //         }
+// //         res.json({
+// //             success: true,
+// //             data: results
+// //         });
+// //     });
+// // });
+
+// // // ✅ Get All Categories with Hierarchy
+// // app.get("/api/categories/hierarchy", (req, res) => {
+// //     const sql = `
+// //         SELECT
+// //             c.id as category_id,
+// //             c.name as category_name,
+// //             c.slug as category_slug,
+// //             sc.id as sub_category_id,
+// //             sc.name as sub_category_name,
+// //             sc.slug as sub_category_slug,
+// //             ssc.id as sub_sub_category_id,
+// //             ssc.name as sub_sub_category_name,
+// //             ssc.slug as sub_sub_category_slug
+// //         FROM categories c
+// //         LEFT JOIN sub_categories sc ON c.id = sc.category_id AND sc.status = 'active'
+// //         LEFT JOIN sub_sub_categories ssc ON sc.id = ssc.sub_category_id AND ssc.status = 'active'
+// //         WHERE c.status = 'active'
+// //         ORDER BY c.id, sc.id, ssc.id
+// //     `;
+
+// //     req.db.query(sql, (err, results) => {
+// //         if (err) {
+// //             console.error("❌ Categories hierarchy error:", err.message);
+// //             return res.status(500).json({
+// //                 success: false,
+// //                 message: "Failed to fetch categories hierarchy"
+// //             });
+// //         }
+
+// //         const categories = {};
+// //         results.forEach(row => {
+// //             if (!categories[row.category_id]) {
+// //                 categories[row.category_id] = {
+// //                     id: row.category_id,
+// //                     name: row.category_name,
+// //                     slug: row.category_slug,
+// //                     sub_categories: {}
+// //                 };
+// //             }
+
+// //             if (row.sub_category_id && !categories[row.category_id].sub_categories[row.sub_category_id]) {
+// //                 categories[row.category_id].sub_categories[row.sub_category_id] = {
+// //                     id: row.sub_category_id,
+// //                     name: row.sub_category_name,
+// //                     slug: row.sub_category_slug,
+// //                     sub_sub_categories: []
+// //                 };
+// //             }
+
+// //             if (row.sub_sub_category_id) {
+// //                 categories[row.category_id].sub_categories[row.sub_category_id].sub_sub_categories.push({
+// //                     id: row.sub_sub_category_id,
+// //                     name: row.sub_sub_category_name,
+// //                     slug: row.sub_sub_category_slug
+// //                 });
+// //             }
+// //         });
+
+// //         res.json({
+// //             success: true,
+// //             data: Object.values(categories)
+// //         });
+// //     });
+// // });
+
+// // console.log("✅ Category APIs loaded");
+
+// // /* ================= CHECKOUT HELPER APIs ================= */
+// // console.log("🛒 Loading checkout helper APIs...");
+
+// // // ✅ Get Shipping Methods
+// // app.get("/api/shipping-methods", (req, res) => {
+// //     const shippingMethods = [
+// //         {
+// //             id: "standard",
+// //             name: "Standard Shipping",
+// //             description: "Delivery in 5-7 business days",
+// //             cost: 50,
+// //             estimated_days: "5-7"
+// //         },
+// //         {
+// //             id: "express",
+// //             name: "Express Shipping",
+// //             description: "Delivery in 2-3 business days",
+// //             cost: 100,
+// //             estimated_days: "2-3"
+// //         },
+// //         {
+// //             id: "free",
+// //             name: "Free Shipping",
+// //             description: "Delivery in 7-10 business days",
+// //             cost: 0,
+// //             estimated_days: "7-10",
+// //             min_order: 500
+// //         }
+// //     ];
+
+// //     res.json({
+// //         success: true,
+// //         data: shippingMethods
+// //     });
+// // });
+
+// // // ✅ Get Payment Methods
+// // app.get("/api/payment-methods", (req, res) => {
+// //     const paymentMethods = [
+// //         {
+// //             id: "cod",
+// //             name: "Cash on Delivery",
+// //             description: "Pay when you receive the product",
+// //             available: true,
+// //             icon: "💵"
+// //         },
+// //         {
+// //             id: "razorpay",
+// //             name: "Razorpay",
+// //             description: "Pay via Card, UPI, Net Banking, Wallet",
+// //             available: true,
+// //             icon: "🟣"
+// //         }
+// //     ];
+
+// //     res.json({
+// //         success: true,
+// //         data: paymentMethods
+// //     });
+// // });
+
+// // // ✅ Validate Promo Code
+// // app.post("/api/promo/validate", (req, res) => {
+// //     const { promoCode } = req.body;
+
+// //     const validPromoCodes = {
+// //         "WELCOME10": { discount: 10, minOrder: 0, maxDiscount: 500, type: "percentage" },
+// //         "SAVE20": { discount: 20, minOrder: 1000, maxDiscount: 1000, type: "percentage" },
+// //         "FREESHIP": { discount: 0, freeShipping: true, minOrder: 500, type: "shipping" },
+// //         "FLAT100": { discount: 100, minOrder: 500, maxDiscount: 100, type: "fixed" }
+// //     };
+
+// //     const code = promoCode?.toUpperCase().trim();
+
+// //     if (validPromoCodes[code]) {
+// //         res.json({
+// //             success: true,
+// //             valid: true,
+// //             promo: validPromoCodes[code],
+// //             message: "Promo code applied successfully"
+// //         });
+// //     } else {
+// //         res.json({
+// //             success: false,
+// //             valid: false,
+// //             message: "Invalid or expired promo code"
+// //         });
+// //     }
+// // });
+
+// // // ✅ Get Checkout Summary
+// // app.post("/api/checkout/summary", async (req, res) => {
+// //     try {
+// //         const { items, shippingMethod = "standard" } = req.body;
+
+// //         if (!items || !Array.isArray(items) || items.length === 0) {
+// //             return res.status(400).json({
+// //                 success: false,
+// //                 message: "Items are required"
+// //             });
+// //         }
+
+// //         let subtotal = 0;
+// //         let discountTotal = 0;
+// //         let hasFreeShipping = false;
+
+// //         for (const item of items) {
+// //             const price = parseFloat(item.price || 0);
+// //             const quantity = parseInt(item.quantity || 1);
+// //             const discount = parseFloat(item.discount || 0);
+
+// //             const itemTotal = price * quantity;
+// //             subtotal += itemTotal;
+
+// //             if (discount > 0) {
+// //                 discountTotal += (price * discount / 100) * quantity;
+// //             }
+
+// //             if (item.free_shipping) {
+// //                 hasFreeShipping = true;
+// //             }
+// //         }
+
+// //         let shipping = 0;
+// //         if (!hasFreeShipping) {
+// //             shipping = shippingMethod === "express" ? 100 : 50;
+// //         }
+
+// //         const tax = subtotal * 0.18;
+// //         const total = subtotal + shipping + tax - discountTotal;
+
+// //         res.json({
+// //             success: true,
+// //             summary: {
+// //                 subtotal: subtotal.toFixed(2),
+// //                 shipping: shipping.toFixed(2),
+// //                 tax: tax.toFixed(2),
+// //                 discount: discountTotal.toFixed(2),
+// //                 total: total.toFixed(2),
+// //                 hasFreeShipping,
+// //                 itemsCount: items.length
+// //             }
+// //         });
+
+// //     } catch (error) {
+// //         console.error("Checkout summary error:", error);
+// //         res.status(500).json({
+// //             success: false,
+// //             message: "Failed to calculate checkout summary"
+// //         });
+// //     }
+// // });
+
+// // console.log("✅ Checkout helper APIs loaded");
+
+// // // ✅ FALLBACK USER ROUTES (ये तब use होंगे जब userAddressRoutes में न हों)
+// // app.get("/api/users/:id/details", (req, res) => {
+// //     const userId = req.params.id;
+// //     const db = req.db;
+
+// //     db.query(`
+// //         SELECT id, name, email, phone, address, city, state,
+// //                postal_code as postalCode, country, avatar, is_verified as isVerified
+// //         FROM users
+// //         WHERE id = ? AND is_active = 1 AND is_deleted = 0
+// //     `, [userId], (err, results) => {
+// //         if (err) {
+// //             console.error("Get user error:", err);
+// //             return res.status(500).json({
+// //                 success: false,
+// //                 message: "Failed to fetch user details"
+// //             });
+// //         }
+
+// //         if (results.length === 0) {
+// //             return res.status(404).json({
+// //                 success: false,
+// //                 message: "User not found"
+// //             });
+// //         }
+
+// //         res.json({
+// //             success: true,
+// //             user: results[0]
+// //         });
+// //     });
+// // });
+
+// // /* ================= 📧 EMAIL TEST ENDPOINT ================= */
+// // app.get("/api/test-email", async (req, res) => {
+// //     console.log("========== 📧 TEST EMAIL ENDPOINT ==========");
+
+// //     if (!emailService) {
+// //         return res.status(500).json({
+// //             success: false,
+// //             message: "Email service not loaded",
+// //             solution: "Please check if backend/services/emailService.js exists"
+// //         });
+// //     }
+
+// //     try {
+// //         const testResult = await emailService.testEmailConfig();
+// //         res.json({
+// //             success: testResult.success,
+// //             message: testResult.message || "Email test completed",
+// //             details: testResult,
+// //             env: {
+// //                 EMAIL_USER: process.env.EMAIL_USER ? "✅ Set" : "❌ Missing",
+// //                 EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Missing",
+// //                 FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000"
+// //             }
+// //         });
+// //     } catch (error) {
+// //         console.error("❌ Test email error:", error);
+// //         res.status(500).json({
+// //             success: false,
+// //             message: "Email test failed",
+// //             error: error.message
+// //         });
+// //     }
+// // });
+
+// // /* ================= EMAIL LOGS ENDPOINT ================= */
+// // app.get("/api/email-logs", (req, res) => {
+// //     const db = req.db;
+// //     const { limit = 20 } = req.query;
+
+// //     db.query(`
+// //         SELECT * FROM email_logs
+// //         ORDER BY created_at DESC
+// //         LIMIT ?
+// //     `, [parseInt(limit)], (err, results) => {
+// //         if (err) {
+// //             console.error("❌ Email logs fetch error:", err);
+// //             return res.status(500).json({
+// //                 success: false,
+// //                 message: "Failed to fetch email logs"
+// //             });
+// //         }
+
+// //         res.json({
+// //             success: true,
+// //             logs: results || []
+// //         });
+// //     });
+// // });
+
+// // /* ================= DATABASE HEALTH CHECK ================= */
+// // app.get("/api/db-health", (req, res) => {
+// //     const requiredTables = [
+// //         'users', 'products', 'cart', 'orders', 'order_items',
+// //         'categories', 'sub_categories', 'sub_sub_categories',
+// //         'user_addresses', 'email_logs'
+// //     ];
+
+// //     const checkPromises = requiredTables.map(table => {
+// //         return new Promise((resolve) => {
+// //             req.db.query(`SHOW TABLES LIKE '${table}'`, (err, results) => {
+// //                 resolve({
+// //                     table,
+// //                     exists: results && results.length > 0,
+// //                     error: err ? err.message : null
+// //                 });
+// //             });
+// //         });
+// //     });
+
+// //     Promise.all(checkPromises)
+// //         .then(results => {
+// //             const missingTables = results.filter(r => !r.exists);
+// //             const errors = results.filter(r => r.error);
+
+// //             res.json({
+// //                 success: true,
+// //                 database: process.env.DB_NAME,
+// //                 tables: results,
+// //                 status: missingTables.length === 0 ? "healthy" : "incomplete",
+// //                 missingTables: missingTables.map(t => t.table),
+// //                 errors: errors.length > 0 ? errors : null
+// //             });
+// //         })
+// //         .catch(error => {
+// //             res.status(500).json({
+// //                 success: false,
+// //                 message: "Database health check failed",
+// //                 error: error.message
+// //             });
+// //         });
+// // });
+
+// // /* ================= HEALTH CHECK ================= */
+// // app.get("/health", (req, res) => {
+// //     req.db.getConnection((err, connection) => {
+// //         if (err) {
+// //             return res.status(503).json({
+// //                 status: "unhealthy",
+// //                 database: "disconnected",
+// //                 message: "Database connection failed",
+// //                 error: err.message
+// //             });
+// //         }
+
+// //         connection.ping((pingErr) => {
+// //             connection.release();
+
+// //             if (pingErr) {
+// //                 return res.status(503).json({
+// //                     status: "unhealthy",
+// //                     database: "unresponsive",
+// //                     message: "Database ping failed"
+// //                 });
+// //             }
+
+// //             res.json({
+// //                 status: "healthy",
+// //                 database: "connected",
+// //                 email: emailService ? "✅ Ready" : "❌ Not configured",
+// //                 timestamp: new Date().toISOString(),
+// //                 uptime: process.uptime(),
+// //                 memory: process.memoryUsage()
+// //             });
+// //         });
+// //     });
+// // });
+
+// // // Detailed health endpoint
+// // app.get("/api/health/detailed", (req, res) => {
+// //     const health = {
+// //         status: "healthy",
+// //         timestamp: new Date().toISOString(),
+// //         services: {
+// //             database: "checking...",
+// //             email: emailService ? "loaded" : "not loaded",
+// //             api: "running",
+// //             memory: process.memoryUsage()
+// //         },
+// //         env: {
+// //             NODE_ENV: process.env.NODE_ENV || 'development',
+// //             EMAIL_CONFIGURED: !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD)
+// //         }
+// //     };
+
+// //     req.db.getConnection((err, connection) => {
+// //         if (err) {
+// //             health.status = "unhealthy";
+// //             health.services.database = "disconnected";
+// //             health.error = err.message;
+// //             return res.status(503).json(health);
+// //         }
+
+// //         connection.query("SELECT 1", (queryErr) => {
+// //             connection.release();
+
+// //             if (queryErr) {
+// //                 health.status = "unhealthy";
+// //                 health.services.database = "query_failed";
+// //                 health.error = queryErr.message;
+// //                 return res.status(503).json(health);
+// //             }
+
+// //             health.services.database = "connected";
+// //             res.json(health);
+// //         });
+// //     });
+// // });
+
+// // /* ================= API DOCUMENTATION ================= */
+// // app.get("/api", (req, res) => {
+// //     const apiDocs = {
+// //         name: "Pankhudi E-commerce API",
+// //         version: "1.0.0",
+// //         description: "Complete e-commerce API with checkout support",
+// //         endpoints: {
+// //             auth: "/api/auth/*",
+// //             products: "/api/products/*",
+// //             cart: "/api/cart/*",
+// //             orders: "/api/orders/*",
+// //             users: "/api/users/*",
+// //             addresses: "/api/users/:userId/addresses", // नया endpoint
+// //             categories: "/api/categories/*",
+// //             checkout: {
+// //                 summary: "POST /api/checkout/summary",
+// //                 shippingMethods: "GET /api/shipping-methods",
+// //                 paymentMethods: "GET /api/payment-methods",
+// //                 promoValidation: "POST /api/promo/validate"
+// //             },
+// //             email: {
+// //                 test: "GET /api/test-email",
+// //                 logs: "GET /api/email-logs"
+// //             }
+// //         },
+// //         health: {
+// //             basic: "/health",
+// //             detailed: "/api/health/detailed",
+// //             database: "/api/db-health"
+// //         }
+// //     };
+
+// //     res.json(apiDocs);
+// // });
+
+// // // Route debugging endpoint - सभी registered routes दिखाने के लिए
+// // app.get("/api/debug/routes", (req, res) => {
+// //     const routes = [];
+
+// //     function print(path, layer) {
+// //         if (layer.route) {
+// //             layer.route.stack.forEach(print.bind(null, path + layer.route.path));
+// //         } else if (layer.name === 'router' && layer.handle.stack) {
+// //             layer.handle.stack.forEach(print.bind(null, path + layer.regexp.source));
+// //         } else if (layer.method) {
+// //             routes.push({
+// //                 method: layer.method.toUpperCase(),
+// //                 path: path,
+// //                 name: layer.name
+// //             });
+// //         }
+// //     }
+
+// //     app._router.stack.forEach(print.bind(null, ''));
+
+// //     res.json({
+// //         success: true,
+// //         totalRoutes: routes.length,
+// //         routes: routes.sort((a, b) => a.path.localeCompare(b.path))
+// //     });
+// // });
+
+// // /* ================= FALLBACK ================= */
+// // app.use((req, res) => {
+// //     console.log("❌ 404 - Route not found:", req.method, req.url);
+// //     res.status(404).json({
+// //         success: false,
+// //         message: "Route not found",
+// //         requestedUrl: req.originalUrl,
+// //         availableRoutes: ["/api", "/health", "/api/health/detailed", "/api/test-email", "/api/email-logs", "/api/debug/routes"]
+// //     });
+// // });
+
+// // /* ================= START SERVER ================= */
+// // const port = process.env.PORT || 5000;
+
+// // const server = app.listen(port, () => {
+// //     console.log(`\n🚀 Server running on http://localhost:${port}`);
+// //     console.log(`📚 API Documentation: http://localhost:${port}/api`);
+// //     console.log(`❤️  Health Check: http://localhost:${port}/health`);
+// //     console.log(`🛒 Checkout API: http://localhost:${port}/api/orders`);
+// //     console.log(`🛍️  Cart API: http://localhost:${port}/api/cart`);
+// //     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
+// //     console.log(`👤 User API: http://localhost:${port}/api/users`);
+// //     console.log(`🏠 Address API: http://localhost:${port}/api/users/:userId/addresses`);
+// //     console.log(`📧 Email API: http://localhost:${port}/api/test-email`);
+// //     console.log(`📋 Email Logs: http://localhost:${port}/api/email-logs`);
+// //     console.log(`🔧 Debug Routes: http://localhost:${port}/api/debug/routes`);
+
+// //     // Test email configuration on startup
+// //     if (emailService) {
+// //         emailService.testEmailConfig().then(result => {
+// //             if (result.success) {
+// //                 console.log("✅ Email service is ready");
+// //             } else {
+// //                 console.warn("⚠️ Email service not configured properly");
+// //                 console.warn("   Please set EMAIL_USER and EMAIL_PASSWORD in .env file");
+// //                 console.warn("   Or check backend/services/emailService.js");
+// //             }
+// //         }).catch(err => {
+// //             console.error("❌ Email service test failed:", err.message);
+// //         });
+// //     } else {
+// //         console.warn("⚠️ Email service not loaded");
+// //         console.warn("   Please create backend/services/emailService.js");
+// //     }
+
+// //     console.log(`\n✅ Server is fully operational!\n`);
+// // });
+
+// // /* ================= GRACEFUL SHUTDOWN ================= */
+// // const gracefulShutdown = () => {
+// //     console.log("\n🔴 Received shutdown signal...");
+
+// //     server.close(() => {
+// //         console.log("✅ HTTP server closed");
+
+// //         db.end((err) => {
+// //             if (err) {
+// //                 console.error("❌ Error closing database pool:", err);
+// //                 process.exit(1);
+// //             }
+// //             console.log("✅ Database pool closed");
+// //             process.exit(0);
+// //         });
+// //     });
+
+// //     setTimeout(() => {
+// //         console.error("💥 Forcing shutdown after timeout");
+// //         process.exit(1);
+// //     }, 10000);
+// // };
+
+// // process.on('SIGTERM', gracefulShutdown);
+// // process.on('SIGINT', gracefulShutdown);
+
+// // /* ================= ERROR HANDLING ================= */
+// // process.on("unhandledRejection", (reason, promise) => {
+// //     console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+// // });
+
+// // process.on("uncaughtException", (error) => {
+// //     console.error("💥 Uncaught Exception:", error);
+// //     gracefulShutdown();
+// // });
+
+// // /* ================= DATABASE AUTO-RECONNECT ================= */
+// // db.on('error', (err) => {
+// //     console.error('💥 Database pool error:', err);
+
+// //     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+// //         console.log('🔄 Attempting to reconnect to database...');
+// //         testDatabaseConnection();
+// //     }
+// // });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// require("dotenv").config();
+// const express = require("express");
+// const mysql = require("mysql");
+// const bodyParser = require("body-parser");
+// const cors = require("cors");
+// const path = require("path");
+// const fs = require('fs');
+// const jwt = require('jsonwebtoken');
+
+// /* ================= EMAIL SERVICE ================= */
+// // Create email service directory if it doesn't exist
+// const emailServiceDir = path.join(__dirname, 'services');
+// if (!fs.existsSync(emailServiceDir)) {
+//     fs.mkdirSync(emailServiceDir, { recursive: true });
+// }
+
+// // Import email service
+// let emailService;
+// try {
+//     emailService = require("./services/emailService");
+//     console.log("✅ Email service loaded successfully");
+// } catch (error) {
+//     console.error("❌ Error loading email service:", error.message);
+//     console.log("⚠️ Email service will be created on server start");
+//     emailService = null;
+// }
+
+// /* ================= ROUTES ================= */
+// const authRoutes = require("./routes/auth");
+// const profileRoutes = require("./routes/profile");
+// const productsRoutes = require("./routes/products");
+// const chatRoutes = require("./routes/chat");
+// const cartRoutes = require("./routes/cart");
+// const reviewRoutes = require("./routes/reviews");
+// const searchRoutes = require("./routes/searchRoutes");
+// const categoryRoutes = require("./routes/categories");
+// const bannerRoutes = require("./routes/banner");
+// const addressRoutes = require("./routes/address");
+// const paymentRoutes = require("./routes/paymentRoutes");
+// const promoRoutes = require("./routes/promoRoutes");
+
+// // ✅ NEW CHECKOUT-RELATED ROUTES
+// const orderRoutes = require("./routes/orderRoutes");
+// const productDetailRoutes = require("./routes/productDetailRoutes");
+// const userAddressRoutes = require("./routes/address");
+
+// // email logs route
+// const emailRoutes = require("./routes/emailRoutes");
+
+// // ✅ USER ROUTES
+// let userRoutes;
+// try {
+//     userRoutes = require("./routes/user");
+//     console.log("✅ userRoutes loaded successfully from ./routes/user");
+// } catch (error) {
+//     console.error("❌ Error loading userRoutes:", error.message);
+//     console.log("⚠️ Creating fallback user routes");
+
+//     const express = require("express");
+//     userRoutes = express.Router();
+
+//     userRoutes.get("/me", (req, res) => {
+//         res.status(500).json({
+//             success: false,
+//             message: "User routes are currently unavailable. Please check server configuration."
+//         });
+//     });
+
+//     userRoutes.put("/address", (req, res) => {
+//         res.status(500).json({
+//             success: false,
+//             message: "User routes are currently unavailable. Please check server configuration."
+//         });
+//     });
+// }
+
+// const app = express();
+
+// /* ================= BODY & CORS ================= */
+// app.use(bodyParser.json({ limit: "50mb" }));
+// app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+
+// // ✅ FIXED CORS configuration
+// app.use(
+//     cors({
+//         origin: ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+//         credentials: true,
+//         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+//         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+//         exposedHeaders: ["Content-Range", "X-Content-Range"]
+//     })
+// );
+
+// // Handle preflight requests
+// app.options("*", cors());
+
+// /* ================= DB POOL WITH ENHANCED CONFIG ================= */
+// const db = mysql.createPool({
+//     host: process.env.DB_HOST || "localhost",
+//     user: process.env.DB_USER || "root",
+//     password: process.env.DB_PASSWORD || "",
+//     database: process.env.DB_NAME || "pankhudi",
+//     port: process.env.DB_PORT || 3306,
+//     connectionLimit: 50,
+//     waitForConnections: true,
+//     queueLimit: 0,
+//     enableKeepAlive: true,
+//     keepAliveInitialDelay: 10000,
+//     charset: 'utf8mb4',
+//     timezone: 'local',
+//     multipleStatements: true
+// });
+
+// /* ================= DB TEST WITH RETRY LOGIC ================= */
+// const testDatabaseConnection = (retries = 5, delay = 3000) => {
+//     db.getConnection((err, connection) => {
+//         if (err) {
+//             console.error("❌ Database connection failed:", err.message);
+
+//             if (retries > 0) {
+//                 console.log(`🔄 Retrying connection in ${delay / 1000} seconds... (${retries} attempts left)`);
+//                 setTimeout(() => testDatabaseConnection(retries - 1, delay), delay);
+//             } else {
+//                 console.error("💥 Failed to connect to database after multiple attempts");
+//             }
+//         } else {
+//             console.log("✅ Database connected successfully");
+
+//             // Test query to ensure tables exist
+//             connection.query("SELECT 1", (queryErr) => {
+//                 if (queryErr) {
+//                     console.error("⚠️ Database query test failed:", queryErr.message);
+//                 } else {
+//                     console.log("✅ Database query test successful");
+//                 }
+//             });
+
+//             // ✅ Check if users table has avatar column
+//             connection.query("SHOW COLUMNS FROM users LIKE 'avatar'", (err, results) => {
+//                 if (err) {
+//                     console.error("⚠️ Error checking avatar column:", err.message);
+//                 } else if (results.length === 0) {
+//                     console.log("📝 Adding avatar column to users table...");
+//                     connection.query(
+//                         "ALTER TABLE users ADD COLUMN avatar VARCHAR(500) DEFAULT NULL AFTER email",
+//                         (alterErr) => {
+//                             if (alterErr) {
+//                                 console.error("❌ Failed to add avatar column:", alterErr.message);
+//                             } else {
+//                                 console.log("✅ Avatar column added to users table");
+//                             }
+//                         }
+//                     );
+//                 } else {
+//                     console.log("✅ Avatar column exists in users table");
+//                 }
+//             });
+
+//             // ✅ Check if users table has auth_method column
+//             connection.query("SHOW COLUMNS FROM users LIKE 'auth_method'", (err, results) => {
+//                 if (err) {
+//                     console.error("⚠️ Error checking auth_method column:", err.message);
+//                 } else if (results.length === 0) {
+//                     console.log("📝 Adding auth_method column to users table...");
+//                     connection.query(
+//                         "ALTER TABLE users ADD COLUMN auth_method VARCHAR(20) DEFAULT 'local' AFTER password",
+//                         (alterErr) => {
+//                             if (alterErr) {
+//                                 console.error("❌ Failed to add auth_method column:", alterErr.message);
+//                             } else {
+//                                 console.log("✅ Auth_method column added to users table");
+//                             }
+//                         }
+//                     );
+//                 } else {
+//                     console.log("✅ Auth_method column exists in users table");
+//                 }
+//             });
+
+//             // ✅ Check if users table has address column
+//             connection.query("SHOW COLUMNS FROM users LIKE 'address'", (err, results) => {
+//                 if (err) {
+//                     console.error("⚠️ Error checking address column:", err.message);
+//                 } else if (results.length === 0) {
+//                     console.log("📝 Adding address column to users table...");
+//                     connection.query(
+//                         "ALTER TABLE users ADD COLUMN address TEXT DEFAULT NULL AFTER phone",
+//                         (alterErr) => {
+//                             if (alterErr) {
+//                                 console.error("❌ Failed to add address column:", alterErr.message);
+//                             } else {
+//                                 console.log("✅ Address column added to users table");
+//                             }
+//                         }
+//                     );
+//                 } else {
+//                     console.log("✅ Address column exists in users table");
+//                 }
+//             });
+
+//             // ✅ Create email_logs table if not exists
+//             connection.query(`
+//                 CREATE TABLE IF NOT EXISTS email_logs (
+//                     id INT AUTO_INCREMENT PRIMARY KEY,
+//                     order_id INT,
+//                     recipient VARCHAR(255) NOT NULL,
+//                     subject VARCHAR(255) NOT NULL,
+//                     message_id VARCHAR(255),
+//                     status ENUM('pending', 'sent', 'failed', 'logged') DEFAULT 'pending',
+//                     error TEXT,
+//                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//                     sent_at DATETIME,
+//                     INDEX idx_order_id (order_id),
+//                     INDEX idx_status (status)
+//                 )
+//             `, (tableErr) => {
+//                 if (tableErr) {
+//                     console.error("⚠️ Email logs table creation error:", tableErr.message);
+//                 } else {
+//                     console.log("✅ Email logs table ready");
+//                 }
+//             });
+
+//             // ✅ Create user_addresses table if not exists
+//             connection.query(`
+//                 CREATE TABLE IF NOT EXISTS user_addresses (
+//                     id INT AUTO_INCREMENT PRIMARY KEY,
+//                     user_id INT NOT NULL,
+//                     address_type ENUM('home', 'office', 'other') DEFAULT 'home',
+//                     full_name VARCHAR(255) NOT NULL,
+//                     phone VARCHAR(20) NOT NULL,
+//                     address_line TEXT NOT NULL,
+//                     city VARCHAR(100) NOT NULL,
+//                     state VARCHAR(100) NOT NULL,
+//                     postal_code VARCHAR(20) NOT NULL,
+//                     country VARCHAR(100) DEFAULT 'India',
+//                     is_default TINYINT(1) DEFAULT 0,
+//                     is_active TINYINT(1) DEFAULT 1,
+//                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//                     INDEX idx_user_id (user_id),
+//                     INDEX idx_is_default (is_default),
+//                     INDEX idx_is_active (is_active),
+//                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+//                 )
+//             `, (tableErr) => {
+//                 if (tableErr) {
+//                     console.error("⚠️ User addresses table creation error:", tableErr.message);
+//                 } else {
+//                     console.log("✅ User addresses table ready");
+//                 }
+//             });
+
+//             // ✅ Create login_activity table if not exists
+//             connection.query(`
+//                 CREATE TABLE IF NOT EXISTS login_activity (
+//                     id INT PRIMARY KEY AUTO_INCREMENT,
+//                     user_id INT NOT NULL,
+//                     action VARCHAR(50) DEFAULT 'Login',
+//                     ip_address VARCHAR(45),
+//                     user_agent TEXT,
+//                     browser VARCHAR(50),
+//                     os VARCHAR(50),
+//                     device_type VARCHAR(20),
+//                     status VARCHAR(20),
+//                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+//                     INDEX idx_user_id (user_id),
+//                     INDEX idx_timestamp (timestamp)
+//                 )
+//             `, (tableErr) => {
+//                 if (tableErr) {
+//                     console.error("⚠️ Login activity table creation error:", tableErr.message);
+//                 } else {
+//                     console.log("✅ Login activity table ready");
+//                 }
+//             });
+
+//             connection.release();
+//         }
+//     });
+// };
+
+// testDatabaseConnection();
+
+// /* ================= ENHANCED DB MIDDLEWARE ================= */
+// app.use((req, res, next) => {
+//     req.db = db;
+
+//     // Add query helper methods
+//     req.db.queryAsync = (sql, params) => {
+//         return new Promise((resolve, reject) => {
+//             db.query(sql, params, (err, results) => {
+//                 if (err) {
+//                     console.error("Database Query Error:", err);
+//                     reject(err);
+//                 } else {
+//                     resolve(results);
+//                 }
+//             });
+//         });
+//     };
+
+//     next();
+// });
+
+// /* ================= JWT AUTHENTICATION MIDDLEWARE ================= */
+// const authenticateToken = (req, res, next) => {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+
+//     if (!token) {
+//         return res.status(401).json({ success: false, message: 'Authentication required' });
+//     }
+
+//     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+//         if (err) {
+//             console.error("JWT verification error:", err.message);
+//             return res.status(403).json({ success: false, message: 'Invalid or expired token' });
+//         }
+//         req.user = user;
+//         next();
+//     });
+// };
+
+// // Make authentication middleware available to all routes
+// app.use((req, res, next) => {
+//     req.authenticateToken = authenticateToken;
+//     next();
+// });
+
+// /* ================= EMAIL SERVICE MIDDLEWARE ================= */
+// // Make email service available to all routes
+// app.use((req, res, next) => {
+//     req.emailService = emailService;
+//     next();
+// });
+
+// /* ================= ERROR HANDLING MIDDLEWARE ================= */
+// app.use((err, req, res, next) => {
+//     console.error("🚨 Server Error:", err.stack);
+
+//     if (err.code === 'ECONNREFUSED') {
+//         return res.status(503).json({
+//             success: false,
+//             message: "Database connection failed. Please try again later."
+//         });
+//     }
+
+//     if (err.code === 'ER_NO_SUCH_TABLE') {
+//         return res.status(500).json({
+//             success: false,
+//             message: "Database table not found. Please check your database setup."
+//         });
+//     }
+
+//     if (err.code === 'ER_DUP_ENTRY') {
+//         return res.status(409).json({
+//             success: false,
+//             message: "Duplicate entry. This record already exists."
+//         });
+//     }
+
+//     res.status(500).json({
+//         success: false,
+//         message: "Internal server error",
+//         error: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+// });
+
+// /* ================= ✅ FIXED STATIC FILES ================= */
+// // Create uploads directory if it doesn't exist
+// const uploadsDir = path.join(__dirname, "uploads");
+// const avatarsDir = path.join(uploadsDir, "avatars");
+// const productsDir = path.join(uploadsDir, "products");
+// const categoriesDir = path.join(uploadsDir, "categories");
+// const bannersDir = path.join(uploadsDir, "banners");
+
+// if (!fs.existsSync(uploadsDir)) {
+//     fs.mkdirSync(uploadsDir, { recursive: true });
+//     console.log("✅ Created uploads directory");
+// }
+
+// if (!fs.existsSync(avatarsDir)) {
+//     fs.mkdirSync(avatarsDir, { recursive: true });
+//     console.log("✅ Created avatars directory");
+// }
+
+// if (!fs.existsSync(productsDir)) {
+//     fs.mkdirSync(productsDir, { recursive: true });
+//     console.log("✅ Created products directory");
+// }
+
+// if (!fs.existsSync(categoriesDir)) {
+//     fs.mkdirSync(categoriesDir, { recursive: true });
+//     console.log("✅ Created categories directory");
+// }
+
+// if (!fs.existsSync(bannersDir)) {
+//     fs.mkdirSync(bannersDir, { recursive: true });
+//     console.log("✅ Created banners directory");
+// }
+
+// // ✅ FIXED: Serve static files with proper paths
+// app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+//     setHeaders: (res, filePath) => {
+//         res.setHeader("Access-Control-Allow-Origin", "*");
+//         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+//         res.setHeader("Cache-Control", "public, max-age=31536000");
+
+//         // Set proper content type for images
+//         if (filePath.endsWith('.svg')) {
+//             res.setHeader("Content-Type", "image/svg+xml");
+//         } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+//             res.setHeader("Content-Type", "image/jpeg");
+//         } else if (filePath.endsWith('.png')) {
+//             res.setHeader("Content-Type", "image/png");
+//         } else if (filePath.endsWith('.gif')) {
+//             res.setHeader("Content-Type", "image/gif");
+//         } else if (filePath.endsWith('.webp')) {
+//             res.setHeader("Content-Type", "image/webp");
+//         }
+//     }
+// }));
+
+// // ✅ FIXED: Serve specific directories with proper paths
+// app.use("/uploads/avatars", express.static(path.join(__dirname, "uploads/avatars")));
+// app.use("/uploads/products", express.static(path.join(__dirname, "uploads/products")));
+// app.use("/uploads/categories", express.static(path.join(__dirname, "uploads/categories")));
+// app.use("/uploads/banners", express.static(path.join(__dirname, "uploads/banners")));
+
+// // ✅ FIXED: Also serve from alternative paths (for backward compatibility)
+// app.use("/uploads/categories", express.static(path.join(__dirname, "uploads/categories")));
+// app.use("/uploads/banners", express.static(path.join(__dirname, "uploads/banners")));
+
+// // Serve product images
+// app.use("/product-images", express.static(path.join(__dirname, "uploads/products"), {
+//     setHeaders: (res) => {
+//         res.setHeader("Access-Control-Allow-Origin", "*");
+//         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+//         res.setHeader("Cache-Control", "public, max-age=31536000");
+//     }
+// }));
+
+// // Serve avatar images
+// app.use("/avatars", express.static(path.join(__dirname, "uploads/avatars"), {
+//     setHeaders: (res) => {
+//         res.setHeader("Access-Control-Allow-Origin", "*");
+//         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+//         res.setHeader("Cache-Control", "public, max-age=31536000");
+//     }
+// }));
+
+// // Create placeholder image if it doesn't exist
+// const placeholderDir = path.join(__dirname, "public/images");
+// if (!fs.existsSync(placeholderDir)) {
+//     fs.mkdirSync(placeholderDir, { recursive: true });
+// }
+
+// // Serve placeholder image
+// app.get("/images/placeholder-product.jpg", (req, res) => {
+//     const placeholderPath = path.join(__dirname, "public/images/placeholder-product.jpg");
+
+//     // Check if placeholder exists, if not create a simple one
+//     if (!fs.existsSync(placeholderPath)) {
+//         // Create a simple SVG placeholder
+//         const svgPlaceholder = `<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+//             <rect width="300" height="300" fill="#f0f0f0"/>
+//             <text x="50%" y="50%" font-family="Arial" font-size="16" fill="#999" text-anchor="middle">No Image</text>
+//         </svg>`;
+
+//         res.setHeader("Content-Type", "image/svg+xml");
+//         return res.send(svgPlaceholder);
+//     }
+
+//     res.sendFile(placeholderPath);
+// });
+
+// /* ================= API ROUTES ================= */
+// console.log("📦 Loading API routes...");
+
+// // Health check routes (no auth required)
+// app.get("/health", (req, res) => {
+//     req.db.getConnection((err, connection) => {
+//         if (err) {
+//             return res.status(503).json({
+//                 status: "unhealthy",
+//                 database: "disconnected",
+//                 message: "Database connection failed",
+//                 error: err.message
+//             });
+//         }
+
+//         connection.ping((pingErr) => {
+//             connection.release();
+
+//             if (pingErr) {
+//                 return res.status(503).json({
+//                     status: "unhealthy",
+//                     database: "unresponsive",
+//                     message: "Database ping failed"
+//                 });
+//             }
+
+//             res.json({
+//                 status: "healthy",
+//                 database: "connected",
+//                 email: emailService ? "✅ Ready" : "❌ Not configured",
+//                 timestamp: new Date().toISOString(),
+//                 uptime: process.uptime(),
+//                 memory: process.memoryUsage(),
+//                 node_version: process.version
+//             });
+//         });
+//     });
+// });
+
+// // Detailed health endpoint
+// app.get("/api/health/detailed", (req, res) => {
+//     const health = {
+//         status: "healthy",
+//         timestamp: new Date().toISOString(),
+//         services: {
+//             database: "checking...",
+//             email: emailService ? "loaded" : "not loaded",
+//             api: "running",
+//             memory: process.memoryUsage(),
+//             uptime: process.uptime()
+//         },
+//         env: {
+//             NODE_ENV: process.env.NODE_ENV || 'development',
+//             EMAIL_CONFIGURED: !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD),
+//             JWT_SECRET_CONFIGURED: !!process.env.JWT_SECRET,
+//             GOOGLE_CLIENT_ID_CONFIGURED: !!process.env.GOOGLE_CLIENT_ID
+//         }
+//     };
+
+//     req.db.getConnection((err, connection) => {
+//         if (err) {
+//             health.status = "unhealthy";
+//             health.services.database = "disconnected";
+//             health.error = err.message;
+//             return res.status(503).json(health);
+//         }
+
+//         connection.query("SELECT 1", (queryErr) => {
+//             connection.release();
+
+//             if (queryErr) {
+//                 health.status = "unhealthy";
+//                 health.services.database = "query_failed";
+//                 health.error = queryErr.message;
+//                 return res.status(503).json(health);
+//             }
+
+//             health.services.database = "connected";
+//             res.json(health);
+//         });
+//     });
+// });
+
+
+// app.use("/api", profileRoutes);
+// // ✅ FIXED: API Routes - Order matters!
+// app.use("/api/auth", authRoutes);
+// app.use("/api", authRoutes);
+// app.use("/api/profile", profileRoutes);
+// app.use("/api/products", productsRoutes);
+// app.use("/api/chat", chatRoutes);
+// app.use("/api/cart", cartRoutes);
+// app.use("/api/reviews", reviewRoutes);
+// app.use("/api/search", searchRoutes);
+// app.use("/api/categories", categoryRoutes);
+// app.use("/api/banners", bannerRoutes);
+// app.use("/api/orders", orderRoutes);
+// app.use("/api/product-details", productDetailRoutes);
+// app.use("/api/address", addressRoutes);
+// app.use("/api/payment", paymentRoutes);
+// app.use("/api/user", userRoutes);
+// app.use("/api/users", userAddressRoutes);
+// app.use("/api/email", emailRoutes);
+// app.use("/api/promo", promoRoutes);
+
+// console.log("✅ All routes loaded successfully");
+
+// /* ================= EXTRA CATEGORY APIs ================= */
+// console.log("📂 Loading category APIs...");
+
+// // ✅ Sub Categories
+// app.get("/api/subcategories", (req, res) => {
+//     const sql = "SELECT * FROM sub_categories WHERE status = 'active' ORDER BY id DESC";
+//     req.db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("❌ Subcategories SQL Error:", err.message);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Subcategories fetch failed",
+//                 error: process.env.NODE_ENV === 'development' ? err.message : undefined
+//             });
+//         }
+//         res.json({
+//             success: true,
+//             data: results
+//         });
+//     });
+// });
+
+// // ✅ Sub Sub Categories
+// app.get("/api/subsubcategories", (req, res) => {
+//     const sql = "SELECT * FROM sub_sub_categories WHERE status = 'active' ORDER BY id DESC";
+//     req.db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("❌ SubSubCategories SQL Error:", err.message);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "SubSubCategories fetch failed",
+//                 error: process.env.NODE_ENV === 'development' ? err.message : undefined
+//             });
+//         }
+//         res.json({
+//             success: true,
+//             data: results
+//         });
+//     });
+// });
+
+// // ✅ Get All Categories with Hierarchy
+// app.get("/api/categories/hierarchy", (req, res) => {
+//     const sql = `
+//         SELECT 
+//             c.id as category_id,
+//             c.name as category_name,
+//             c.slug as category_slug,
+//             sc.id as sub_category_id,
+//             sc.name as sub_category_name,
+//             sc.slug as sub_category_slug,
+//             ssc.id as sub_sub_category_id,
+//             ssc.name as sub_sub_category_name,
+//             ssc.slug as sub_sub_category_slug
+//         FROM categories c
+//         LEFT JOIN sub_categories sc ON c.id = sc.category_id AND sc.status = 'active'
+//         LEFT JOIN sub_sub_categories ssc ON sc.id = ssc.sub_category_id AND ssc.status = 'active'
+//         WHERE c.status = 'active'
+//         ORDER BY c.id, sc.id, ssc.id
+//     `;
+
+//     req.db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("❌ Categories hierarchy error:", err.message);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch categories hierarchy"
+//             });
+//         }
+
+//         const categories = {};
+//         results.forEach(row => {
+//             if (!categories[row.category_id]) {
+//                 categories[row.category_id] = {
+//                     id: row.category_id,
+//                     name: row.category_name,
+//                     slug: row.category_slug,
+//                     sub_categories: {}
+//                 };
+//             }
+
+//             if (row.sub_category_id && !categories[row.category_id].sub_categories[row.sub_category_id]) {
+//                 categories[row.category_id].sub_categories[row.sub_category_id] = {
+//                     id: row.sub_category_id,
+//                     name: row.sub_category_name,
+//                     slug: row.sub_category_slug,
+//                     sub_sub_categories: []
+//                 };
+//             }
+
+//             if (row.sub_sub_category_id) {
+//                 categories[row.category_id].sub_categories[row.sub_category_id].sub_sub_categories.push({
+//                     id: row.sub_sub_category_id,
+//                     name: row.sub_sub_category_name,
+//                     slug: row.sub_sub_category_slug
+//                 });
+//             }
+//         });
+
+//         res.json({
+//             success: true,
+//             data: Object.values(categories)
+//         });
+//     });
+// });
+
+// console.log("✅ Category APIs loaded");
+
+// /* ================= CHECKOUT HELPER APIs ================= */
+// console.log("🛒 Loading checkout helper APIs...");
+
+// // ✅ Get Shipping Methods
+// app.get("/api/shipping-methods", (req, res) => {
+//     const shippingMethods = [
+//         {
+//             id: "standard",
+//             name: "Standard Shipping",
+//             description: "Delivery in 5-7 business days",
+//             cost: 50,
+//             estimated_days: "5-7"
+//         },
+//         {
+//             id: "express",
+//             name: "Express Shipping",
+//             description: "Delivery in 2-3 business days",
+//             cost: 100,
+//             estimated_days: "2-3"
+//         },
+//         {
+//             id: "free",
+//             name: "Free Shipping",
+//             description: "Delivery in 7-10 business days",
+//             cost: 0,
+//             estimated_days: "7-10",
+//             min_order: 500
+//         }
+//     ];
+
+//     res.json({
+//         success: true,
+//         data: shippingMethods
+//     });
+// });
+
+// // ✅ Get Payment Methods
+// app.get("/api/payment-methods", (req, res) => {
+//     const paymentMethods = [
+//         {
+//             id: "cod",
+//             name: "Cash on Delivery",
+//             description: "Pay when you receive the product",
+//             available: true,
+//             icon: "💵"
+//         },
+//         {
+//             id: "razorpay",
+//             name: "Razorpay",
+//             description: "Pay via Card, UPI, Net Banking, Wallet",
+//             available: true,
+//             icon: "🟣"
+//         }
+//     ];
+
+//     res.json({
+//         success: true,
+//         data: paymentMethods
+//     });
+// });
+
+// // ✅ Validate Promo Code
+// app.post("/api/promo/validate", (req, res) => {
+//     const { promoCode } = req.body;
+
+//     const validPromoCodes = {
+//         "WELCOME10": { discount: 10, minOrder: 0, maxDiscount: 500, type: "percentage" },
+//         "SAVE20": { discount: 20, minOrder: 1000, maxDiscount: 1000, type: "percentage" },
+//         "FREESHIP": { discount: 0, freeShipping: true, minOrder: 500, type: "shipping" },
+//         "FLAT100": { discount: 100, minOrder: 500, maxDiscount: 100, type: "fixed" }
+//     };
+
+//     const code = promoCode?.toUpperCase().trim();
+
+//     if (validPromoCodes[code]) {
+//         res.json({
+//             success: true,
+//             valid: true,
+//             promo: validPromoCodes[code],
+//             message: "Promo code applied successfully"
+//         });
+//     } else {
+//         res.json({
+//             success: false,
+//             valid: false,
+//             message: "Invalid or expired promo code"
+//         });
+//     }
+// });
+
+// // ✅ Get Checkout Summary
+// app.post("/api/checkout/summary", async (req, res) => {
+//     try {
+//         const { items, shippingMethod = "standard" } = req.body;
+
+//         if (!items || !Array.isArray(items) || items.length === 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Items are required"
+//             });
+//         }
+
+//         let subtotal = 0;
+//         let discountTotal = 0;
+//         let hasFreeShipping = false;
+
+//         for (const item of items) {
+//             const price = parseFloat(item.price || 0);
+//             const quantity = parseInt(item.quantity || 1);
+//             const discount = parseFloat(item.discount || 0);
+
+//             const itemTotal = price * quantity;
+//             subtotal += itemTotal;
+
+//             if (discount > 0) {
+//                 discountTotal += (price * discount / 100) * quantity;
+//             }
+
+//             if (item.free_shipping) {
+//                 hasFreeShipping = true;
+//             }
+//         }
+
+//         let shipping = 0;
+//         if (!hasFreeShipping) {
+//             shipping = shippingMethod === "express" ? 100 : 50;
+//         }
+
+//         const tax = subtotal * 0.18;
+//         const total = subtotal + shipping + tax - discountTotal;
+
+//         res.json({
+//             success: true,
+//             summary: {
+//                 subtotal: subtotal.toFixed(2),
+//                 shipping: shipping.toFixed(2),
+//                 tax: tax.toFixed(2),
+//                 discount: discountTotal.toFixed(2),
+//                 total: total.toFixed(2),
+//                 hasFreeShipping,
+//                 itemsCount: items.length
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error("Checkout summary error:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to calculate checkout summary"
+//         });
+//     }
+// });
+
+// console.log("✅ Checkout helper APIs loaded");
+
+// // ✅ User Details Endpoint (Fallback)
+// app.get("/api/users/:id/details", (req, res) => {
+//     const userId = req.params.id;
+//     const db = req.db;
+
+//     db.query(`
+//         SELECT id, name, email, phone, address, avatar, auth_method, is_premium, created_at
+//         FROM users 
+//         WHERE id = ? AND is_active = 1 AND is_deleted = 0
+//     `, [userId], (err, results) => {
+//         if (err) {
+//             console.error("Get user error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch user details"
+//             });
+//         }
+
+//         if (results.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "User not found"
+//             });
+//         }
+
+//         const user = results[0];
+
+//         // Format avatar URL
+//         if (user.avatar && !user.avatar.startsWith('http')) {
+//             user.avatar = `http://localhost:${port}/uploads/avatars/${path.basename(user.avatar)}`;
+//         }
+
+//         res.json({
+//             success: true,
+//             user: user
+//         });
+//     });
+// });
+
+// /* ================= 📧 EMAIL TEST ENDPOINT ================= */
+// app.get("/api/test-email", async (req, res) => {
+//     console.log("========== 📧 TEST EMAIL ENDPOINT ==========");
+
+//     if (!emailService) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "Email service not loaded",
+//             solution: "Please check if backend/services/emailService.js exists"
+//         });
+//     }
+
+//     try {
+//         const testResult = await emailService.testEmailConfig();
+//         res.json({
+//             success: testResult.success,
+//             message: testResult.message || "Email test completed",
+//             details: testResult,
+//             env: {
+//                 EMAIL_USER: process.env.EMAIL_USER ? "✅ Set" : "❌ Missing",
+//                 EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Missing",
+//                 FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000"
+//             }
+//         });
+//     } catch (error) {
+//         console.error("❌ Test email error:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Email test failed",
+//             error: error.message
+//         });
+//     }
+// });
+
+// /* ================= EMAIL LOGS ENDPOINT ================= */
+// app.get("/api/email-logs", (req, res) => {
+//     const db = req.db;
+//     const { limit = 20 } = req.query;
+
+//     db.query(`
+//         SELECT * FROM email_logs 
+//         ORDER BY created_at DESC 
+//         LIMIT ?
+//     `, [parseInt(limit)], (err, results) => {
+//         if (err) {
+//             console.error("❌ Email logs fetch error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: "Failed to fetch email logs"
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             logs: results || []
+//         });
+//     });
+// });
+
+// /* ================= DATABASE HEALTH CHECK ================= */
+// app.get("/api/db-health", (req, res) => {
+//     const requiredTables = [
+//         'users', 'products', 'cart', 'orders', 'order_items',
+//         'categories', 'sub_categories', 'sub_sub_categories',
+//         'user_addresses', 'email_logs', 'login_activity'
+//     ];
+
+//     const checkPromises = requiredTables.map(table => {
+//         return new Promise((resolve) => {
+//             req.db.query(`SHOW TABLES LIKE '${table}'`, (err, results) => {
+//                 resolve({
+//                     table,
+//                     exists: results && results.length > 0,
+//                     error: err ? err.message : null
+//                 });
+//             });
+//         });
+//     });
+
+//     Promise.all(checkPromises)
+//         .then(results => {
+//             const missingTables = results.filter(r => !r.exists);
+//             const errors = results.filter(r => r.error);
+
+//             res.json({
+//                 success: true,
+//                 database: process.env.DB_NAME,
+//                 tables: results,
+//                 status: missingTables.length === 0 ? "healthy" : "incomplete",
+//                 missingTables: missingTables.map(t => t.table),
+//                 errors: errors.length > 0 ? errors : null
+//             });
+//         })
+//         .catch(error => {
+//             res.status(500).json({
+//                 success: false,
+//                 message: "Database health check failed",
+//                 error: error.message
+//             });
+//         });
+// });
+
+// /* ================= API DOCUMENTATION ================= */
+// app.get("/api", (req, res) => {
+//     const apiDocs = {
+//         name: "Pankhudi E-commerce API",
+//         version: "1.0.0",
+//         description: "Complete e-commerce API with checkout support",
+//         base_url: `http://localhost:${port}`,
+//         endpoints: {
+//             auth: {
+//                 register: "POST /api/auth/register",
+//                 login: "POST /api/auth/login",
+//                 google: "POST /api/auth/google",
+//                 logout: "POST /api/auth/logout"
+//             },
+//             user: {
+//                 profile: "GET /api/user/me",
+//                 updateAddress: "PUT /api/user/address",
+//                 userDetails: "GET /api/users/:id/details"
+//             },
+//             products: "/api/products/*",
+//             cart: "/api/cart/*",
+//             orders: "/api/orders/*",
+//             addresses: "/api/address/*",
+//             categories: "/api/categories/*",
+//             checkout: {
+//                 summary: "POST /api/checkout/summary",
+//                 shippingMethods: "GET /api/shipping-methods",
+//                 paymentMethods: "GET /api/payment-methods",
+//                 promoValidation: "POST /api/promo/validate"
+//             },
+//             email: {
+//                 test: "GET /api/test-email",
+//                 logs: "GET /api/email-logs"
+//             }
+//         },
+//         health: {
+//             basic: "/health",
+//             detailed: "/api/health/detailed",
+//             database: "/api/db-health"
+//         }
+//     };
+
+//     res.json(apiDocs);
+// });
+
+// // Route debugging endpoint
+// app.get("/api/debug/routes", (req, res) => {
+//     const routes = [];
+
+//     function print(path, layer) {
+//         if (layer.route) {
+//             layer.route.stack.forEach(print.bind(null, path + (layer.route.path || '')));
+//         } else if (layer.name === 'router' && layer.handle.stack) {
+//             layer.handle.stack.forEach(print.bind(null, path + (layer.regexp ? layer.regexp.source.replace(/\\|\^|\$/g, '') : '')));
+//         } else if (layer.method) {
+//             routes.push({
+//                 method: layer.method.toUpperCase(),
+//                 path: path || '/',
+//                 name: layer.name || 'anonymous'
+//             });
+//         }
+//     }
+
+//     if (app._router && app._router.stack) {
+//         app._router.stack.forEach(print.bind(null, ''));
+//     }
+
+//     // Remove duplicates
+//     const uniqueRoutes = routes.filter((route, index, self) =>
+//         index === self.findIndex(r => r.method === route.method && r.path === route.path)
+//     );
+
+//     res.json({
+//         success: true,
+//         totalRoutes: uniqueRoutes.length,
+//         routes: uniqueRoutes.sort((a, b) => a.path.localeCompare(b.path))
+//     });
+// });
+
+// /* ================= FALLBACK ================= */
+// app.use((req, res) => {
+//     // Don't log 404 for static files that might be missing
+//     if (!req.url.startsWith('/uploads/')) {
+//         console.log("❌ 404 - Route not found:", req.method, req.url);
+//     }
+
+//     res.status(404).json({
+//         success: false,
+//         message: "Route not found",
+//         requestedUrl: req.originalUrl,
+//         requestedMethod: req.method,
+//         availableRoutes: ["/api", "/health", "/api/health/detailed", "/api/test-email", "/api/email-logs", "/api/debug/routes"]
+//     });
+// });
+
+// /* ================= START SERVER ================= */
+// const port = process.env.PORT || 5000;
+
+// const server = app.listen(port, () => {
+//     console.log(`\n🚀 Server running on http://localhost:${port}`);
+//     console.log(`📚 API Documentation: http://localhost:${port}/api`);
+//     console.log(`❤️  Health Check: http://localhost:${port}/health`);
+//     console.log(`🛒 Checkout API: http://localhost:${port}/api/orders`);
+//     console.log(`🛍️  Cart API: http://localhost:${port}/api/cart`);
+//     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
+//     console.log(`👤 User API: http://localhost:${port}/api/user/me`);
+//     console.log(`🏠 Address API: http://localhost:${port}/api/address`);
+//     console.log(`📧 Email API: http://localhost:${port}/api/test-email`);
+//     console.log(`📋 Email Logs: http://localhost:${port}/api/email-logs`);
+//     console.log(`🔧 Debug Routes: http://localhost:${port}/api/debug/routes`);
+//     console.log(`🖼️  Avatars: http://localhost:${port}/uploads/avatars/`);
+//     console.log(`📦 Products: http://localhost:${port}/uploads/products/`);
+//     console.log(`🏷️  Categories: http://localhost:${port}/uploads/categories/`);
+//     console.log(`🎯 Banners: http://localhost:${port}/uploads/banners/`);
+
+//     // Test email configuration on startup
+//     if (emailService) {
+//         emailService.testEmailConfig().then(result => {
+//             if (result.success) {
+//                 console.log("✅ Email service is ready");
+//             } else {
+//                 console.warn("⚠️ Email service not configured properly");
+//                 console.warn("   Please set EMAIL_USER and EMAIL_PASSWORD in .env file");
+//             }
+//         }).catch(err => {
+//             console.error("❌ Email service test failed:", err.message);
+//         });
+//     } else {
+//         console.warn("⚠️ Email service not loaded");
+//     }
+
+//     // Check JWT secret
+//     if (!process.env.JWT_SECRET) {
+//         console.warn("⚠️ JWT_SECRET not set in .env file. Using default secret (not recommended for production)");
+//     }
+
+//     // Check Google Client ID
+//     if (!process.env.GOOGLE_CLIENT_ID) {
+//         console.warn("⚠️ GOOGLE_CLIENT_ID not set in .env file. Google login will not work");
+//     }
+
+//     console.log(`\n✅ Server is fully operational!\n`);
+// });
+
+// /* ================= GRACEFUL SHUTDOWN ================= */
+// const gracefulShutdown = () => {
+//     console.log("\n🔴 Received shutdown signal...");
+
+//     server.close(() => {
+//         console.log("✅ HTTP server closed");
+
+//         db.end((err) => {
+//             if (err) {
+//                 console.error("❌ Error closing database pool:", err);
+//                 process.exit(1);
+//             }
+//             console.log("✅ Database pool closed");
+//             process.exit(0);
+//         });
+//     });
+
+//     setTimeout(() => {
+//         console.error("💥 Forcing shutdown after timeout");
+//         process.exit(1);
+//     }, 10000);
+// };
+
+// process.on('SIGTERM', gracefulShutdown);
+// process.on('SIGINT', gracefulShutdown);
+
+// /* ================= ERROR HANDLING ================= */
+// process.on("unhandledRejection", (reason, promise) => {
+//     console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+// });
+
+// process.on("uncaughtException", (error) => {
+//     console.error("💥 Uncaught Exception:", error);
+//     gracefulShutdown();
+// });
+
+// /* ================= DATABASE AUTO-RECONNECT ================= */
+// db.on('error', (err) => {
+//     console.error('💥 Database pool error:', err);
+
+//     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+//         console.log('🔄 Attempting to reconnect to database...');
+//         testDatabaseConnection();
+//     }
+// });
+
+// module.exports = { app, db, authenticateToken };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql");
@@ -5,22 +2142,20 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 /* ================= EMAIL SERVICE ================= */
-// Create email service directory if it doesn't exist
 const emailServiceDir = path.join(__dirname, 'services');
 if (!fs.existsSync(emailServiceDir)) {
     fs.mkdirSync(emailServiceDir, { recursive: true });
 }
 
-// Import email service
 let emailService;
 try {
     emailService = require("./services/emailService");
     console.log("✅ Email service loaded successfully");
 } catch (error) {
     console.error("❌ Error loading email service:", error.message);
-    console.log("⚠️ Email service will be created on server start");
     emailService = null;
 }
 
@@ -37,88 +2172,92 @@ const bannerRoutes = require("./routes/banner");
 const addressRoutes = require("./routes/address");
 const paymentRoutes = require("./routes/paymentRoutes");
 const promoRoutes = require("./routes/promoRoutes");
-
-// ✅ NEW CHECKOUT-RELATED ROUTES
 const orderRoutes = require("./routes/orderRoutes");
 const productDetailRoutes = require("./routes/productDetailRoutes");
-const userAddressRoutes = require("./routes/address");
-
-// email logs route
 const emailRoutes = require("./routes/emailRoutes");
 
-// ✅ IMPORT USER ROUTES WITH ERROR HANDLING
 let userRoutes;
 try {
-    userRoutes = require("./routes/userRoutes");
-    console.log("✅ userRoutes loaded successfully");
+    userRoutes = require("./routes/user");
+    console.log("✅ userRoutes loaded successfully from ./routes/user");
 } catch (error) {
     console.error("❌ Error loading userRoutes:", error.message);
     const express = require("express");
     userRoutes = express.Router();
-    userRoutes.get("*", (req, res) => {
-        res.status(500).json({
-            success: false,
-            message: "User routes are currently unavailable. Please check server configuration."
-        });
+    userRoutes.get("/me", (req, res) => {
+        res.status(500).json({ success: false, message: "User routes unavailable" });
     });
 }
 
 const app = express();
 
 /* ================= BODY & CORS ================= */
-app.use(bodyParser.json({ limit: "5mb" }));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(
-    cors({
-        origin: "http://localhost:3000",
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"]
-    })
-);
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
-/* ================= DB POOL WITH ENHANCED CONFIG ================= */
+app.use(cors({
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"]
+}));
+
+app.options("*", cors());
+
+/* ================= DB POOL ================= */
 const db = mysql.createPool({
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "pankhudi",
     port: process.env.DB_PORT || 3306,
-    connectionLimit: 20,
+    connectionLimit: 50,
     waitForConnections: true,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
+    keepAliveInitialDelay: 10000,
     charset: 'utf8mb4',
-    timezone: 'local'
+    timezone: 'local',
+    multipleStatements: true
 });
 
-/* ================= DB TEST WITH RETRY LOGIC ================= */
-const testDatabaseConnection = (retries = 3, delay = 2000) => {
+/* ================= DB TEST ================= */
+const testDatabaseConnection = (retries = 5, delay = 3000) => {
     db.getConnection((err, connection) => {
         if (err) {
             console.error("❌ Database connection failed:", err.message);
-
             if (retries > 0) {
                 console.log(`🔄 Retrying connection... (${retries} attempts left)`);
                 setTimeout(() => testDatabaseConnection(retries - 1, delay), delay);
-            } else {
-                console.error("💥 Failed to connect to database after multiple attempts");
             }
         } else {
             console.log("✅ Database connected successfully");
-
-            // Test query to ensure tables exist
             connection.query("SELECT 1", (queryErr) => {
-                if (queryErr) {
-                    console.error("⚠️ Database query test failed:", queryErr.message);
-                } else {
-                    console.log("✅ Database query test successful");
-                }
-                connection.release();
+                if (queryErr) console.error("⚠️ Database query test failed:", queryErr.message);
+                else console.log("✅ Database query test successful");
             });
 
-            // ✅ Create email_logs table if not exists
+            // Check and add columns
+            connection.query("SHOW COLUMNS FROM users LIKE 'avatar'", (err, results) => {
+                if (!err && results.length === 0) {
+                    connection.query("ALTER TABLE users ADD COLUMN avatar VARCHAR(500) DEFAULT NULL AFTER email");
+                }
+            });
+
+            connection.query("SHOW COLUMNS FROM users LIKE 'auth_method'", (err, results) => {
+                if (!err && results.length === 0) {
+                    connection.query("ALTER TABLE users ADD COLUMN auth_method VARCHAR(20) DEFAULT 'local' AFTER password");
+                }
+            });
+
+            connection.query("SHOW COLUMNS FROM users LIKE 'address'", (err, results) => {
+                if (!err && results.length === 0) {
+                    connection.query("ALTER TABLE users ADD COLUMN address TEXT DEFAULT NULL AFTER phone");
+                }
+            });
+
+            // Create tables
             connection.query(`
                 CREATE TABLE IF NOT EXISTS email_logs (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -131,18 +2270,10 @@ const testDatabaseConnection = (retries = 3, delay = 2000) => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     sent_at DATETIME,
                     INDEX idx_order_id (order_id),
-                    INDEX idx_status (status),
-                    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+                    INDEX idx_status (status)
                 )
-            `, (tableErr) => {
-                if (tableErr) {
-                    console.error("⚠️ Email logs table creation error:", tableErr.message);
-                } else {
-                    console.log("✅ Email logs table ready");
-                }
-            });
+            `);
 
-            // ✅ Create user_addresses table if not exists (important for addresses)
             connection.query(`
                 CREATE TABLE IF NOT EXISTS user_addresses (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -161,68 +2292,78 @@ const testDatabaseConnection = (retries = 3, delay = 2000) => {
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_user_id (user_id),
                     INDEX idx_is_default (is_default),
-                    INDEX idx_is_active (is_active),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
-            `, (tableErr) => {
-                if (tableErr) {
-                    console.error("⚠️ User addresses table creation error:", tableErr.message);
-                } else {
-                    console.log("✅ User addresses table ready");
-                }
-            });
+            `);
+
+            connection.query(`
+                CREATE TABLE IF NOT EXISTS login_activity (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    user_id INT NOT NULL,
+                    action VARCHAR(50) DEFAULT 'Login',
+                    ip_address VARCHAR(45),
+                    user_agent TEXT,
+                    browser VARCHAR(50),
+                    os VARCHAR(50),
+                    device_type VARCHAR(20),
+                    status VARCHAR(20),
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_timestamp (timestamp)
+                )
+            `);
+
+            connection.release();
         }
     });
 };
 
 testDatabaseConnection();
 
-/* ================= ENHANCED DB MIDDLEWARE ================= */
+/* ================= DB MIDDLEWARE ================= */
 app.use((req, res, next) => {
     req.db = db;
-
-    // Add query helper methods
     req.db.queryAsync = (sql, params) => {
         return new Promise((resolve, reject) => {
             db.query(sql, params, (err, results) => {
-                if (err) {
-                    console.error("Database Query Error:", err);
-                    reject(err);
-                } else {
-                    resolve(results);
-                }
+                if (err) reject(err);
+                else resolve(results);
             });
         });
     };
+    next();
+});
 
+/* ================= JWT AUTH MIDDLEWARE ================= */
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, message: 'Authentication required' });
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ success: false, message: 'Invalid or expired token' });
+        req.user = user;
+        next();
+    });
+};
+
+app.use((req, res, next) => {
+    req.authenticateToken = authenticateToken;
     next();
 });
 
 /* ================= EMAIL SERVICE MIDDLEWARE ================= */
-// Make email service available to all routes
 app.use((req, res, next) => {
     req.emailService = emailService;
     next();
 });
 
-/* ================= ERROR HANDLING MIDDLEWARE ================= */
+/* ================= ERROR HANDLING ================= */
 app.use((err, req, res, next) => {
     console.error("🚨 Server Error:", err.stack);
-
     if (err.code === 'ECONNREFUSED') {
-        return res.status(503).json({
-            success: false,
-            message: "Database connection failed. Please try again later."
-        });
+        return res.status(503).json({ success: false, message: "Database connection failed" });
     }
-
-    if (err.code === 'ER_NO_SUCH_TABLE') {
-        return res.status(500).json({
-            success: false,
-            message: "Database table not found. Please check your database setup."
-        });
-    }
-
     res.status(500).json({
         success: false,
         message: "Internal server error",
@@ -230,35 +2371,94 @@ app.use((err, req, res, next) => {
     });
 });
 
-/* ================= STATIC FILES ================= */
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
-    setHeaders: (res) => {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    }
-}));
+/* ================= STATIC FILES - FIXED ================= */
+// Create upload directories
+const uploadsDir = path.join(__dirname, "uploads");
+const avatarsDir = path.join(uploadsDir, "avatars");
+const productsDir = path.join(uploadsDir, "products");
+const categoriesDir = path.join(uploadsDir, "categories");
+const bannersDir = path.join(uploadsDir, "banners");
 
-app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads"), {
-    setHeaders: (res) => {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    }
-}));
-
-// Serve static images for products
-app.use("/product-images", express.static(path.join(__dirname, "uploads/products")));
-
-// Serve placeholder image
-app.get("/images/placeholder-product.jpg", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/images/placeholder-product.jpg"));
+[uploadsDir, avatarsDir, productsDir, categoriesDir, bannersDir].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-/* ================= API ROUTES ================= */
+// ✅ IMPORTANT: Serve static files from multiple locations (for backward compatibility)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../admin/backend/src/uploads")));
+
+// Serve specific directories
+app.use("/uploads/avatars", express.static(avatarsDir));
+app.use("/uploads/products", express.static(productsDir));
+app.use("/uploads/categories", express.static(categoriesDir));
+app.use("/uploads/banners", express.static(bannersDir));
+
+// Alternative paths
+app.use("/product-images", express.static(productsDir));
+app.use("/avatars", express.static(avatarsDir));
+
+// Placeholder image
+const placeholderDir = path.join(__dirname, "public/images");
+if (!fs.existsSync(placeholderDir)) fs.mkdirSync(placeholderDir, { recursive: true });
+
+app.get("/images/placeholder-product.jpg", (req, res) => {
+    const placeholderPath = path.join(__dirname, "public/images/placeholder-product.jpg");
+    if (!fs.existsSync(placeholderPath)) {
+        const svgPlaceholder = `<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="300" fill="#f0f0f0"/>
+            <text x="50%" y="50%" font-family="Arial" font-size="16" fill="#999" text-anchor="middle">No Image</text>
+        </svg>`;
+        res.setHeader("Content-Type", "image/svg+xml");
+        return res.send(svgPlaceholder);
+    }
+    res.sendFile(placeholderPath);
+});
+
+/* ================= HEALTH CHECK ================= */
+app.get("/health", (req, res) => {
+    req.db.getConnection((err, connection) => {
+        if (err) return res.status(503).json({ status: "unhealthy", database: "disconnected" });
+        connection.ping((pingErr) => {
+            connection.release();
+            res.json({
+                status: pingErr ? "unhealthy" : "healthy",
+                database: pingErr ? "unresponsive" : "connected",
+                email: emailService ? "✅ Ready" : "❌ Not configured",
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime()
+            });
+        });
+    });
+});
+
+app.get("/api/health/detailed", (req, res) => {
+    req.db.getConnection((err, connection) => {
+        if (err) return res.status(503).json({ status: "unhealthy", error: err.message });
+        connection.query("SELECT 1", (queryErr) => {
+            connection.release();
+            res.json({
+                status: queryErr ? "unhealthy" : "healthy",
+                database: queryErr ? "query_failed" : "connected",
+                email: emailService ? "loaded" : "not loaded",
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime()
+            });
+        });
+    });
+});
+
+/* ================= API ROUTES - FIXED ORDER ================= */
 console.log("📦 Loading API routes...");
 
-// Existing routes
-app.use("/api", authRoutes);
-app.use("/api", profileRoutes);
+// ✅ Auth routes (order matters - more specific first)
+app.use("/api/auth", authRoutes);      // For /api/auth/google, /api/auth/login
+app.use("/api", authRoutes);            // For /api/login, /api/register (if your routes support it)
+
+// ✅ Profile routes - THIS WAS MISSING!
+app.use("/api", profileRoutes);         // This makes /api/profile available
+app.use("/api/profile", profileRoutes); // Also mount at /api/profile for clarity
+
+// ✅ Other routes
 app.use("/api/products", productsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/cart", cartRoutes);
@@ -266,76 +2466,45 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
-
-// ✅ NEW CHECKOUT-RELATED ROUTES
 app.use("/api/orders", orderRoutes);
 app.use("/api/product-details", productDetailRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/payment", paymentRoutes);
-
-
-
-app.use("/api/users", userAddressRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/users", addressRoutes);   // For user addresses
 app.use("/api/email", emailRoutes);
 app.use("/api/promo", promoRoutes);
 
 console.log("✅ All routes loaded successfully");
 
-/* ================= EXTRA CATEGORY APIs ================= */
+/* ================= CATEGORY APIs ================= */
 console.log("📂 Loading category APIs...");
 
-// ✅ Sub Categories
+// Get all subcategories
 app.get("/api/subcategories", (req, res) => {
     const sql = "SELECT * FROM sub_categories WHERE status = 'active' ORDER BY id DESC";
     req.db.query(sql, (err, results) => {
-        if (err) {
-            console.error("❌ Subcategories SQL Error:", err.message);
-            return res.status(500).json({
-                success: false,
-                message: "Subcategories fetch failed",
-                error: process.env.NODE_ENV === 'development' ? err.message : undefined
-            });
-        }
-        res.json({
-            success: true,
-            data: results
-        });
+        if (err) return res.status(500).json({ success: false, message: "Subcategories fetch failed" });
+        res.json({ success: true, data: results });
     });
 });
 
-// ✅ Sub Sub Categories
+// Get all sub-subcategories
 app.get("/api/subsubcategories", (req, res) => {
     const sql = "SELECT * FROM sub_sub_categories WHERE status = 'active' ORDER BY id DESC";
     req.db.query(sql, (err, results) => {
-        if (err) {
-            console.error("❌ SubSubCategories SQL Error:", err.message);
-            return res.status(500).json({
-                success: false,
-                message: "SubSubCategories fetch failed",
-                error: process.env.NODE_ENV === 'development' ? err.message : undefined
-            });
-        }
-        res.json({
-            success: true,
-            data: results
-        });
+        if (err) return res.status(500).json({ success: false, message: "SubSubCategories fetch failed" });
+        res.json({ success: true, data: results });
     });
 });
 
-// ✅ Get All Categories with Hierarchy
+// Get categories with hierarchy
 app.get("/api/categories/hierarchy", (req, res) => {
     const sql = `
         SELECT 
-            c.id as category_id,
-            c.name as category_name,
-            c.slug as category_slug,
-            sc.id as sub_category_id,
-            sc.name as sub_category_name,
-            sc.slug as sub_category_slug,
-            ssc.id as sub_sub_category_id,
-            ssc.name as sub_sub_category_name,
-            ssc.slug as sub_sub_category_slug
+            c.id as category_id, c.name as category_name, c.slug as category_slug,
+            sc.id as sub_category_id, sc.name as sub_category_name, sc.slug as sub_category_slug,
+            ssc.id as sub_sub_category_id, ssc.name as sub_sub_category_name, ssc.slug as sub_sub_category_slug
         FROM categories c
         LEFT JOIN sub_categories sc ON c.id = sc.category_id AND sc.status = 'active'
         LEFT JOIN sub_sub_categories ssc ON sc.id = ssc.sub_category_id AND ssc.status = 'active'
@@ -344,13 +2513,7 @@ app.get("/api/categories/hierarchy", (req, res) => {
     `;
 
     req.db.query(sql, (err, results) => {
-        if (err) {
-            console.error("❌ Categories hierarchy error:", err.message);
-            return res.status(500).json({
-                success: false,
-                message: "Failed to fetch categories hierarchy"
-            });
-        }
+        if (err) return res.status(500).json({ success: false, message: "Failed to fetch categories hierarchy" });
 
         const categories = {};
         results.forEach(row => {
@@ -362,7 +2525,6 @@ app.get("/api/categories/hierarchy", (req, res) => {
                     sub_categories: {}
                 };
             }
-
             if (row.sub_category_id && !categories[row.category_id].sub_categories[row.sub_category_id]) {
                 categories[row.category_id].sub_categories[row.sub_category_id] = {
                     id: row.sub_category_id,
@@ -371,7 +2533,6 @@ app.get("/api/categories/hierarchy", (req, res) => {
                     sub_sub_categories: []
                 };
             }
-
             if (row.sub_sub_category_id) {
                 categories[row.category_id].sub_categories[row.sub_category_id].sub_sub_categories.push({
                     id: row.sub_sub_category_id,
@@ -381,10 +2542,7 @@ app.get("/api/categories/hierarchy", (req, res) => {
             }
         });
 
-        res.json({
-            success: true,
-            data: Object.values(categories)
-        });
+        res.json({ success: true, data: Object.values(categories) });
     });
 });
 
@@ -393,130 +2551,62 @@ console.log("✅ Category APIs loaded");
 /* ================= CHECKOUT HELPER APIs ================= */
 console.log("🛒 Loading checkout helper APIs...");
 
-// ✅ Get Shipping Methods
 app.get("/api/shipping-methods", (req, res) => {
-    const shippingMethods = [
-        {
-            id: "standard",
-            name: "Standard Shipping",
-            description: "Delivery in 5-7 business days",
-            cost: 50,
-            estimated_days: "5-7"
-        },
-        {
-            id: "express",
-            name: "Express Shipping",
-            description: "Delivery in 2-3 business days",
-            cost: 100,
-            estimated_days: "2-3"
-        },
-        {
-            id: "free",
-            name: "Free Shipping",
-            description: "Delivery in 7-10 business days",
-            cost: 0,
-            estimated_days: "7-10",
-            min_order: 500
-        }
-    ];
-
     res.json({
         success: true,
-        data: shippingMethods
+        data: [
+            { id: "standard", name: "Standard Shipping", description: "Delivery in 5-7 business days", cost: 50, estimated_days: "5-7" },
+            { id: "express", name: "Express Shipping", description: "Delivery in 2-3 business days", cost: 100, estimated_days: "2-3" },
+            { id: "free", name: "Free Shipping", description: "Delivery in 7-10 business days", cost: 0, estimated_days: "7-10", min_order: 500 }
+        ]
     });
 });
 
-// ✅ Get Payment Methods
 app.get("/api/payment-methods", (req, res) => {
-    const paymentMethods = [
-        {
-            id: "cod",
-            name: "Cash on Delivery",
-            description: "Pay when you receive the product",
-            available: true,
-            icon: "💵"
-        },
-        {
-            id: "razorpay",
-            name: "Razorpay",
-            description: "Pay via Card, UPI, Net Banking, Wallet",
-            available: true,
-            icon: "🟣"
-        }
-    ];
-
     res.json({
         success: true,
-        data: paymentMethods
+        data: [
+            { id: "cod", name: "Cash on Delivery", description: "Pay when you receive the product", available: true, icon: "💵" },
+            { id: "razorpay", name: "Razorpay", description: "Pay via Card, UPI, Net Banking, Wallet", available: true, icon: "🟣" }
+        ]
     });
 });
 
-// ✅ Validate Promo Code
 app.post("/api/promo/validate", (req, res) => {
     const { promoCode } = req.body;
-
     const validPromoCodes = {
         "WELCOME10": { discount: 10, minOrder: 0, maxDiscount: 500, type: "percentage" },
         "SAVE20": { discount: 20, minOrder: 1000, maxDiscount: 1000, type: "percentage" },
         "FREESHIP": { discount: 0, freeShipping: true, minOrder: 500, type: "shipping" },
         "FLAT100": { discount: 100, minOrder: 500, maxDiscount: 100, type: "fixed" }
     };
-
     const code = promoCode?.toUpperCase().trim();
-
     if (validPromoCodes[code]) {
-        res.json({
-            success: true,
-            valid: true,
-            promo: validPromoCodes[code],
-            message: "Promo code applied successfully"
-        });
+        res.json({ success: true, valid: true, promo: validPromoCodes[code], message: "Promo code applied successfully" });
     } else {
-        res.json({
-            success: false,
-            valid: false,
-            message: "Invalid or expired promo code"
-        });
+        res.json({ success: false, valid: false, message: "Invalid or expired promo code" });
     }
 });
 
-// ✅ Get Checkout Summary
 app.post("/api/checkout/summary", async (req, res) => {
     try {
         const { items, shippingMethod = "standard" } = req.body;
-
         if (!items || !Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Items are required"
-            });
+            return res.status(400).json({ success: false, message: "Items are required" });
         }
 
-        let subtotal = 0;
-        let discountTotal = 0;
-        let hasFreeShipping = false;
-
+        let subtotal = 0, discountTotal = 0, hasFreeShipping = false;
         for (const item of items) {
             const price = parseFloat(item.price || 0);
             const quantity = parseInt(item.quantity || 1);
             const discount = parseFloat(item.discount || 0);
-
-            const itemTotal = price * quantity;
-            subtotal += itemTotal;
-
-            if (discount > 0) {
-                discountTotal += (price * discount / 100) * quantity;
-            }
-
-            if (item.free_shipping) {
-                hasFreeShipping = true;
-            }
+            subtotal += price * quantity;
+            if (discount > 0) discountTotal += (price * discount / 100) * quantity;
+            if (item.free_shipping) hasFreeShipping = true;
         }
 
         let shipping = 0;
-        if (!hasFreeShipping) {
-            shipping = shippingMethod === "express" ? 100 : 50;
-        }
+        if (!hasFreeShipping) shipping = shippingMethod === "express" ? 100 : 50;
 
         const tax = subtotal * 0.18;
         const total = subtotal + shipping + tax - discountTotal;
@@ -533,299 +2623,125 @@ app.post("/api/checkout/summary", async (req, res) => {
                 itemsCount: items.length
             }
         });
-
     } catch (error) {
         console.error("Checkout summary error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to calculate checkout summary"
-        });
+        res.status(500).json({ success: false, message: "Failed to calculate checkout summary" });
     }
 });
 
 console.log("✅ Checkout helper APIs loaded");
 
-// ✅ FALLBACK USER ROUTES (ये तब use होंगे जब userAddressRoutes में न हों)
+/* ================= USER DETAILS ENDPOINT ================= */
 app.get("/api/users/:id/details", (req, res) => {
     const userId = req.params.id;
-    const db = req.db;
-
-    db.query(`
-        SELECT id, name, email, phone, address, city, state, 
-               postal_code as postalCode, country, avatar, is_verified as isVerified
-        FROM users 
-        WHERE id = ? AND is_active = 1 AND is_deleted = 0
+    req.db.query(`
+        SELECT id, name, email, phone, address, avatar, auth_method, is_premium, created_at
+        FROM users WHERE id = ? AND is_active = 1 AND is_deleted = 0
     `, [userId], (err, results) => {
-        if (err) {
-            console.error("Get user error:", err);
-            return res.status(500).json({
-                success: false,
-                message: "Failed to fetch user details"
-            });
-        }
+        if (err) return res.status(500).json({ success: false, message: "Failed to fetch user details" });
+        if (results.length === 0) return res.status(404).json({ success: false, message: "User not found" });
 
-        if (results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+        const user = results[0];
+        if (user.avatar && !user.avatar.startsWith('http')) {
+            user.avatar = `http://localhost:${port}/uploads/avatars/${path.basename(user.avatar)}`;
         }
-
-        res.json({
-            success: true,
-            user: results[0]
-        });
+        res.json({ success: true, user });
     });
 });
 
-/* ================= 📧 EMAIL TEST ENDPOINT ================= */
+/* ================= EMAIL TEST ENDPOINT ================= */
 app.get("/api/test-email", async (req, res) => {
-    console.log("========== 📧 TEST EMAIL ENDPOINT ==========");
-
     if (!emailService) {
-        return res.status(500).json({
-            success: false,
-            message: "Email service not loaded",
-            solution: "Please check if backend/services/emailService.js exists"
-        });
+        return res.status(500).json({ success: false, message: "Email service not loaded" });
     }
-
     try {
         const testResult = await emailService.testEmailConfig();
-        res.json({
-            success: testResult.success,
-            message: testResult.message || "Email test completed",
-            details: testResult,
-            env: {
-                EMAIL_USER: process.env.EMAIL_USER ? "✅ Set" : "❌ Missing",
-                EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Missing",
-                FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000"
-            }
-        });
+        res.json({ success: testResult.success, message: testResult.message, details: testResult });
     } catch (error) {
-        console.error("❌ Test email error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Email test failed",
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: "Email test failed", error: error.message });
     }
 });
 
-/* ================= EMAIL LOGS ENDPOINT ================= */
+/* ================= EMAIL LOGS ================= */
 app.get("/api/email-logs", (req, res) => {
-    const db = req.db;
     const { limit = 20 } = req.query;
-
-    db.query(`
-        SELECT * FROM email_logs 
-        ORDER BY created_at DESC 
-        LIMIT ?
-    `, [parseInt(limit)], (err, results) => {
-        if (err) {
-            console.error("❌ Email logs fetch error:", err);
-            return res.status(500).json({
-                success: false,
-                message: "Failed to fetch email logs"
-            });
-        }
-
-        res.json({
-            success: true,
-            logs: results || []
-        });
+    req.db.query(`SELECT * FROM email_logs ORDER BY created_at DESC LIMIT ?`, [parseInt(limit)], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: "Failed to fetch email logs" });
+        res.json({ success: true, logs: results || [] });
     });
 });
 
-/* ================= DATABASE HEALTH CHECK ================= */
+/* ================= DATABASE HEALTH ================= */
 app.get("/api/db-health", (req, res) => {
-    const requiredTables = [
-        'users', 'products', 'cart', 'orders', 'order_items',
-        'categories', 'sub_categories', 'sub_sub_categories',
-        'user_addresses', 'email_logs'
-    ];
+    const requiredTables = ['users', 'products', 'cart', 'orders', 'order_items', 'categories', 'sub_categories', 'sub_sub_categories', 'user_addresses', 'email_logs', 'login_activity'];
 
-    const checkPromises = requiredTables.map(table => {
+    Promise.all(requiredTables.map(table => {
         return new Promise((resolve) => {
             req.db.query(`SHOW TABLES LIKE '${table}'`, (err, results) => {
-                resolve({
-                    table,
-                    exists: results && results.length > 0,
-                    error: err ? err.message : null
-                });
+                resolve({ table, exists: results && results.length > 0, error: err ? err.message : null });
             });
         });
-    });
-
-    Promise.all(checkPromises)
-        .then(results => {
-            const missingTables = results.filter(r => !r.exists);
-            const errors = results.filter(r => r.error);
-
-            res.json({
-                success: true,
-                database: process.env.DB_NAME,
-                tables: results,
-                status: missingTables.length === 0 ? "healthy" : "incomplete",
-                missingTables: missingTables.map(t => t.table),
-                errors: errors.length > 0 ? errors : null
-            });
-        })
-        .catch(error => {
-            res.status(500).json({
-                success: false,
-                message: "Database health check failed",
-                error: error.message
-            });
+    })).then(results => {
+        const missingTables = results.filter(r => !r.exists);
+        res.json({
+            success: true,
+            database: process.env.DB_NAME,
+            tables: results,
+            status: missingTables.length === 0 ? "healthy" : "incomplete",
+            missingTables: missingTables.map(t => t.table)
         });
-});
-
-/* ================= HEALTH CHECK ================= */
-app.get("/health", (req, res) => {
-    req.db.getConnection((err, connection) => {
-        if (err) {
-            return res.status(503).json({
-                status: "unhealthy",
-                database: "disconnected",
-                message: "Database connection failed",
-                error: err.message
-            });
-        }
-
-        connection.ping((pingErr) => {
-            connection.release();
-
-            if (pingErr) {
-                return res.status(503).json({
-                    status: "unhealthy",
-                    database: "unresponsive",
-                    message: "Database ping failed"
-                });
-            }
-
-            res.json({
-                status: "healthy",
-                database: "connected",
-                email: emailService ? "✅ Ready" : "❌ Not configured",
-                timestamp: new Date().toISOString(),
-                uptime: process.uptime(),
-                memory: process.memoryUsage()
-            });
-        });
-    });
-});
-
-// Detailed health endpoint
-app.get("/api/health/detailed", (req, res) => {
-    const health = {
-        status: "healthy",
-        timestamp: new Date().toISOString(),
-        services: {
-            database: "checking...",
-            email: emailService ? "loaded" : "not loaded",
-            api: "running",
-            memory: process.memoryUsage()
-        },
-        env: {
-            NODE_ENV: process.env.NODE_ENV || 'development',
-            EMAIL_CONFIGURED: !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD)
-        }
-    };
-
-    req.db.getConnection((err, connection) => {
-        if (err) {
-            health.status = "unhealthy";
-            health.services.database = "disconnected";
-            health.error = err.message;
-            return res.status(503).json(health);
-        }
-
-        connection.query("SELECT 1", (queryErr) => {
-            connection.release();
-
-            if (queryErr) {
-                health.status = "unhealthy";
-                health.services.database = "query_failed";
-                health.error = queryErr.message;
-                return res.status(503).json(health);
-            }
-
-            health.services.database = "connected";
-            res.json(health);
-        });
+    }).catch(error => {
+        res.status(500).json({ success: false, message: "Database health check failed", error: error.message });
     });
 });
 
 /* ================= API DOCUMENTATION ================= */
 app.get("/api", (req, res) => {
-    const apiDocs = {
+    res.json({
         name: "Pankhudi E-commerce API",
         version: "1.0.0",
-        description: "Complete e-commerce API with checkout support",
+        base_url: `http://localhost:${port}`,
         endpoints: {
-            auth: "/api/auth/*",
+            auth: { register: "POST /api/auth/register", login: "POST /api/auth/login", google: "POST /api/auth/google" },
+            user: { profile: "GET /api/profile", userDetails: "GET /api/users/:id/details" },
             products: "/api/products/*",
             cart: "/api/cart/*",
             orders: "/api/orders/*",
-            users: "/api/users/*",
-            addresses: "/api/users/:userId/addresses", // नया endpoint
-            categories: "/api/categories/*",
-            checkout: {
-                summary: "POST /api/checkout/summary",
-                shippingMethods: "GET /api/shipping-methods",
-                paymentMethods: "GET /api/payment-methods",
-                promoValidation: "POST /api/promo/validate"
-            },
-            email: {
-                test: "GET /api/test-email",
-                logs: "GET /api/email-logs"
-            }
+            categories: "/api/categories/*"
         },
-        health: {
-            basic: "/health",
-            detailed: "/api/health/detailed",
-            database: "/api/db-health"
-        }
-    };
-
-    res.json(apiDocs);
+        health: { basic: "/health", detailed: "/api/health/detailed", database: "/api/db-health" }
+    });
 });
 
-// Route debugging endpoint - सभी registered routes दिखाने के लिए
+/* ================= DEBUG ROUTES ================= */
 app.get("/api/debug/routes", (req, res) => {
     const routes = [];
-
     function print(path, layer) {
         if (layer.route) {
-            layer.route.stack.forEach(print.bind(null, path + layer.route.path));
+            layer.route.stack.forEach(print.bind(null, path + (layer.route.path || '')));
         } else if (layer.name === 'router' && layer.handle.stack) {
-            layer.handle.stack.forEach(print.bind(null, path + layer.regexp.source));
+            layer.handle.stack.forEach(print.bind(null, path + (layer.regexp ? layer.regexp.source.replace(/\\|\^|\$/g, '') : '')));
         } else if (layer.method) {
-            routes.push({
-                method: layer.method.toUpperCase(),
-                path: path,
-                name: layer.name
-            });
+            routes.push({ method: layer.method.toUpperCase(), path: path || '/', name: layer.name || 'anonymous' });
         }
     }
+    if (app._router && app._router.stack) app._router.stack.forEach(print.bind(null, ''));
 
-    app._router.stack.forEach(print.bind(null, ''));
-
-    res.json({
-        success: true,
-        totalRoutes: routes.length,
-        routes: routes.sort((a, b) => a.path.localeCompare(b.path))
-    });
+    const uniqueRoutes = routes.filter((route, index, self) =>
+        index === self.findIndex(r => r.method === route.method && r.path === route.path)
+    );
+    res.json({ success: true, totalRoutes: uniqueRoutes.length, routes: uniqueRoutes.sort((a, b) => a.path.localeCompare(b.path)) });
 });
 
 /* ================= FALLBACK ================= */
 app.use((req, res) => {
-    console.log("❌ 404 - Route not found:", req.method, req.url);
+    if (!req.url.startsWith('/uploads/')) {
+        console.log("❌ 404 - Route not found:", req.method, req.url);
+    }
     res.status(404).json({
         success: false,
         message: "Route not found",
-        requestedUrl: req.originalUrl,
-        availableRoutes: ["/api", "/health", "/api/health/detailed", "/api/test-email", "/api/email-logs", "/api/debug/routes"]
+        requestedUrl: req.originalUrl
     });
 });
 
@@ -836,32 +2752,15 @@ const server = app.listen(port, () => {
     console.log(`\n🚀 Server running on http://localhost:${port}`);
     console.log(`📚 API Documentation: http://localhost:${port}/api`);
     console.log(`❤️  Health Check: http://localhost:${port}/health`);
+    console.log(`👤 Profile API: http://localhost:${port}/api/profile`);
     console.log(`🛒 Checkout API: http://localhost:${port}/api/orders`);
     console.log(`🛍️  Cart API: http://localhost:${port}/api/cart`);
     console.log(`🔍 Search API: http://localhost:${port}/api/search`);
-    console.log(`👤 User API: http://localhost:${port}/api/users`);
-    console.log(`🏠 Address API: http://localhost:${port}/api/users/:userId/addresses`);
-    console.log(`📧 Email API: http://localhost:${port}/api/test-email`);
-    console.log(`📋 Email Logs: http://localhost:${port}/api/email-logs`);
-    console.log(`🔧 Debug Routes: http://localhost:${port}/api/debug/routes`);
+    console.log(`🏷️  Categories: http://localhost:${port}/uploads/categories/`);
+    console.log(`🎯 Banners: http://localhost:${port}/uploads/banners/`);
 
-    // Test email configuration on startup
-    if (emailService) {
-        emailService.testEmailConfig().then(result => {
-            if (result.success) {
-                console.log("✅ Email service is ready");
-            } else {
-                console.warn("⚠️ Email service not configured properly");
-                console.warn("   Please set EMAIL_USER and EMAIL_PASSWORD in .env file");
-                console.warn("   Or check backend/services/emailService.js");
-            }
-        }).catch(err => {
-            console.error("❌ Email service test failed:", err.message);
-        });
-    } else {
-        console.warn("⚠️ Email service not loaded");
-        console.warn("   Please create backend/services/emailService.js");
-    }
+    if (!process.env.JWT_SECRET) console.warn("⚠️ JWT_SECRET not set in .env file");
+    if (!process.env.GOOGLE_CLIENT_ID) console.warn("⚠️ GOOGLE_CLIENT_ID not set in .env file. Google login will not work");
 
     console.log(`\n✅ Server is fully operational!\n`);
 });
@@ -869,20 +2768,14 @@ const server = app.listen(port, () => {
 /* ================= GRACEFUL SHUTDOWN ================= */
 const gracefulShutdown = () => {
     console.log("\n🔴 Received shutdown signal...");
-
     server.close(() => {
         console.log("✅ HTTP server closed");
-
         db.end((err) => {
-            if (err) {
-                console.error("❌ Error closing database pool:", err);
-                process.exit(1);
-            }
-            console.log("✅ Database pool closed");
+            if (err) console.error("❌ Error closing database pool:", err);
+            else console.log("✅ Database pool closed");
             process.exit(0);
         });
     });
-
     setTimeout(() => {
         console.error("💥 Forcing shutdown after timeout");
         process.exit(1);
@@ -891,23 +2784,12 @@ const gracefulShutdown = () => {
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
-
-/* ================= ERROR HANDLING ================= */
 process.on("unhandledRejection", (reason, promise) => {
     console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
 });
-
 process.on("uncaughtException", (error) => {
     console.error("💥 Uncaught Exception:", error);
     gracefulShutdown();
 });
 
-/* ================= DATABASE AUTO-RECONNECT ================= */
-db.on('error', (err) => {
-    console.error('💥 Database pool error:', err);
-
-    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('🔄 Attempting to reconnect to database...');
-        testDatabaseConnection();
-    }
-});
+module.exports = { app, db, authenticateToken };
