@@ -586,7 +586,7 @@ CREATE TABLE `promo_code_usage` (
 
 --
 -- Table structure for table `registration_otps`
---
+--  
 
 CREATE TABLE `registration_otps` (
   `id` int(11) NOT NULL,
@@ -1544,6 +1544,53 @@ CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_orders_deleted_at ON orders(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Fix any null payment_status
+UPDATE orders SET payment_status = 'pending' WHERE payment_status IS NULL;
+
+
+
+-- Fix the orders table column 
+ALTER TABLE orders 
+DROP COLUMN IF EXISTS `u.first_name`;
+
+-- Add missing columns if not exist
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS `cancelled_at` datetime DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `cancelled_by` int(11) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `deleted_at` datetime DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `deleted_by` int(11) DEFAULT NULL;
+
+-- Add indexes for better performance
+ALTER TABLE orders ADD INDEX IF NOT EXISTS idx_orders_payment_status (payment_status);
+ALTER TABLE orders ADD INDEX IF NOT EXISTS idx_orders_deleted_at (deleted_at);
+ALTER TABLE order_items ADD INDEX IF NOT EXISTS idx_order_items_order_id (order_id);
+ALTER TABLE order_items ADD INDEX IF NOT EXISTS idx_order_items_product_id (product_id);
+
+-- Fix any null payment_status
+UPDATE orders SET payment_status = 'pending' WHERE payment_status IS NULL;
+
+
+
+
+-- Fix the orders table column (remove invalid column)
+ALTER TABLE orders 
+DROP COLUMN IF EXISTS `u.first_name`;
+
+-- Add missing columns if not exist
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS `cancelled_at` datetime DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `cancelled_by` int(11) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `deleted_at` datetime DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `deleted_by` int(11) DEFAULT NULL;
+
+-- Add indexes for better performance
+ALTER TABLE orders ADD INDEX IF NOT EXISTS idx_orders_payment_status (payment_status);
+ALTER TABLE orders ADD INDEX IF NOT EXISTS idx_orders_deleted_at (deleted_at);
+ALTER TABLE order_items ADD INDEX IF NOT EXISTS idx_order_items_order_id (order_id);
+ALTER TABLE order_items ADD INDEX IF NOT EXISTS idx_order_items_product_id (product_id);
+ALTER TABLE order_returns ADD INDEX IF NOT EXISTS idx_order_returns_order_id (order_id);
+ALTER TABLE order_returns ADD INDEX IF NOT EXISTS idx_order_returns_status (status);
 
 -- Fix any null payment_status
 UPDATE orders SET payment_status = 'pending' WHERE payment_status IS NULL;

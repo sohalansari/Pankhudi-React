@@ -13,11 +13,11 @@ const CategoryManagement = () => {
     const [subCategories, setSubCategories] = useState([]);
     const [subSubCategories, setSubSubCategories] = useState([]);
 
-    // Statistics state
+    // Statistics state - FIXED: Correct property names
     const [stats, setStats] = useState({
         categories: { total: 0, active: 0, latest: 'Loading...' },
-        sub_categories: { total: 0, active: 0, latest: 'Loading...' },
-        sub_sub_categories: { total: 0, active: 0, latest: 'Loading...' },
+        subCategories: { total: 0, active: 0, latest: 'Loading...' },
+        subSubCategories: { total: 0, active: 0, latest: 'Loading...' },
         summary: { total_items: 0, active_items: 0, last_updated: '' }
     });
 
@@ -60,26 +60,6 @@ const CategoryManagement = () => {
     const IMAGE_BASE_URL = 'http://localhost:5001';
 
     // ============ HELPER FUNCTIONS ============
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return 'https://via.placeholder.com/100x100?text=No+Image';
-
-        // Check if it's already a full URL
-        if (imagePath.startsWith('http')) return imagePath;
-
-        // Check if it's a relative path starting with /uploads
-        if (imagePath.startsWith('/uploads/')) {
-            return `${IMAGE_BASE_URL}${imagePath}`;
-        }
-
-        // For old format or just filename
-        let folder = '';
-        if (activeTab === 'categories') folder = 'categories';
-        else if (activeTab === 'subcategories') folder = 'sub_categories';
-        else if (activeTab === 'subsubcategories') folder = 'sub_sub_categories';
-
-        return `${IMAGE_BASE_URL}/uploads/${folder}/${imagePath}`;
-    };
-
     const getImageUrlForItem = (imagePath, type) => {
         if (!imagePath) return 'https://via.placeholder.com/100x100?text=No+Image';
 
@@ -104,7 +84,30 @@ const CategoryManagement = () => {
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             if (data.success) {
-                setStats(data.data);
+                // FIXED: Map the API response to correct property names
+                const apiData = data.data;
+                setStats({
+                    categories: {
+                        total: apiData.categories?.total || 0,
+                        active: apiData.categories?.active || 0,
+                        latest: apiData.categories?.latest || 'N/A'
+                    },
+                    subCategories: {
+                        total: apiData.subCategories?.total || apiData.sub_categories?.total || 0,
+                        active: apiData.subCategories?.active || apiData.sub_categories?.active || 0,
+                        latest: apiData.subCategories?.latest || apiData.sub_categories?.latest || 'N/A'
+                    },
+                    subSubCategories: {
+                        total: apiData.subSubCategories?.total || apiData.sub_sub_categories?.total || 0,
+                        active: apiData.subSubCategories?.active || apiData.sub_sub_categories?.active || 0,
+                        latest: apiData.subSubCategories?.latest || apiData.sub_sub_categories?.latest || 'N/A'
+                    },
+                    summary: {
+                        total_items: apiData.summary?.total_items || 0,
+                        active_items: apiData.summary?.active_items || 0,
+                        last_updated: apiData.summary?.last_updated || new Date().toISOString()
+                    }
+                });
             }
         } catch (err) {
             console.error('Failed to fetch global stats:', err);
@@ -132,7 +135,7 @@ const CategoryManagement = () => {
 
             if (data.success) {
                 setCategories(data.data || []);
-                setTotalItems(data.pagination?.totalItems || 0);
+                setTotalItems(data.pagination?.totalItems || data.pagination?.total || 0);
             } else {
                 setError(data.message || 'Failed to fetch categories');
             }
@@ -165,7 +168,7 @@ const CategoryManagement = () => {
 
             if (data.success) {
                 setSubCategories(data.data || []);
-                setTotalItems(data.pagination?.totalItems || 0);
+                setTotalItems(data.pagination?.totalItems || data.pagination?.total || 0);
             } else {
                 setError(data.message || 'Failed to fetch sub-categories');
             }
@@ -198,7 +201,7 @@ const CategoryManagement = () => {
 
             if (data.success) {
                 setSubSubCategories(data.data || []);
-                setTotalItems(data.pagination?.totalItems || 0);
+                setTotalItems(data.pagination?.totalItems || data.pagination?.total || 0);
             } else {
                 setError(data.message || 'Failed to fetch sub-sub-categories');
             }
@@ -241,13 +244,11 @@ const CategoryManagement = () => {
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validate file size (5MB max)
             if (file.size > 5 * 1024 * 1024) {
                 setError('Image size should be less than 5MB');
                 return;
             }
 
-            // Validate file type
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             if (!validTypes.includes(file.type)) {
                 setError('Please upload a valid image file (JPEG, PNG, GIF, WebP)');
@@ -256,7 +257,6 @@ const CategoryManagement = () => {
 
             setFormData(prev => ({ ...prev, image: file }));
 
-            // Create preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
@@ -327,7 +327,6 @@ const CategoryManagement = () => {
         setFormData(formDataToSet);
         setExistingImage(item.image || '');
 
-        // Set image preview
         if (item.image) {
             let type = '';
             if (activeTab === 'categories') type = 'category';
@@ -353,7 +352,6 @@ const CategoryManagement = () => {
         setError('');
         setSuccess('');
 
-        // Validate required fields
         if (!formData.name.trim()) {
             setError('Name is required');
             return;
@@ -371,20 +369,16 @@ const CategoryManagement = () => {
 
         try {
             const formDataToSend = new FormData();
-
-            // Add common fields
             formDataToSend.append('name', formData.name.trim());
             formDataToSend.append('description', formData.description || '');
             formDataToSend.append('status', formData.status);
 
-            // Add parent IDs based on tab
             if (activeTab === 'subcategories') {
                 formDataToSend.append('category_id', formData.category_id);
             } else if (activeTab === 'subsubcategories') {
                 formDataToSend.append('sub_category_id', formData.sub_category_id);
             }
 
-            // Add image if exists
             if (formData.image) {
                 formDataToSend.append('image', formData.image);
             }
@@ -427,7 +421,6 @@ const CategoryManagement = () => {
         setError('');
         setSuccess('');
 
-        // Validate required fields
         if (!formData.name.trim()) {
             setError('Name is required');
             return;
@@ -445,20 +438,16 @@ const CategoryManagement = () => {
 
         try {
             const formDataToSend = new FormData();
-
-            // Add common fields
             formDataToSend.append('name', formData.name.trim());
             formDataToSend.append('description', formData.description || '');
             formDataToSend.append('status', formData.status);
 
-            // Add parent IDs based on tab
             if (activeTab === 'subcategories') {
                 formDataToSend.append('category_id', formData.category_id);
             } else if (activeTab === 'subsubcategories') {
                 formDataToSend.append('sub_category_id', formData.sub_category_id);
             }
 
-            // Add image if exists
             if (formData.image) {
                 formDataToSend.append('image', formData.image);
             }
@@ -506,7 +495,6 @@ const CategoryManagement = () => {
 
         try {
             let url = '';
-
             if (activeTab === 'categories') {
                 url = `${API_URL}/categories/${id}`;
             } else if (activeTab === 'subcategories') {
@@ -538,7 +526,6 @@ const CategoryManagement = () => {
 
         try {
             let url = '';
-
             if (activeTab === 'categories') {
                 url = `${API_URL}/categories/${id}/status`;
             } else if (activeTab === 'subcategories') {
@@ -579,7 +566,6 @@ const CategoryManagement = () => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Validate file
             if (file.size > 5 * 1024 * 1024) {
                 setError('Image size should be less than 5MB');
                 return;
@@ -705,95 +691,109 @@ const CategoryManagement = () => {
     }, [subCategoryFilter]);
 
     // ============ RENDER FUNCTIONS ============
-    const renderStats = () => (
-        <div className="stats-container">
-            <div className="stat-card">
-                <div className="stat-icon category-icon">
-                    <i className="fas fa-layer-group"></i>
+    const renderStats = () => {
+        // FIXED: Access correct property names
+        const categoriesStats = stats.categories || { total: 0, active: 0, latest: 'N/A' };
+        const subCategoriesStats = stats.subCategories || { total: 0, active: 0, latest: 'N/A' };
+        const subSubCategoriesStats = stats.subSubCategories || { total: 0, active: 0, latest: 'N/A' };
+        const summaryStats = stats.summary || { total_items: 0, active_items: 0, last_updated: '' };
+
+        return (
+            <div className="stats-container">
+                <div className="stat-card">
+                    <div className="stat-icon category-icon">
+                        <i className="fas fa-layer-group"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{categoriesStats.total}</h3>
+                        <p>Total Categories</p>
+                        <div className="stat-details">
+                            <span className="active-stat">{categoriesStats.active} Active</span>
+                            <span className="latest-stat">Latest: {categoriesStats.latest}</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="stat-info">
-                    <h3>{stats.categories.total}</h3>
-                    <p>Total Categories</p>
-                    <div className="stat-details">
-                        <span className="active-stat">{stats.categories.active} Active</span>
-                        <span className="latest-stat">Latest: {stats.categories.latest}</span>
+
+                <div className="stat-card">
+                    <div className="stat-icon subcategory-icon">
+                        <i className="fas fa-sitemap"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{subCategoriesStats.total}</h3>
+                        <p>Total Sub-Categories</p>
+                        <div className="stat-details">
+                            <span className="active-stat">{subCategoriesStats.active} Active</span>
+                            <span className="latest-stat">Latest: {subCategoriesStats.latest}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon subsubcategory-icon">
+                        <i className="fas fa-stream"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{subSubCategoriesStats.total}</h3>
+                        <p>Total Sub-Sub-Categories</p>
+                        <div className="stat-details">
+                            <span className="active-stat">{subSubCategoriesStats.active} Active</span>
+                            <span className="latest-stat">Latest: {subSubCategoriesStats.latest}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="stat-card total-card">
+                    <div className="stat-icon total-icon">
+                        <i className="fas fa-chart-pie"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{summaryStats.total_items}</h3>
+                        <p>Total Items</p>
+                        <div className="stat-details">
+                            <span className="active-stat">{summaryStats.active_items} Active</span>
+                            <span className="inactive-stat">
+                                {summaryStats.total_items - summaryStats.active_items} Inactive
+                            </span>
+                        </div>
+                        <div className="stat-footer">
+                            <small>Updated: {summaryStats.last_updated ?
+                                new Date(summaryStats.last_updated).toLocaleTimeString() :
+                                'Loading...'}</small>
+                        </div>
                     </div>
                 </div>
             </div>
+        );
+    };
 
-            <div className="stat-card">
-                <div className="stat-icon subcategory-icon">
-                    <i className="fas fa-sitemap"></i>
-                </div>
-                <div className="stat-info">
-                    <h3>{stats.sub_categories.total}</h3>
-                    <p>Total Sub-Categories</p>
-                    <div className="stat-details">
-                        <span className="active-stat">{stats.sub_categories.active} Active</span>
-                        <span className="latest-stat">Latest: {stats.sub_categories.latest}</span>
-                    </div>
-                </div>
+    const renderTabs = () => {
+        const categoriesStats = stats.categories || { total: 0 };
+        const subCategoriesStats = stats.subCategories || { total: 0 };
+        const subSubCategoriesStats = stats.subSubCategories || { total: 0 };
+
+        return (
+            <div className="tabs-container">
+                <button
+                    className={`tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('categories')}
+                >
+                    <i className="fas fa-list"></i> Categories ({categoriesStats.total})
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'subcategories' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('subcategories')}
+                >
+                    <i className="fas fa-sitemap"></i> Sub-Categories ({subCategoriesStats.total})
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'subsubcategories' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('subsubcategories')}
+                >
+                    <i className="fas fa-stream"></i> Sub-Sub-Categories ({subSubCategoriesStats.total})
+                </button>
             </div>
-
-            <div className="stat-card">
-                <div className="stat-icon subsubcategory-icon">
-                    <i className="fas fa-stream"></i>
-                </div>
-                <div className="stat-info">
-                    <h3>{stats.sub_sub_categories.total}</h3>
-                    <p>Total Sub-Sub-Categories</p>
-                    <div className="stat-details">
-                        <span className="active-stat">{stats.sub_sub_categories.active} Active</span>
-                        <span className="latest-stat">Latest: {stats.sub_sub_categories.latest}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="stat-card total-card">
-                <div className="stat-icon total-icon">
-                    <i className="fas fa-chart-pie"></i>
-                </div>
-                <div className="stat-info">
-                    <h3>{stats.summary.total_items}</h3>
-                    <p>Total Items</p>
-                    <div className="stat-details">
-                        <span className="active-stat">{stats.summary.active_items} Active</span>
-                        <span className="inactive-stat">
-                            {stats.summary.total_items - stats.summary.active_items} Inactive
-                        </span>
-                    </div>
-                    <div className="stat-footer">
-                        <small>Updated: {stats.summary.last_updated ?
-                            new Date(stats.summary.last_updated).toLocaleTimeString() :
-                            'Loading...'}</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderTabs = () => (
-        <div className="tabs-container">
-            <button
-                className={`tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
-                onClick={() => setActiveTab('categories')}
-            >
-                <i className="fas fa-list"></i> Categories ({stats.categories.total})
-            </button>
-            <button
-                className={`tab-btn ${activeTab === 'subcategories' ? 'active' : ''}`}
-                onClick={() => setActiveTab('subcategories')}
-            >
-                <i className="fas fa-sitemap"></i> Sub-Categories ({stats.sub_categories.total})
-            </button>
-            <button
-                className={`tab-btn ${activeTab === 'subsubcategories' ? 'active' : ''}`}
-                onClick={() => setActiveTab('subsubcategories')}
-            >
-                <i className="fas fa-stream"></i> Sub-Sub-Categories ({stats.sub_sub_categories.total})
-            </button>
-        </div>
-    );
+        );
+    };
 
     const renderFilters = () => (
         <div className="filters-container">
@@ -822,7 +822,6 @@ const CategoryManagement = () => {
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
-                    <option value="draft">Draft</option>
                 </select>
 
                 {activeTab === 'subcategories' && (
@@ -936,7 +935,6 @@ const CategoryManagement = () => {
                             />
                         </div>
 
-                        {/* Image Upload Field */}
                         <div className="form-group">
                             <label>Image {formMode === 'edit' && '(Optional)'}</label>
                             <div className="image-upload-container">
@@ -1029,7 +1027,6 @@ const CategoryManagement = () => {
                             >
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
-                                <option value="draft">Draft</option>
                             </select>
                         </div>
 
@@ -1108,7 +1105,6 @@ const CategoryManagement = () => {
                     </thead>
                     <tbody>
                         {data.map((item) => {
-                            // Determine type for image URL
                             let type = '';
                             if (activeTab === 'categories') type = 'category';
                             else if (activeTab === 'subcategories') type = 'subcategory';
@@ -1124,7 +1120,6 @@ const CategoryManagement = () => {
                                                 className="table-image"
                                                 onError={(e) => {
                                                     e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
-                                                    e.target.style.backgroundColor = '#f5f5f5';
                                                 }}
                                             />
                                             <button
@@ -1224,13 +1219,23 @@ const CategoryManagement = () => {
                 </button>
 
                 <div className="page-numbers">
-                    {[...Array(totalPages)].map((_, index) => {
-                        const page = index + 1;
-                        if (
-                            page === 1 ||
-                            page === totalPages ||
-                            (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
+                    {[...Array(Math.min(totalPages, 7))].map((_, index) => {
+                        let page;
+                        if (totalPages <= 7) {
+                            page = index + 1;
+                        } else if (currentPage <= 4) {
+                            page = index + 1;
+                            if (page > 5 && index < 6) {
+                                if (index === 5) return <span key="ellipsis1" className="ellipsis">...</span>;
+                                return null;
+                            }
+                        } else if (currentPage >= totalPages - 3) {
+                            page = totalPages - 6 + index;
+                        } else {
+                            page = currentPage - 3 + index;
+                        }
+
+                        if (page > 0 && page <= totalPages) {
                             return (
                                 <button
                                     key={page}
@@ -1240,11 +1245,6 @@ const CategoryManagement = () => {
                                     {page}
                                 </button>
                             );
-                        } else if (
-                            page === currentPage - 2 ||
-                            page === currentPage + 2
-                        ) {
-                            return <span key={page} className="ellipsis">...</span>;
                         }
                         return null;
                     })}

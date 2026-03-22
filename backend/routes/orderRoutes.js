@@ -2976,18 +2976,18 @@ router.get("/:orderId/invoice", authenticateToken, async (req, res) => {
             doc.pipe(res);
 
             // Add company logo/header
-            doc.fontSize(20).text('Your Store Name', 50, 50);
-            doc.fontSize(10).text('123 Business Street', 50, 75);
+            doc.fontSize(20).text('Pankhudi | Premium Fashion & Lifestyle ', 50, 50);
+            doc.fontSize(10).text('Online Shop', 50, 75);
             doc.text('City, State - 123456', 50, 90);
-            doc.text('Phone: +91 9876543210', 50, 105);
-            doc.text('Email: support@yourstore.com', 50, 120);
+            doc.text('Phone: +91 8574814934', 50, 105);
+            doc.text('Email: support@pankhudi.com', 50, 120);
 
             // Invoice title
             doc.fontSize(16).text('TAX INVOICE', 50, 160);
 
             // Invoice details
             doc.fontSize(10);
-            doc.text(`Invoice No: INV-${order.order_number}`, 400, 160);
+            doc.text(`Invoice No: INV-${order.order_number}`, 500, 220);
             doc.text(`Date: ${new Date(order.order_date).toLocaleDateString('en-IN')}`, 400, 175);
             doc.text(`Order No: ${order.order_number}`, 400, 190);
 

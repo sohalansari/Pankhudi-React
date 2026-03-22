@@ -12,7 +12,8 @@ import AdminReports from "./pages/Reports/Reports";
 import Cart from "./pages/userCart/cart";
 import CategoryManagement from "./pages/Category/category";
 import BannerManagement from "./pages/AdminBanners/Banners"; // ✅ Import Banner Management
-
+import PromoCodes from "./pages/PromoCodes/PromoCodes"; // ✅ Import Promo Codes Management
+import Orders from "./pages/Orders/Orders";
 import "./App.css";
 
 function App() {
@@ -42,6 +43,8 @@ function App() {
 
           {/* 404 Page - Add at the end */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="/promocodes" element={<PromoCodes />} />
+          <Route path="/orders" element={<Orders />} />
         </Routes>
       </div>
     </Layout>

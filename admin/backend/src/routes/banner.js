@@ -1,43 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
+// ✅ Using global express-fileupload (multer removed)
 const path = require('path');
 const fs = require('fs');
 
-// ✅ Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads/banners');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
-// ✅ Multer configuration for banner images
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadsDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'banner-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)!'), false);
-    }
-};
-
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    fileFilter: fileFilter
-});
 
 // ✅ Simple admin check middleware (for demo)
 const checkAdmin = (req, res, next) => {
@@ -338,7 +308,7 @@ router.get('/admin/:id', checkAdmin, async (req, res) => {
 });
 
 // ✅ CREATE NEW BANNER (Admin)
-router.post('/admin/create', checkAdmin, upload.single('image'), async (req, res) => {
+router.post('/admin/create', checkAdmin, async (req, res) => {
     try {
         const {
             title,
@@ -362,12 +332,8 @@ router.post('/admin/create', checkAdmin, upload.single('image'), async (req, res
             });
         }
 
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: 'Banner image is required'
-            });
-        }
+        // Optional image for updates
+        const imageFile = req.files && req.files.image ? req.files.image : null;
 
         // Validate position
         const validPositions = ['home_top', 'home_middle', 'category_top', 'product_page', 'sidebar'];
@@ -375,6 +341,13 @@ router.post('/admin/create', checkAdmin, upload.single('image'), async (req, res
             return res.status(400).json({
                 success: false,
                 message: 'Invalid banner position'
+            });
+        }
+
+        if (!imageFile) {
+            return res.status(400).json({
+                success: false,
+                message: 'Banner image is required for create'
             });
         }
 
@@ -389,7 +362,7 @@ router.post('/admin/create', checkAdmin, upload.single('image'), async (req, res
         const values = [
             title.trim(),
             description ? description.trim() : null,
-            req.file.filename,
+            imageFile.name,
             position,
             parseInt(display_order) || 0,
             status,
@@ -439,7 +412,7 @@ router.post('/admin/create', checkAdmin, upload.single('image'), async (req, res
 });
 
 // ✅ UPDATE BANNER (Admin)
-router.put('/admin/update/:id', checkAdmin, upload.single('image'), async (req, res) => {
+router.put('/admin/update/:id', checkAdmin, async (req, res) => {
     try {
         const bannerId = req.params.id;
         const updateData = req.body;

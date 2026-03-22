@@ -5,12 +5,13 @@ const authenticateToken = require("../middleware/auth");
 // ==================== VALIDATE PROMO CODE ====================
 router.post("/validate", authenticateToken, (req, res) => {
     const db = req.db;
-    const { promoCode } = req.body;
+    const { promoCode, subtotal } = req.body;
     const userId = req.user.id;
 
     console.log("========== 🎟️ VALIDATE PROMO CODE ==========");
     console.log("Promo Code:", promoCode);
     console.log("User ID:", userId);
+    console.log("Subtotal:", subtotal);
 
     if (!promoCode) {
         return res.status(400).json({
@@ -89,14 +90,30 @@ router.post("/validate", authenticateToken, (req, res) => {
                 }
 
                 const userUsageCount = usageResults[0].count;
+                const remainingUses = promo.per_user_limit - userUsageCount;
+
                 console.log(`User ${userId} has used this promo ${userUsageCount} times`);
+                console.log(`Remaining uses: ${remainingUses}`);
 
                 if (userUsageCount >= promo.per_user_limit) {
                     return res.json({
                         success: true,
                         valid: false,
-                        message: "You have already used this promo code"
+                        message: `You have already used this promo code ${promo.per_user_limit} time(s)`
                     });
+                }
+
+                // Calculate discount for preview
+                let discountAmount = 0;
+                if (subtotal) {
+                    if (promo.discount_type === 'percentage') {
+                        discountAmount = (subtotal * promo.discount_value / 100);
+                        if (promo.max_discount_amount && discountAmount > promo.max_discount_amount) {
+                            discountAmount = promo.max_discount_amount;
+                        }
+                    } else if (promo.discount_type === 'fixed') {
+                        discountAmount = promo.discount_value;
+                    }
                 }
 
                 // Valid promo
@@ -106,16 +123,34 @@ router.post("/validate", authenticateToken, (req, res) => {
                     promo: {
                         id: promo.id,
                         code: promo.code,
+                        description: promo.description,
                         discountType: promo.discount_type,
-                        discount: parseFloat(promo.discount_value),
+                        discountValue: parseFloat(promo.discount_value),
                         minOrder: parseFloat(promo.min_order_amount),
                         maxDiscount: promo.max_discount_amount ? parseFloat(promo.max_discount_amount) : null,
-                        description: promo.description
+                        perUserLimit: promo.per_user_limit,
+                        userUsageCount: userUsageCount,
+                        remainingUses: remainingUses
                     },
-                    message: "Promo code applied successfully"
+                    discountAmount: discountAmount || 0,
+                    finalAmount: subtotal ? subtotal - discountAmount : 0,
+                    message: "Promo code is valid! Apply to get discount."
                 });
             });
         } else {
+            // Calculate discount for preview
+            let discountAmount = 0;
+            if (subtotal) {
+                if (promo.discount_type === 'percentage') {
+                    discountAmount = (subtotal * promo.discount_value / 100);
+                    if (promo.max_discount_amount && discountAmount > promo.max_discount_amount) {
+                        discountAmount = promo.max_discount_amount;
+                    }
+                } else if (promo.discount_type === 'fixed') {
+                    discountAmount = promo.discount_value;
+                }
+            }
+
             // Valid promo (no per-user limit)
             res.json({
                 success: true,
@@ -123,13 +158,18 @@ router.post("/validate", authenticateToken, (req, res) => {
                 promo: {
                     id: promo.id,
                     code: promo.code,
+                    description: promo.description,
                     discountType: promo.discount_type,
-                    discount: parseFloat(promo.discount_value),
+                    discountValue: parseFloat(promo.discount_value),
                     minOrder: parseFloat(promo.min_order_amount),
                     maxDiscount: promo.max_discount_amount ? parseFloat(promo.max_discount_amount) : null,
-                    description: promo.description
+                    perUserLimit: null,
+                    userUsageCount: 0,
+                    remainingUses: null
                 },
-                message: "Promo code applied successfully"
+                discountAmount: discountAmount || 0,
+                finalAmount: subtotal ? subtotal - discountAmount : 0,
+                message: "Promo code is valid! Apply to get discount."
             });
         }
     });
@@ -151,6 +191,13 @@ router.post("/apply", authenticateToken, (req, res) => {
         return res.status(400).json({
             success: false,
             message: "Promo code is required"
+        });
+    }
+
+    if (!orderId) {
+        return res.status(400).json({
+            success: false,
+            message: "Order ID is required to apply promo"
         });
     }
 
@@ -184,60 +231,136 @@ router.post("/apply", authenticateToken, (req, res) => {
             });
         }
 
-        // Calculate discount
-        let discountAmount = 0;
-        if (promo.discount_type === 'percentage') {
-            discountAmount = (subtotal * promo.discount_value / 100);
-            if (promo.max_discount_amount && discountAmount > promo.max_discount_amount) {
-                discountAmount = promo.max_discount_amount;
-            }
-        } else if (promo.discount_type === 'fixed') {
-            discountAmount = promo.discount_value;
+        // Check global usage limit
+        if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
+            return res.status(400).json({
+                success: false,
+                message: "Promo code usage limit exceeded"
+            });
         }
 
-        // ✅ IMPORTANT: Log usage only if orderId is provided
-        if (orderId) {
-            console.log(`📝 Logging promo usage for Order ID: ${orderId}`);
+        // Check per-user limit
+        if (promo.per_user_limit > 0) {
+            const usageQuery = `
+                SELECT COUNT(*) as count 
+                FROM promo_code_usage 
+                WHERE promo_code_id = ? AND user_id = ?
+            `;
 
-            // Update promo used_count
+            db.query(usageQuery, [promo.id, userId], (usageErr, usageResults) => {
+                if (usageErr) {
+                    console.error("❌ Usage check error:", usageErr);
+                    return res.status(500).json({ success: false, message: "Database error" });
+                }
+
+                if (usageResults[0].count >= promo.per_user_limit) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `You have already used this promo code ${promo.per_user_limit} time(s)`
+                    });
+                }
+
+                applyPromoAndLog();
+            });
+        } else {
+            applyPromoAndLog();
+        }
+
+        function applyPromoAndLog() {
+            // Calculate discount
+            let discountAmount = 0;
+            let discountDetails = {};
+
+            if (promo.discount_type === 'percentage') {
+                discountAmount = (subtotal * promo.discount_value / 100);
+                if (promo.max_discount_amount && discountAmount > promo.max_discount_amount) {
+                    discountAmount = promo.max_discount_amount;
+                }
+                discountDetails = {
+                    type: 'percentage',
+                    rate: promo.discount_value,
+                    maxDiscount: promo.max_discount_amount
+                };
+            } else if (promo.discount_type === 'fixed') {
+                discountAmount = promo.discount_value;
+                discountDetails = {
+                    type: 'fixed',
+                    amount: promo.discount_value
+                };
+            } else if (promo.discount_type === 'shipping') {
+                discountAmount = 0;
+                discountDetails = {
+                    type: 'shipping',
+                    message: 'Free Shipping'
+                };
+            }
+
+            const finalAmount = subtotal - discountAmount;
+
+            // ✅ Update promo used_count
             db.query(
                 'UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?',
                 [promo.id],
-                (updateErr) => {
+                (updateErr, updateResult) => {
                     if (updateErr) {
                         console.error("❌ Error updating promo count:", updateErr);
                     } else {
-                        console.log("✅ Promo used_count updated");
+                        console.log(`✅ Promo used_count updated. Affected rows: ${updateResult.affectedRows}`);
+                        console.log(`📊 New used_count: ${promo.used_count + 1}`);
                     }
                 }
             );
 
-            // Insert into promo_code_usage
+            // ✅ Insert into promo_code_usage
             db.query(
-                'INSERT INTO promo_code_usage (promo_code_id, user_id, order_id) VALUES (?, ?, ?)',
+                'INSERT INTO promo_code_usage (promo_code_id, user_id, order_id, used_at) VALUES (?, ?, ?, NOW())',
                 [promo.id, userId, orderId],
-                (insertErr, result) => {
+                (insertErr, insertResult) => {
                     if (insertErr) {
                         console.error("❌ Error inserting promo usage:", insertErr);
-                    } else {
-                        console.log(`✅ Promo usage logged with ID: ${result.insertId}`);
-                        console.log(`📊 Data: PromoID=${promo.id}, UserID=${userId}, OrderID=${orderId}`);
+                        console.error("Error details:", insertErr.sqlMessage);
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Failed to log promo usage",
+                            error: insertErr.message
+                        });
                     }
+
+                    console.log(`✅ Promo usage logged successfully!`);
+                    console.log(`📊 Insert ID: ${insertResult.insertId}`);
+                    console.log(`📊 Data: PromoID=${promo.id}, UserID=${userId}, OrderID=${orderId}`);
+
+                    // ✅ Fetch the inserted record to confirm
+                    db.query(
+                        'SELECT * FROM promo_code_usage WHERE id = ?',
+                        [insertResult.insertId],
+                        (fetchErr, fetchResults) => {
+                            if (!fetchErr && fetchResults.length > 0) {
+                                console.log("✅ Verified inserted record:", fetchResults[0]);
+                            }
+                        }
+                    );
+
+                    res.json({
+                        success: true,
+                        message: "Promo code applied successfully",
+                        discount: {
+                            type: promo.discount_type,
+                            amount: discountAmount,
+                            code: promo.code,
+                            description: promo.description,
+                            details: discountDetails
+                        },
+                        orderDetails: {
+                            subtotal: subtotal,
+                            discountAmount: discountAmount,
+                            finalAmount: finalAmount
+                        }
+                    });
                 }
             );
-        } else {
-            console.log("⚠️ No orderId provided, skipping usage logging");
         }
-
-        res.json({
-            success: true,
-            message: "Promo code applied successfully",
-            discount: {
-                type: promo.discount_type,
-                amount: discountAmount,
-                code: promo.code
-            }
-        });
     });
 });
 
@@ -256,7 +379,11 @@ router.get("/usage/:userId", authenticateToken, (req, res) => {
             pcu.*,
             pc.code as promo_code,
             pc.description as promo_description,
-            o.order_number
+            pc.discount_type,
+            pc.discount_value,
+            o.order_number,
+            o.total_amount as order_total,
+            o.order_date
         FROM promo_code_usage pcu
         JOIN promo_codes pc ON pcu.promo_code_id = pc.id
         LEFT JOIN orders o ON pcu.order_id = o.id
@@ -282,6 +409,7 @@ router.get("/usage/:userId", authenticateToken, (req, res) => {
         }
 
         console.log(`✅ Found ${results.length} promo usage records`);
+
         res.json({
             success: true,
             usage: results
@@ -331,10 +459,14 @@ router.get("/check/:code", authenticateToken, (req, res) => {
         const available = (!promo.usage_limit || promo.total_used < promo.usage_limit) &&
             (!promo.per_user_limit || promo.user_used < promo.per_user_limit);
 
+        const remainingGlobal = promo.usage_limit ? promo.usage_limit - promo.total_used : 'Unlimited';
+        const remainingUser = promo.per_user_limit ? promo.per_user_limit - promo.user_used : 'Unlimited';
+
         res.json({
             success: true,
             available: available,
             promo: {
+                id: promo.id,
                 code: promo.code,
                 description: promo.description,
                 discount_type: promo.discount_type,
@@ -344,7 +476,9 @@ router.get("/check/:code", authenticateToken, (req, res) => {
                 total_used: promo.total_used,
                 user_used: promo.user_used,
                 usage_limit: promo.usage_limit,
-                per_user_limit: promo.per_user_limit
+                per_user_limit: promo.per_user_limit,
+                remaining_global: remainingGlobal,
+                remaining_user: remainingUser
             },
             message: available ? "Promo code is available" : "Promo code is not available"
         });

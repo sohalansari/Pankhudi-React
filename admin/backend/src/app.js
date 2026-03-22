@@ -1,337 +1,498 @@
+// ============================================
+// APP.JS - Main Application Configuration
+// ============================================
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-const fileUpload = require("express-fileupload"); // Add this import
+const fileUpload = require("express-fileupload");
+const morgan = require("morgan");
 
 const app = express();
 
-// ✅ 1. CORS Configuration - MUST COME FIRST
+// ============================================
+// 1. CONFIGURATION
+// ============================================
+
+// Environment variables
+const NODE_ENV = process.env.NODE_ENV || "development";
+const PORT = process.env.PORT || 5001;
+const CLIENT_URLS = process.env.CLIENT_URLS
+    ? process.env.CLIENT_URLS.split(",")
+    : ["http://localhost:3000", "http://localhost:3001"];
+
+// Upload directory setup
+const UPLOADS_DIR = path.join(__dirname, "uploads");
+const ensureDirectoryExists = (dir) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`📁 Created directory: ${dir}`);
+    }
+};
+ensureDirectoryExists(UPLOADS_DIR);
+
+// ============================================
+// 2. MIDDLEWARE - Core
+// ============================================
+
+// CORS Configuration
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    origin: CLIENT_URLS,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Content-Length', 'X-Requested-With']
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Content-Disposition"]
 }));
 
-// ✅ 2. Create uploads directory BEFORE static middleware
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    console.log(`📁 Created uploads directory: ${uploadsDir}`);
-}
+// Static Files
+app.use("/uploads", express.static(UPLOADS_DIR));
 
-// ✅ 3. Static files - BEFORE body parsers
-app.use("/uploads", express.static(uploadsDir));
+// Body Parsers
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ✅ 4. Body parsers - IMPORTANT: Order matters!
-// For JSON requests
-app.use(express.json({
-    limit: '10mb'
-}));
-
-// For URL-encoded requests (form submissions without files)
-app.use(express.urlencoded({
-    extended: true,
-    limit: '10mb'
-}));
-
-// ✅ 5. File Upload Middleware - MUST COME AFTER body parsers
-// This handles multipart/form-data (file uploads)
+// File Upload
 app.use(fileUpload({
     createParentPath: true,
-    limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-    },
+    limits: { fileSize: 5 * 1024 * 1024 },
     abortOnLimit: true,
-    responseOnLimit: 'File size limit has been reached (5MB)',
-    useTempFiles: false, // Important: Keep false for proper req.files handling
-    tempFileDir: '/tmp/',
+    responseOnLimit: "File size limit has been reached (5MB)",
+    useTempFiles: true,
+    tempFileDir: path.join(__dirname, 'temp'),
     parseNested: true,
     safeFileNames: true,
-    preserveExtension: 4 // Keep original file extension
+    preserveExtension: 4
 }));
 
-// ✅ 6. Custom middleware to handle form-data body parsing
-// This fixes the issue where req.body is empty for form-data requests
+// ============================================
+// 3. MIDDLEWARE - Logging
+// ============================================
+
+// Request Logger (Development only)
+if (NODE_ENV === "development") {
+    app.use(morgan("dev"));
+
+    // Custom detailed logger
+    app.use((req, res, next) => {
+        const start = Date.now();
+        res.on("finish", () => {
+            const duration = Date.now() - start;
+            const statusColor = res.statusCode >= 400 ? "\x1b[31m" : "\x1b[32m";
+            console.log(
+                `${statusColor}${req.method}\x1b[0m ${req.url} - ${res.statusCode} - ${duration}ms`
+            );
+        });
+        next();
+    });
+}
+
+// ============================================
+// 4. MIDDLEWARE - Database
+// ============================================
+
 app.use((req, res, next) => {
-    const contentType = req.headers['content-type'] || '';
-
-    // If it's multipart/form-data and we have files
-    if (contentType.includes('multipart/form-data') && req.files) {
-        // For form-data, text fields are available in req.body
-        // But we need to make sure req.body is populated
-        // express-fileupload automatically populates req.body for text fields
-        // However, if we need to manually handle it:
-
-        // Clone the original body parser middleware behavior
-        if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-            // Merge text fields from req.body with any existing data
-            // This ensures text fields are available in req.body
-            if (typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-                // req.body is already populated by express-fileupload
-                console.log('Form-data text fields:', req.body);
-            }
-        }
+    try {
+        req.db = require("./config/db");
+        next();
+    } catch (error) {
+        console.error("❌ Database connection error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed",
+            error: NODE_ENV === "development" ? error.message : undefined
+        });
     }
-
-    next();
 });
 
-// ✅ 7. Database Middleware
-app.use((req, res, next) => {
-    req.db = require('./config/db');
-    next();
-});
+// ============================================
+// 5. ROUTES - Import
+// ============================================
 
-// ✅ 8. Import routes
+// Main Routes
 const userRoutes = require("./routes/userRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
 const productRoutes = require("./routes/products");
 const reportsRoutes = require("./routes/adminReports");
 const cartRoutes = require("./routes/cartRoutes");
-const bannerRoutes = require('./routes/banner');
+const bannerRoutes = require("./routes/banner");
 const categoryManagementRoutes = require("./routes/categories");
+const promoCodeRoutes = require("./routes/promoCodeRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
-// ✅ 9. Mount routes
+// ============================================
+// 6. ROUTES - Mount
+// ============================================
+
+// API Routes
 app.use("/api/users", userRoutes);
-app.use("/api/dashboard", dashboardRoutes);
+app.use("/api", dashboardRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin/reports", reportsRoutes);
 app.use("/api/cart", cartRoutes);
-app.use('/api/banners', bannerRoutes);
+app.use("/api/banners", bannerRoutes);
 app.use("/api", categoryManagementRoutes);
+app.use("/api/promocodes", promoCodeRoutes);
+app.use("/api/orders", orderRoutes);
 
-// ✅ 10. Test endpoints for debugging
-app.post('/api/test-body', (req, res) => {
-    console.log('Test Body - Content-Type:', req.headers['content-type']);
-    console.log('Test Body - req.body:', req.body);
-    console.log('Test Body - req.files:', req.files);
-    console.log('Test Body - req.query:', req.query);
-    console.log('Test Body - req.params:', req.params);
+// ============================================
+// 7. PUBLIC ENDPOINTS
+// ============================================
 
+// Root Endpoint
+app.get("/", (req, res) => {
     res.json({
         success: true,
-        body: req.body,
-        files: req.files ? Object.keys(req.files) : null,
-        contentType: req.headers['content-type'],
-        method: req.method
+        message: "Admin Panel API is running",
+        timestamp: new Date().toISOString(),
+        version: "1.0.0",
+        environment: NODE_ENV,
+        endpoints: {
+            documentation: "See /api/health for available endpoints",
+            health: "/api/health",
+            dashboard: "/api/dashboard",
+            orders: "/api/orders",
+            products: "/api/products",
+            users: "/api/users",
+            categories: "/api/categories",
+            promoCodes: "/api/promocodes"
+        }
     });
 });
 
-// Test file upload endpoint
-app.post('/api/test-upload', (req, res) => {
-    try {
-        console.log('Test Upload - Content-Type:', req.headers['content-type']);
-        console.log('Test Upload - Body keys:', Object.keys(req.body));
-        console.log('Test Upload - Files:', req.files);
-
-        if (!req.files || !req.files.image) {
-            return res.status(400).json({
-                success: false,
-                message: 'No file uploaded'
-            });
-        }
-
-        const image = req.files.image;
-        const uploadPath = path.join(uploadsDir, 'test', image.name);
-
-        // Create test directory if it doesn't exist
-        const testDir = path.join(uploadsDir, 'test');
-        if (!fs.existsSync(testDir)) {
-            fs.mkdirSync(testDir, { recursive: true });
-        }
-
-        image.mv(uploadPath, (err) => {
-            if (err) {
-                console.error('File move error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to save file'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'File uploaded successfully',
-                data: {
-                    fileName: image.name,
-                    filePath: `/uploads/test/${image.name}`,
-                    size: image.size,
-                    mimetype: image.mimetype,
-                    bodyFields: req.body // Show any text fields sent with the file
-                }
-            });
-        });
-    } catch (error) {
-        console.error('Test upload error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message
-        });
-    }
-});
-
-// ✅ 11. Health Check Endpoints (after all routes)
+// Health Check
 app.get("/api/health", (req, res) => {
     res.json({
         success: true,
         message: "API Server is running",
         timestamp: new Date().toISOString(),
         version: "1.0.0",
+        environment: NODE_ENV,
         uptime: process.uptime(),
+        memory: {
+            rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`,
+            heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`,
+            heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`
+        },
         features: {
             fileUpload: true,
             categories: true,
             products: true,
-            users: true
+            users: true,
+            promoCodes: true,
+            orders: true,
+            dashboard: true
         }
     });
 });
 
-app.get("/api/db-health", (req, res) => {
+// Database Health Check
+app.get("/api/db-health", async (req, res) => {
     const db = req.db;
 
-    db.query('SELECT 1 as test', (error, results) => {
-        if (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Database connection failed",
-                error: error.message
+    try {
+        // Test basic connection
+        const testResult = await new Promise((resolve, reject) => {
+            db.query("SELECT 1 as connected", (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
             });
-        }
+        });
+
+        // Get order count
+        const orderCount = await new Promise((resolve) => {
+            db.query("SELECT COUNT(*) as count FROM orders WHERE deleted_at IS NULL", (err, results) => {
+                resolve(err ? "Error" : results[0]?.count || 0);
+            });
+        });
+
+        // Get user count
+        const userCount = await new Promise((resolve) => {
+            db.query("SELECT COUNT(*) as count FROM users WHERE is_deleted = 0", (err, results) => {
+                resolve(err ? "Error" : results[0]?.count || 0);
+            });
+        });
 
         res.json({
             success: true,
             message: "Database is connected",
-            timestamp: new Date().toISOString()
-        });
-    });
-});
-
-// ✅ 12. Global Statistics Endpoint
-app.get('/api/global-stats', async (req, res) => {
-    try {
-        const db = req.db;
-
-        const query = `
-            SELECT 
-                (SELECT COUNT(*) FROM categories) as total_categories,
-                (SELECT COUNT(*) FROM sub_categories) as total_sub_categories,
-                (SELECT COUNT(*) FROM sub_sub_categories) as total_sub_sub_categories,
-                (SELECT COUNT(*) FROM categories WHERE status = 'active') as active_categories,
-                (SELECT COUNT(*) FROM sub_categories WHERE status = 'active') as active_sub_categories,
-                (SELECT COUNT(*) FROM sub_sub_categories WHERE status = 'active') as active_sub_sub_categories,
-                (SELECT name FROM categories ORDER BY created_at DESC LIMIT 1) as latest_category,
-                (SELECT name FROM sub_categories ORDER BY created_at DESC LIMIT 1) as latest_sub_category,
-                (SELECT name FROM sub_sub_categories ORDER BY created_at DESC LIMIT 1) as latest_sub_sub_category
-        `;
-
-        db.query(query, (err, results) => {
-            if (err) {
-                console.error('Global stats query error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Database error fetching statistics'
-                });
+            timestamp: new Date().toISOString(),
+            database: process.env.DB_NAME || "pankhudi",
+            statistics: {
+                orders: orderCount,
+                users: userCount,
+                connection: testResult[0]?.connected === 1 ? "OK" : "Failed"
             }
-
-            const data = results[0];
-
-            const stats = {
-                categories: {
-                    total: data.total_categories || 0,
-                    active: data.active_categories || 0,
-                    latest: data.latest_category || 'N/A'
-                },
-                sub_categories: {
-                    total: data.total_sub_categories || 0,
-                    active: data.active_sub_categories || 0,
-                    latest: data.latest_sub_category || 'N/A'
-                },
-                sub_sub_categories: {
-                    total: data.total_sub_sub_categories || 0,
-                    active: data.active_sub_sub_categories || 0,
-                    latest: data.latest_sub_sub_category || 'N/A'
-                },
-                summary: {
-                    total_items: (data.total_categories || 0) +
-                        (data.total_sub_categories || 0) +
-                        (data.total_sub_sub_categories || 0),
-                    active_items: (data.active_categories || 0) +
-                        (data.active_sub_categories || 0) +
-                        (data.active_sub_sub_categories || 0),
-                    last_updated: new Date().toISOString()
-                }
-            };
-
-            res.json({
-                success: true,
-                data: stats
-            });
         });
     } catch (error) {
-        console.error('Global stats error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error fetching statistics'
+            message: "Database connection failed",
+            error: error.message
         });
     }
 });
 
-// ✅ 13. Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('🔥 Server Error:', err.stack);
+// Global Statistics
+app.get("/api/global-stats", async (req, res) => {
+    const db = req.db;
 
-    // Handle specific errors
-    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    const queries = {
+        categories: "SELECT COUNT(*) as total FROM categories",
+        activeCategories: "SELECT COUNT(*) as count FROM categories WHERE status = 'active'",
+        subCategories: "SELECT COUNT(*) as total FROM sub_categories",
+        activeSubCategories: "SELECT COUNT(*) as count FROM sub_categories WHERE status = 'active'",
+        subSubCategories: "SELECT COUNT(*) as total FROM sub_sub_categories",
+        activeSubSubCategories: "SELECT COUNT(*) as count FROM sub_sub_categories WHERE status = 'active'",
+        promoCodes: "SELECT COUNT(*) as total FROM promo_codes",
+        activePromoCodes: "SELECT COUNT(*) as count FROM promo_codes WHERE is_active = 1",
+        orders: "SELECT COUNT(*) as total FROM orders WHERE deleted_at IS NULL",
+        todayOrders: "SELECT COUNT(*) as count FROM orders WHERE DATE(order_date) = CURDATE() AND deleted_at IS NULL",
+        latestCategory: "SELECT name FROM categories ORDER BY created_at DESC LIMIT 1",
+        latestSubCategory: "SELECT name FROM sub_categories ORDER BY created_at DESC LIMIT 1",
+        latestSubSubCategory: "SELECT name FROM sub_sub_categories ORDER BY created_at DESC LIMIT 1",
+        latestPromo: "SELECT code as name FROM promo_codes ORDER BY created_at DESC LIMIT 1",
+        latestOrder: "SELECT order_number as name FROM orders ORDER BY order_date DESC LIMIT 1"
+    };
+
+    try {
+        const results = {};
+        for (const [key, query] of Object.entries(queries)) {
+            results[key] = await new Promise((resolve) => {
+                db.query(query, (err, result) => {
+                    if (err) resolve({ total: 0, count: 0, name: null });
+                    else resolve(result[0]);
+                });
+            });
+        }
+
+        const stats = {
+            categories: {
+                total: results.categories?.total || 0,
+                active: results.activeCategories?.count || 0,
+                latest: results.latestCategory?.name || "N/A"
+            },
+            subCategories: {
+                total: results.subCategories?.total || 0,
+                active: results.activeSubCategories?.count || 0,
+                latest: results.latestSubCategory?.name || "N/A"
+            },
+            subSubCategories: {
+                total: results.subSubCategories?.total || 0,
+                active: results.activeSubSubCategories?.count || 0,
+                latest: results.latestSubSubCategory?.name || "N/A"
+            },
+            promoCodes: {
+                total: results.promoCodes?.total || 0,
+                active: results.activePromoCodes?.count || 0,
+                latest: results.latestPromo?.name || "N/A"
+            },
+            orders: {
+                total: results.orders?.total || 0,
+                today: results.todayOrders?.count || 0,
+                latest: results.latestOrder?.name || "N/A"
+            }
+        };
+
+        res.json({ success: true, data: stats });
+    } catch (error) {
+        console.error("Global stats error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching statistics",
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// 8. TEST ENDPOINTS
+// ============================================
+
+app.get("/api/orders-test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Orders API is working",
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            list: "GET /api/orders - Get all orders (with filters)",
+            stats: "GET /api/orders/stats - Get order statistics",
+            details: "GET /api/orders/:id - Get single order details",
+            updateStatus: "PUT /api/orders/:id/status - Update order status",
+            updatePayment: "PUT /api/orders/:id/payment - Update payment status",
+            addTracking: "POST /api/orders/:id/tracking - Add tracking information",
+            export: "GET /api/orders/export - Export orders to CSV",
+            returns: "GET /api/orders/returns - Get return requests"
+        }
+    });
+});
+
+app.get("/api/promocodes-test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Promo Codes API is working",
+        endpoints: [
+            "GET /api/promocodes - List all promo codes",
+            "GET /api/promocodes/:id - Get single promo code",
+            "POST /api/promocodes - Create promo code",
+            "PUT /api/promocodes/:id - Update promo code",
+            "PATCH /api/promocodes/:id/toggle - Toggle promo code status",
+            "DELETE /api/promocodes/:id - Delete promo code",
+            "POST /api/promocodes/validate - Validate promo code",
+            "POST /api/promocodes/:id/use - Use promo code",
+            "GET /api/promocodes/stats/overview - Get promo code statistics"
+        ]
+    });
+});
+
+// Test Body Endpoint
+app.post("/api/test-body", (req, res) => {
+    res.json({
+        success: true,
+        method: req.method,
+        contentType: req.headers["content-type"],
+        body: req.body,
+        files: req.files ? Object.keys(req.files) : null,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Test Upload Endpoint
+app.post("/api/test-upload", (req, res) => {
+    try {
+        if (!req.files || !req.files.image) {
+            return res.status(400).json({
+                success: false,
+                message: "No file uploaded"
+            });
+        }
+
+        const image = req.files.image;
+        const testDir = path.join(UPLOADS_DIR, "test");
+        ensureDirectoryExists(testDir);
+
+        const uploadPath = path.join(testDir, `${Date.now()}_${image.name}`);
+
+        image.mv(uploadPath, (err) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to save file",
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "File uploaded successfully",
+                data: {
+                    fileName: image.name,
+                    filePath: `/uploads/test/${path.basename(uploadPath)}`,
+                    size: image.size,
+                    mimetype: image.mimetype,
+                    bodyFields: req.body
+                }
+            });
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+});
+
+// Debug Orders Endpoint
+app.get("/api/debug/orders", (req, res) => {
+    const db = req.db;
+
+    db.query(
+        "SELECT id, order_number, order_status, total_amount, order_date FROM orders WHERE deleted_at IS NULL ORDER BY order_date DESC LIMIT 5",
+        (err, orders) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Error fetching orders",
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success: true,
+                count: orders?.length || 0,
+                orders: orders || []
+            });
+        }
+    );
+});
+
+// ============================================
+// 9. ERROR HANDLING
+// ============================================
+
+// 404 Handler
+app.use((req, res) => {
+    console.log(`❌ 404 - Route not found: ${req.method} ${req.url}`);
+
+    res.status(404).json({
+        success: false,
+        message: "API endpoint not found",
+        requestedUrl: req.originalUrl,
+        requestedMethod: req.method,
+        timestamp: new Date().toISOString(),
+        availableEndpoints: [
+            "GET /api/health - Health check",
+            "GET /api/db-health - Database health check",
+            "GET /api/global-stats - Global statistics",
+            "GET /api/orders-test - Orders API test",
+            "GET /api/promocodes-test - Promo codes API test",
+            "GET /api/orders - Orders management",
+            "GET /api/products - Products management",
+            "GET /api/users - Users management",
+            "GET /api/categories - Categories management",
+            "POST /api/test-body - Test request body",
+            "POST /api/test-upload - Test file upload"
+        ],
+        note: "Check your HTTP method (GET, POST, PUT, DELETE)"
+    });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error("🔥 Server Error:", err.stack);
+
+    // Handle JSON parsing errors
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
         return res.status(400).json({
             success: false,
             message: "Invalid JSON in request body"
         });
     }
 
-    if (err.code === 'LIMIT_FILE_SIZE') {
+    // Handle file size limit
+    if (err.code === "LIMIT_FILE_SIZE") {
         return res.status(413).json({
             success: false,
             message: "File size too large. Maximum size is 5MB"
         });
     }
 
-    // Express-fileupload errors
-    if (err.message && err.message.includes('File size limit')) {
-        return res.status(413).json({
-            success: false,
-            message: err.message
-        });
-    }
-
-    res.status(500).json({
+    // Generic error response
+    res.status(err.status || 500).json({
         success: false,
-        message: "Internal server error",
-        error: process.env.NODE_ENV === "development" ? err.message : undefined
+        message: err.message || "Internal server error",
+        error: NODE_ENV === "development" ? err.stack : undefined,
+        timestamp: new Date().toISOString()
     });
 });
+// ✅ Fixed: Removed duplicate fileUpload middleware
+// Global fileUpload already configured above with proper Windows temp path
+console.log('✅ App middleware configured: fileUpload active');
 
-// ✅ 14. 404 handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: "API endpoint not found",
-        requestedUrl: req.originalUrl,
-        availableEndpoints: [
-            "/api/health",
-            "/api/db-health",
-            "/api/global-stats",
-            "/api/test-body",
-            "/api/test-upload",
-            "/api/categories",
-            "/api/subcategories",
-            "/api/subsubcategories"
-        ]
-    });
-});
+// ============================================
+// 10. EXPORT
+// ============================================
 
 module.exports = app;
