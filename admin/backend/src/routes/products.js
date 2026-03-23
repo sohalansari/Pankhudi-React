@@ -1,49 +1,765 @@
+// const express = require("express");
+// const path = require("path");
+// const fs = require("fs");
+// const multer = require("multer");
+// const db = require("../config/db");
+// const router = express.Router();
+
+// // ✅ Ensure uploads folder exists
+// const uploadDir = path.join(__dirname, "..", "uploads");
+// if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+// // ✅ FIXED: Multer storage configuration
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => cb(null, uploadDir),
+//     filename: (req, file, cb) =>
+//         cb(null, Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname)),
+// });
+
+// // ✅ CRITICAL FIX: Increase ALL limits dramatically
+// const upload = multer({
+//     storage,
+//     limits: {
+//         fileSize: 100 * 1024 * 1024, // 100MB
+//         files: 30,
+//         parts: 500, // CRITICAL: Increase parts limit
+//         fieldSize: 10 * 1024 * 1024, // 10MB per field
+//         headerPairs: 2000
+//     },
+//     fileFilter: (req, file, cb) => {
+//         if (file.fieldname === 'images') {
+//             if (file.mimetype.startsWith('image/')) {
+//                 cb(null, true);
+//             } else {
+//                 cb(new Error('Only image files are allowed for images field'), false);
+//             }
+//         } else if (file.fieldname === 'video') {
+//             if (file.mimetype.startsWith('video/')) {
+//                 cb(null, true);
+//             } else {
+//                 cb(new Error('Only video files are allowed for video field'), false);
+//             }
+//         } else {
+//             cb(null, true);
+//         }
+//     }
+// });
+
+// const BASE_URL = process.env.ADMIN_PUBLIC_URL || "http://localhost:5001";
+
+// // ✅ Helper: Safe JSON parse with cleaning
+// function safeJsonParse(str, defaultValue) {
+//     if (!str) return defaultValue;
+//     try {
+//         // Clean the string - remove any backticks or extra quotes
+//         let cleanStr = str;
+//         if (typeof str === 'string') {
+//             // Remove backticks if present
+//             cleanStr = str.replace(/`/g, '');
+//             // Remove extra quotes at start/end
+//             cleanStr = cleanStr.replace(/^"+|"+$/g, '');
+//         }
+//         return JSON.parse(cleanStr);
+//     } catch (e) {
+//         console.warn("JSON parse error:", e.message, "for value:", str);
+//         return defaultValue;
+//     }
+// }
+
+// // ✅ Helper: Generate slug
+// function generateSlug(name) {
+//     if (!name) return '';
+//     return name
+//         .toLowerCase()
+//         .replace(/[^a-z0-9 -]/g, '')
+//         .replace(/\s+/g, '-')
+//         .replace(/-+/g, '-')
+//         .trim();
+// }
+
+// // ✅ Helper: Convert to boolean
+// function toBoolean(value) {
+//     if (value === undefined || value === null) return false;
+//     if (typeof value === 'boolean') return value;
+//     if (typeof value === 'string') {
+//         return value === 'true' || value === '1' || value === 'yes';
+//     }
+//     return Boolean(value);
+// }
+
+// // ✅ Helper: Parse number
+// function safeParseNumber(value, defaultValue = 0) {
+//     if (value === undefined || value === null || value === '') return defaultValue;
+//     const num = parseFloat(value);
+//     return isNaN(num) ? defaultValue : num;
+// }
+
+// // ✅ Helper: Parse integer
+// function safeParseInt(value, defaultValue = 0) {
+//     if (value === undefined || value === null || value === '') return defaultValue;
+//     const num = parseInt(value);
+//     return isNaN(num) ? defaultValue : num;
+// }
+
+// /* ================================
+//    ✅ CATEGORY ROUTES
+// ================================ */
+// router.get("/categories", (req, res) => {
+//     const sql = "SELECT * FROM categories WHERE status = 'active' ORDER BY name";
+//     db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("Categories Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch categories" });
+//         }
+//         res.json(results);
+//     });
+// });
+
+// router.post("/categories", (req, res) => {
+//     const { name, description, status = 'active' } = req.body;
+//     if (!name) return res.status(400).json({ error: "Category name is required" });
+//     const sql = "INSERT INTO categories (name, description, status) VALUES (?, ?, ?)";
+//     db.query(sql, [name, description || "", status], (err, result) => {
+//         if (err) {
+//             console.error("Add Category Error:", err);
+//             return res.status(500).json({ error: "Failed to add category" });
+//         }
+//         res.json({
+//             message: "Category added successfully",
+//             category: { id: result.insertId, name, description, status }
+//         });
+//     });
+// });
+
+// /* ================================
+//    ✅ SUB-CATEGORY ROUTES
+// ================================ */
+// router.get("/sub-categories", (req, res) => {
+//     const sql = `
+//         SELECT sc.*, c.name as category_name 
+//         FROM sub_categories sc 
+//         LEFT JOIN categories c ON sc.category_id = c.id 
+//         WHERE sc.status = 'active' 
+//         ORDER BY sc.name
+//     `;
+//     db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("Sub-Categories Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch sub-categories" });
+//         }
+//         res.json(results);
+//     });
+// });
+
+// router.get("/sub-categories/category/:categoryId", (req, res) => {
+//     const { categoryId } = req.params;
+//     const sql = `
+//         SELECT sc.*, c.name as category_name 
+//         FROM sub_categories sc 
+//         LEFT JOIN categories c ON sc.category_id = c.id 
+//         WHERE sc.category_id = ? AND sc.status = 'active' 
+//         ORDER BY sc.name
+//     `;
+//     db.query(sql, [categoryId], (err, results) => {
+//         if (err) {
+//             console.error("Sub-Categories by Category Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch sub-categories" });
+//         }
+//         res.json(results);
+//     });
+// });
+
+// router.post("/sub-categories", (req, res) => {
+//     const { name, description, category_id, status = 'active' } = req.body;
+//     if (!name) return res.status(400).json({ error: "Sub-category name is required" });
+//     if (!category_id) return res.status(400).json({ error: "Category ID is required" });
+//     const sql = "INSERT INTO sub_categories (name, description, category_id, status) VALUES (?, ?, ?, ?)";
+//     db.query(sql, [name, description || "", category_id, status], (err, result) => {
+//         if (err) {
+//             console.error("Add Sub-Category Error:", err);
+//             return res.status(500).json({ error: "Failed to add sub-category" });
+//         }
+//         res.json({
+//             message: "Sub-category added successfully",
+//             sub_category: { id: result.insertId, name, description, category_id, status }
+//         });
+//     });
+// });
+
+// /* ================================
+//    ✅ SUB-SUB-CATEGORY ROUTES
+// ================================ */
+// router.get("/sub-sub-categories", (req, res) => {
+//     const sql = `
+//         SELECT ssc.*, sc.name as sub_category_name, c.name as category_name 
+//         FROM sub_sub_categories ssc 
+//         LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id 
+//         LEFT JOIN categories c ON sc.category_id = c.id 
+//         WHERE ssc.status = 'active' 
+//         ORDER BY ssc.name
+//     `;
+//     db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("Sub-Sub-Categories Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch sub-sub-categories" });
+//         }
+//         res.json(results);
+//     });
+// });
+
+// router.get("/sub-sub-categories/subcategory/:subCategoryId", (req, res) => {
+//     const { subCategoryId } = req.params;
+//     const sql = `
+//         SELECT ssc.*, sc.name as sub_category_name, c.name as category_name 
+//         FROM sub_sub_categories ssc 
+//         LEFT JOIN sub_categories sc ON ssc.sub_category_id = sc.id 
+//         LEFT JOIN categories c ON sc.category_id = c.id 
+//         WHERE ssc.sub_category_id = ? AND ssc.status = 'active' 
+//         ORDER BY ssc.name
+//     `;
+//     db.query(sql, [subCategoryId], (err, results) => {
+//         if (err) {
+//             console.error("Sub-Sub-Categories by Sub-Category Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch sub-sub-categories" });
+//         }
+//         res.json(results);
+//     });
+// });
+
+// router.post("/sub-sub-categories", (req, res) => {
+//     const { name, description, sub_category_id, status = 'active' } = req.body;
+//     if (!name) return res.status(400).json({ error: "Sub-sub-category name is required" });
+//     if (!sub_category_id) return res.status(400).json({ error: "Sub-category ID is required" });
+//     const sql = "INSERT INTO sub_sub_categories (name, description, sub_category_id, status) VALUES (?, ?, ?, ?)";
+//     db.query(sql, [name, description || "", sub_category_id, status], (err, result) => {
+//         if (err) {
+//             console.error("Add Sub-Sub-Category Error:", err);
+//             return res.status(500).json({ error: "Failed to add sub-sub-category" });
+//         }
+//         res.json({
+//             message: "Sub-sub-category added successfully",
+//             sub_sub_category: { id: result.insertId, name, description, sub_category_id, status }
+//         });
+//     });
+// });
+
+// /* ================================
+//    ✅ ADD PRODUCT
+// ================================ */
+// router.post("/add", upload.fields([
+//     { name: 'images', maxCount: 20 },
+//     { name: 'video', maxCount: 1 }
+// ]), (req, res) => {
+//     console.log("📦 Adding product...");
+
+//     const {
+//         name, description, short_description, price, discount, stock,
+//         category_id, sub_category_id, sub_sub_category_id, brand,
+//         status = "active", rating = 0,
+//         sizes, colors, material, weight, dimensions, warranty,
+//         features, tags, sku,
+//         is_featured = false, is_trending = false, is_bestseller = false,
+//         seo_title, seo_description, meta_keywords,
+//         return_policy, slug,
+//         min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
+//         is_virtual = false, is_downloadable = false, download_link,
+//         shipping_class, tax_class, shipping_cost = 0, free_shipping = false
+//     } = req.body;
+
+//     if (!name) return res.status(400).json({ error: "Product name is required" });
+//     if (!sku) return res.status(400).json({ error: "SKU is required" });
+//     if (!category_id) return res.status(400).json({ error: "Category is required" });
+
+//     // Process images
+//     const images = (req.files && req.files['images']) ?
+//         req.files['images'].map(f => `${BASE_URL}/uploads/${f.filename}`) : [];
+
+//     // Process video
+//     let video = null;
+//     if (req.files && req.files['video'] && req.files['video'][0]) {
+//         video = `${BASE_URL}/uploads/${req.files['video'][0].filename}`;
+//     }
+
+//     // Parse JSON fields safely
+//     const sizesArray = safeJsonParse(sizes, []);
+//     const colorsArray = safeJsonParse(colors, []);
+//     const featuresArray = safeJsonParse(features, []);
+//     const tagsArray = safeJsonParse(tags, []);
+
+//     // Convert booleans
+//     const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
+//     const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
+//     const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
+//     const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
+//     const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
+//     const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
+
+//     // Parse numbers
+//     const parsedPrice = safeParseNumber(price, 0);
+//     const parsedDiscount = safeParseNumber(discount, 0);
+//     const parsedStock = safeParseInt(stock, 0);
+//     const parsedRating = safeParseNumber(rating, 0);
+//     const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
+//     const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
+//     const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
+//     const parsedShippingCost = safeParseNumber(shipping_cost, 0);
+
+//     const sql = `
+//         INSERT INTO products 
+//         (name, description, short_description, price, discount, stock, 
+//          category_id, sub_category_id, sub_sub_category_id, brand, 
+//          images, status, rating, sizes, colors, material, weight, 
+//          dimensions, warranty, features, tags, sku, 
+//          is_featured, is_trending, is_bestseller, video, 
+//          seo_title, seo_description, meta_keywords, return_policy, slug, 
+//          min_order_quantity, max_order_quantity, low_stock_threshold, 
+//          is_virtual, is_downloadable, download_link,
+//          shipping_class, tax_class, shipping_cost, free_shipping) 
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//     `;
+
+//     const values = [
+//         name, description || "", short_description || "",
+//         parsedPrice, parsedDiscount, parsedStock,
+//         category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
+//         JSON.stringify(images), status, parsedRating,
+//         JSON.stringify(sizesArray), JSON.stringify(colorsArray),
+//         material || "", weight || "", dimensions || "", warranty || "",
+//         JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
+//         isFeaturedBool, isTrendingBool, isBestsellerBool, video,
+//         seo_title || "", seo_description || "", meta_keywords || "",
+//         return_policy || "", slug || generateSlug(name),
+//         parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
+//         isVirtualBool, isDownloadableBool, download_link || "",
+//         shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool
+//     ];
+
+//     db.query(sql, values, (err, result) => {
+//         if (err) {
+//             console.error("❌ DB Error:", err);
+//             if (req.files) {
+//                 Object.values(req.files).flat().forEach(file => {
+//                     if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+//                 });
+//             }
+//             return res.status(500).json({ error: "Database operation failed", details: err.message });
+//         }
+
+//         console.log("✅ Product added with ID:", result.insertId);
+//         res.json({
+//             message: "Product added successfully",
+//             product: { id: result.insertId, name, sku }
+//         });
+//     });
+// });
+
+// /* ================================
+//    ✅ LIST PRODUCTS
+// ================================ */
+// router.get("/", (req, res) => {
+//     const sql = `
+//         SELECT p.*, c.name as category_name, sc.name as sub_category_name, ssc.name as sub_sub_category_name 
+//         FROM products p 
+//         LEFT JOIN categories c ON p.category_id = c.id 
+//         LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+//         LEFT JOIN sub_sub_categories ssc ON p.sub_sub_category_id = ssc.id 
+//         ORDER BY p.created_at DESC
+//     `;
+
+//     db.query(sql, (err, results) => {
+//         if (err) {
+//             console.error("Products List Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch products" });
+//         }
+
+//         const parsed = results.map((product) => ({
+//             ...product,
+//             images: safeJsonParse(product.images, []),
+//             sizes: safeJsonParse(product.sizes, []),
+//             colors: safeJsonParse(product.colors, []),
+//             features: safeJsonParse(product.features, []),
+//             tags: safeJsonParse(product.tags, []),
+//             is_featured: Boolean(product.is_featured),
+//             is_trending: Boolean(product.is_trending),
+//             is_bestseller: Boolean(product.is_bestseller)
+//         }));
+
+//         res.json(parsed);
+//     });
+// });
+
+// /* ================================
+//    ✅ GET SINGLE PRODUCT
+// ================================ */
+// router.get("/:id", (req, res) => {
+//     const { id } = req.params;
+
+//     const sql = `
+//         SELECT p.*, c.name as category_name, sc.name as sub_category_name, ssc.name as sub_sub_category_name 
+//         FROM products p 
+//         LEFT JOIN categories c ON p.category_id = c.id 
+//         LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+//         LEFT JOIN sub_sub_categories ssc ON p.sub_sub_category_id = ssc.id 
+//         WHERE p.id = ?
+//     `;
+
+//     db.query(sql, [id], (err, results) => {
+//         if (err) {
+//             console.error("Product Fetch Error:", err);
+//             return res.status(500).json({ error: "Failed to fetch product" });
+//         }
+//         if (results.length === 0) {
+//             return res.status(404).json({ error: "Product not found" });
+//         }
+
+//         const product = results[0];
+//         product.images = safeJsonParse(product.images, []);
+//         product.sizes = safeJsonParse(product.sizes, []);
+//         product.colors = safeJsonParse(product.colors, []);
+//         product.features = safeJsonParse(product.features, []);
+//         product.tags = safeJsonParse(product.tags, []);
+//         product.is_featured = Boolean(product.is_featured);
+//         product.is_trending = Boolean(product.is_trending);
+//         product.is_bestseller = Boolean(product.is_bestseller);
+
+//         res.json(product);
+//     });
+// });
+
+// /* ================================
+//    ✅ 🔥🔥🔥 COMPLETE REWRITE - UPDATE PRODUCT
+//    ================================ */
+// router.put("/:id", (req, res) => {
+//     const { id } = req.params;
+//     console.log(`🔄 Processing update for product ID: ${id}`);
+
+//     // ✅ Check if this is multipart/form-data or application/json
+//     const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
+
+//     if (isMultipart) {
+//         // Handle multipart form data with files
+//         const uploadMiddleware = upload.fields([
+//             { name: 'images', maxCount: 10 },
+//             { name: 'video', maxCount: 1 }
+//         ]);
+
+//         return uploadMiddleware(req, res, (err) => {
+//             if (err) {
+//                 console.error("❌ Multer Error:", err);
+//                 return res.status(400).json({
+//                     error: "File upload error",
+//                     details: err.message
+//                 });
+//             }
+
+//             // Process the multipart form data
+//             processProductUpdate(req, res, id);
+//         });
+//     } else {
+//         // Handle JSON data (no files)
+//         processProductUpdate(req, res, id);
+//     }
+// });
+
+// // Shared update function
+// function processProductUpdate(req, res, id) {
+//     const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
+
+//     // Get data from either req.body (JSON) or req.body (multipart)
+//     let body = req.body;
+
+//     console.log("📦 Update data received");
+
+//     const {
+//         name, description, short_description, price, discount, stock,
+//         category_id, sub_category_id, sub_sub_category_id, brand,
+//         status = "active", rating = 0,
+//         sizes, colors, material, weight, dimensions, warranty,
+//         features, tags, sku,
+//         is_featured = false, is_trending = false, is_bestseller = false,
+//         seo_title, seo_description, meta_keywords,
+//         return_policy, slug,
+//         min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
+//         is_virtual = false, is_downloadable = false, download_link,
+//         shipping_class, tax_class, shipping_cost = 0, free_shipping = false,
+//         oldImages, oldVideo
+//     } = body;
+
+//     // Validation
+//     if (!name) return res.status(400).json({ error: "Product name is required" });
+//     if (!sku) return res.status(400).json({ error: "SKU is required" });
+//     if (!category_id) return res.status(400).json({ error: "Category is required" });
+
+//     // ✅ Handle array fields - support both JSON strings and comma-separated strings
+//     let sizesArray = [];
+//     if (sizes) {
+//         if (typeof sizes === 'string') {
+//             if (sizes.startsWith('[')) {
+//                 try { sizesArray = JSON.parse(sizes); } catch (e) { sizesArray = []; }
+//             } else {
+//                 sizesArray = sizes.split(',').filter(s => s.trim());
+//             }
+//         } else if (Array.isArray(sizes)) {
+//             sizesArray = sizes;
+//         }
+//     }
+
+//     let colorsArray = [];
+//     if (colors) {
+//         if (typeof colors === 'string') {
+//             if (colors.startsWith('[')) {
+//                 try { colorsArray = JSON.parse(colors); } catch (e) { colorsArray = []; }
+//             } else {
+//                 colorsArray = colors.split(',').filter(s => s.trim());
+//             }
+//         } else if (Array.isArray(colors)) {
+//             colorsArray = colors;
+//         }
+//     }
+
+//     let featuresArray = [];
+//     if (features) {
+//         if (typeof features === 'string') {
+//             if (features.startsWith('[')) {
+//                 try { featuresArray = JSON.parse(features); } catch (e) { featuresArray = []; }
+//             } else {
+//                 featuresArray = features.split(',').filter(s => s.trim());
+//             }
+//         } else if (Array.isArray(features)) {
+//             featuresArray = features;
+//         }
+//     }
+
+//     let tagsArray = [];
+//     if (tags) {
+//         if (typeof tags === 'string') {
+//             if (tags.startsWith('[')) {
+//                 try { tagsArray = JSON.parse(tags); } catch (e) { tagsArray = []; }
+//             } else {
+//                 tagsArray = tags.split(',').filter(s => s.trim());
+//             }
+//         } else if (Array.isArray(tags)) {
+//             tagsArray = tags;
+//         }
+//     }
+
+//     // ✅ Handle images
+//     let finalImages = [];
+//     if (oldImages) {
+//         if (typeof oldImages === 'string') {
+//             try { finalImages = JSON.parse(oldImages); } catch (e) { finalImages = []; }
+//         } else if (Array.isArray(oldImages)) {
+//             finalImages = oldImages;
+//         }
+//     }
+
+//     // Add new images if they exist (multipart only)
+//     if (isMultipart && req.files && req.files['images']) {
+//         const newImages = req.files['images'].map(f => `${BASE_URL}/uploads/${f.filename}`);
+//         finalImages = [...finalImages, ...newImages];
+//     }
+
+//     // ✅ Handle video
+//     let finalVideo = oldVideo || null;
+//     if (isMultipart && req.files && req.files['video'] && req.files['video'][0]) {
+//         finalVideo = `${BASE_URL}/uploads/${req.files['video'][0].filename}`;
+//         // Delete old video if it exists
+//         if (oldVideo) {
+//             try {
+//                 const oldVideoPath = path.join(uploadDir, path.basename(oldVideo));
+//                 if (fs.existsSync(oldVideoPath)) fs.unlinkSync(oldVideoPath);
+//             } catch (fileErr) {
+//                 console.error("Error deleting old video:", fileErr);
+//             }
+//         }
+//     }
+
+//     // Convert booleans
+//     const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
+//     const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
+//     const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
+//     const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
+//     const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
+//     const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
+
+//     // Parse numbers
+//     const parsedPrice = safeParseNumber(price, 0);
+//     const parsedDiscount = safeParseNumber(discount, 0);
+//     const parsedStock = safeParseInt(stock, 0);
+//     const parsedRating = safeParseNumber(rating, 0);
+//     const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
+//     const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
+//     const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
+//     const parsedShippingCost = safeParseNumber(shipping_cost, 0);
+
+//     const sql = `
+//         UPDATE products 
+//         SET name=?, description=?, short_description=?, price=?, discount=?, stock=?, 
+//             category_id=?, sub_category_id=?, sub_sub_category_id=?, brand=?, status=?, 
+//             images=?, rating=?, sizes=?, colors=?, material=?, weight=?, dimensions=?, 
+//             warranty=?, features=?, tags=?, sku=?, 
+//             is_featured=?, is_trending=?, is_bestseller=?, video=?, 
+//             seo_title=?, seo_description=?, meta_keywords=?, return_policy=?, slug=?, 
+//             min_order_quantity=?, max_order_quantity=?, low_stock_threshold=?, 
+//             is_virtual=?, is_downloadable=?, download_link=?, 
+//             shipping_class=?, tax_class=?, shipping_cost=?, free_shipping=?,
+//             updated_at=NOW()
+//         WHERE id=?
+//     `;
+
+//     const values = [
+//         name, description || "", short_description || "",
+//         parsedPrice, parsedDiscount, parsedStock,
+//         category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
+//         status, JSON.stringify(finalImages), parsedRating,
+//         JSON.stringify(sizesArray), JSON.stringify(colorsArray),
+//         material || "", weight || "", dimensions || "", warranty || "",
+//         JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
+//         isFeaturedBool, isTrendingBool, isBestsellerBool, finalVideo,
+//         seo_title || "", seo_description || "", meta_keywords || "",
+//         return_policy || "", slug || generateSlug(name),
+//         parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
+//         isVirtualBool, isDownloadableBool, download_link || "",
+//         shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool,
+//         id
+//     ];
+
+//     db.query(sql, values, (err, result) => {
+//         if (err) {
+//             console.error("❌ Update Error:", err);
+//             // Delete uploaded files if DB fails
+//             if (isMultipart && req.files) {
+//                 Object.values(req.files).flat().forEach(file => {
+//                     try { if (fs.existsSync(file.path)) fs.unlinkSync(file.path); } catch (e) { }
+//                 });
+//             }
+//             return res.status(500).json({ error: "Update failed", details: err.message });
+//         }
+
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({ error: "Product not found" });
+//         }
+
+//         console.log(`✅ Product ${id} updated successfully`);
+//         res.json({
+//             message: "Product updated successfully",
+//             affectedRows: result.affectedRows
+//         });
+//     });
+// }
+
+// /* ================================
+//    ✅ DELETE PRODUCT
+// ================================ */
+// router.delete("/:id", (req, res) => {
+//     const { id } = req.params;
+
+//     const selectSql = "SELECT images, video FROM products WHERE id = ?";
+//     db.query(selectSql, [id], (selectErr, results) => {
+//         if (selectErr) {
+//             console.error("Select Product Error:", selectErr);
+//             return res.status(500).json({ error: "Failed to delete product" });
+//         }
+//         if (results.length === 0) {
+//             return res.status(404).json({ error: "Product not found" });
+//         }
+
+//         const product = results[0];
+
+//         // Delete files
+//         try {
+//             const images = safeJsonParse(product.images, []);
+//             images.forEach(image => {
+//                 const imagePath = path.join(uploadDir, path.basename(image));
+//                 if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+//             });
+//             if (product.video) {
+//                 const videoPath = path.join(uploadDir, path.basename(product.video));
+//                 if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+//             }
+//         } catch (fileErr) {
+//             console.error("File Deletion Error:", fileErr);
+//         }
+
+//         const deleteSql = "DELETE FROM products WHERE id = ?";
+//         db.query(deleteSql, [id], (deleteErr, result) => {
+//             if (deleteErr) {
+//                 console.error("Delete Product Error:", deleteErr);
+//                 return res.status(500).json({ error: "Failed to delete product" });
+//             }
+//             res.json({ message: "Product deleted successfully", affectedRows: result.affectedRows });
+//         });
+//     });
+// });
+
+// /* ================================
+//    ✅ SEARCH PRODUCTS
+// ================================ */
+// router.get("/search/:query", (req, res) => {
+//     const { query } = req.params;
+//     const searchTerm = `%${query}%`;
+
+//     const sql = `
+//         SELECT p.*, c.name as category_name, sc.name as sub_category_name, ssc.name as sub_sub_category_name 
+//         FROM products p 
+//         LEFT JOIN categories c ON p.category_id = c.id 
+//         LEFT JOIN sub_categories sc ON p.sub_category_id = sc.id 
+//         LEFT JOIN sub_sub_categories ssc ON p.sub_sub_category_id = ssc.id 
+//         WHERE p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ? OR p.sku LIKE ?
+//         ORDER BY p.created_at DESC
+//     `;
+
+//     db.query(sql, [searchTerm, searchTerm, searchTerm, searchTerm], (err, results) => {
+//         if (err) {
+//             console.error("Search Error:", err);
+//             return res.status(500).json({ error: "Search failed" });
+//         }
+
+//         const parsed = results.map((product) => ({
+//             ...product,
+//             images: safeJsonParse(product.images, []),
+//             sizes: safeJsonParse(product.sizes, []),
+//             colors: safeJsonParse(product.colors, []),
+//             features: safeJsonParse(product.features, []),
+//             tags: safeJsonParse(product.tags, []),
+//             is_featured: Boolean(product.is_featured),
+//             is_trending: Boolean(product.is_trending),
+//             is_bestseller: Boolean(product.is_bestseller)
+//         }));
+
+//         res.json(parsed);
+//     });
+// });
+
+// module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const multer = require("multer");
 const db = require("../config/db");
 const router = express.Router();
 
 // ✅ Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "..", "uploads");
+const productsUploadDir = path.join(uploadDir, "products");
+
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-// ✅ FIXED: Multer storage configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) =>
-        cb(null, Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname)),
-});
-
-// ✅ CRITICAL FIX: Increase ALL limits dramatically
-const upload = multer({
-    storage,
-    limits: {
-        fileSize: 100 * 1024 * 1024, // 100MB
-        files: 30,
-        parts: 500, // CRITICAL: Increase parts limit
-        fieldSize: 10 * 1024 * 1024, // 10MB per field
-        headerPairs: 2000
-    },
-    fileFilter: (req, file, cb) => {
-        if (file.fieldname === 'images') {
-            if (file.mimetype.startsWith('image/')) {
-                cb(null, true);
-            } else {
-                cb(new Error('Only image files are allowed for images field'), false);
-            }
-        } else if (file.fieldname === 'video') {
-            if (file.mimetype.startsWith('video/')) {
-                cb(null, true);
-            } else {
-                cb(new Error('Only video files are allowed for video field'), false);
-            }
-        } else {
-            cb(null, true);
-        }
-    }
-});
+if (!fs.existsSync(productsUploadDir)) fs.mkdirSync(productsUploadDir, { recursive: true });
 
 const BASE_URL = process.env.ADMIN_PUBLIC_URL || "http://localhost:5001";
 
@@ -51,12 +767,9 @@ const BASE_URL = process.env.ADMIN_PUBLIC_URL || "http://localhost:5001";
 function safeJsonParse(str, defaultValue) {
     if (!str) return defaultValue;
     try {
-        // Clean the string - remove any backticks or extra quotes
         let cleanStr = str;
         if (typeof str === 'string') {
-            // Remove backticks if present
             cleanStr = str.replace(/`/g, '');
-            // Remove extra quotes at start/end
             cleanStr = cleanStr.replace(/^"+|"+$/g, '');
         }
         return JSON.parse(cleanStr);
@@ -99,6 +812,36 @@ function safeParseInt(value, defaultValue = 0) {
     if (value === undefined || value === null || value === '') return defaultValue;
     const num = parseInt(value);
     return isNaN(num) ? defaultValue : num;
+}
+
+// ✅ Helper: Process uploaded files
+async function processUploadedFiles(files, fieldName, maxCount = 20) {
+    const uploadedFiles = [];
+
+    if (!files || !files[fieldName]) {
+        return uploadedFiles;
+    }
+
+    const fileArray = Array.isArray(files[fieldName]) ? files[fieldName] : [files[fieldName]];
+    const filesToProcess = fileArray.slice(0, maxCount);
+
+    for (const file of filesToProcess) {
+        try {
+            const timestamp = Date.now();
+            const random = Math.round(Math.random() * 1E9);
+            const ext = path.extname(file.name);
+            const filename = `${fieldName}-${timestamp}-${random}${ext}`;
+            const uploadPath = path.join(productsUploadDir, filename);
+
+            await file.mv(uploadPath);
+            uploadedFiles.push(`${BASE_URL}/uploads/products/${filename}`);
+            console.log(`✅ Uploaded ${fieldName}: ${filename}`);
+        } catch (error) {
+            console.error(`❌ Error uploading ${fieldName}:`, error);
+        }
+    }
+
+    return uploadedFiles;
 }
 
 /* ================================
@@ -244,113 +987,180 @@ router.post("/sub-sub-categories", (req, res) => {
 });
 
 /* ================================
-   ✅ ADD PRODUCT
+   ✅ ADD PRODUCT - USING EXPRESS-FILEUPLOAD
 ================================ */
-router.post("/add", upload.fields([
-    { name: 'images', maxCount: 20 },
-    { name: 'video', maxCount: 1 }
-]), (req, res) => {
-    console.log("📦 Adding product...");
+router.post("/add", async (req, res) => {
+    console.log("📦 Starting product addition...");
+    console.log("Content-Type:", req.headers['content-type']);
+    console.log("Files received:", req.files ? Object.keys(req.files) : "none");
+    console.log("Body fields:", Object.keys(req.body));
 
-    const {
-        name, description, short_description, price, discount, stock,
-        category_id, sub_category_id, sub_sub_category_id, brand,
-        status = "active", rating = 0,
-        sizes, colors, material, weight, dimensions, warranty,
-        features, tags, sku,
-        is_featured = false, is_trending = false, is_bestseller = false,
-        seo_title, seo_description, meta_keywords,
-        return_policy, slug,
-        min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
-        is_virtual = false, is_downloadable = false, download_link,
-        shipping_class, tax_class, shipping_cost = 0, free_shipping = false
-    } = req.body;
+    try {
+        const {
+            name, description, short_description, price, discount, stock,
+            category_id, sub_category_id, sub_sub_category_id, brand,
+            status = "active", rating = 0,
+            sizes, colors, material, weight, dimensions, warranty,
+            features, tags, sku,
+            is_featured = false, is_trending = false, is_bestseller = false,
+            seo_title, seo_description, meta_keywords,
+            return_policy, slug,
+            min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
+            is_virtual = false, is_downloadable = false, download_link,
+            shipping_class, tax_class, shipping_cost = 0, free_shipping = false
+        } = req.body;
 
-    if (!name) return res.status(400).json({ error: "Product name is required" });
-    if (!sku) return res.status(400).json({ error: "SKU is required" });
-    if (!category_id) return res.status(400).json({ error: "Category is required" });
-
-    // Process images
-    const images = (req.files && req.files['images']) ?
-        req.files['images'].map(f => `${BASE_URL}/uploads/${f.filename}`) : [];
-
-    // Process video
-    let video = null;
-    if (req.files && req.files['video'] && req.files['video'][0]) {
-        video = `${BASE_URL}/uploads/${req.files['video'][0].filename}`;
-    }
-
-    // Parse JSON fields safely
-    const sizesArray = safeJsonParse(sizes, []);
-    const colorsArray = safeJsonParse(colors, []);
-    const featuresArray = safeJsonParse(features, []);
-    const tagsArray = safeJsonParse(tags, []);
-
-    // Convert booleans
-    const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
-    const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
-    const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
-    const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
-    const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
-    const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
-
-    // Parse numbers
-    const parsedPrice = safeParseNumber(price, 0);
-    const parsedDiscount = safeParseNumber(discount, 0);
-    const parsedStock = safeParseInt(stock, 0);
-    const parsedRating = safeParseNumber(rating, 0);
-    const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
-    const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
-    const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
-    const parsedShippingCost = safeParseNumber(shipping_cost, 0);
-
-    const sql = `
-        INSERT INTO products 
-        (name, description, short_description, price, discount, stock, 
-         category_id, sub_category_id, sub_sub_category_id, brand, 
-         images, status, rating, sizes, colors, material, weight, 
-         dimensions, warranty, features, tags, sku, 
-         is_featured, is_trending, is_bestseller, video, 
-         seo_title, seo_description, meta_keywords, return_policy, slug, 
-         min_order_quantity, max_order_quantity, low_stock_threshold, 
-         is_virtual, is_downloadable, download_link,
-         shipping_class, tax_class, shipping_cost, free_shipping) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const values = [
-        name, description || "", short_description || "",
-        parsedPrice, parsedDiscount, parsedStock,
-        category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
-        JSON.stringify(images), status, parsedRating,
-        JSON.stringify(sizesArray), JSON.stringify(colorsArray),
-        material || "", weight || "", dimensions || "", warranty || "",
-        JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
-        isFeaturedBool, isTrendingBool, isBestsellerBool, video,
-        seo_title || "", seo_description || "", meta_keywords || "",
-        return_policy || "", slug || generateSlug(name),
-        parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
-        isVirtualBool, isDownloadableBool, download_link || "",
-        shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool
-    ];
-
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("❌ DB Error:", err);
-            if (req.files) {
-                Object.values(req.files).flat().forEach(file => {
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-            }
-            return res.status(500).json({ error: "Database operation failed", details: err.message });
+        // Validation
+        if (!name) {
+            return res.status(400).json({ error: "Product name is required" });
+        }
+        if (!sku) {
+            return res.status(400).json({ error: "SKU is required" });
+        }
+        if (!category_id) {
+            return res.status(400).json({ error: "Category is required" });
         }
 
-        console.log("✅ Product added with ID:", result.insertId);
-        res.json({
-            message: "Product added successfully",
-            product: { id: result.insertId, name, sku }
+        // Process images using express-fileupload
+        let images = [];
+        if (req.files && req.files.images) {
+            const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+            console.log(`📸 Processing ${imageFiles.length} images`);
+
+            for (let i = 0; i < Math.min(imageFiles.length, 20); i++) {
+                const file = imageFiles[i];
+                try {
+                    const timestamp = Date.now();
+                    const random = Math.round(Math.random() * 1E9);
+                    const ext = path.extname(file.name);
+                    const filename = `img-${timestamp}-${random}${ext}`;
+                    const uploadPath = path.join(productsUploadDir, filename);
+
+                    await file.mv(uploadPath);
+                    images.push(`${BASE_URL}/uploads/products/${filename}`);
+                    console.log(`✅ Uploaded image ${i + 1}: ${filename}`);
+                } catch (err) {
+                    console.error(`❌ Error uploading image ${i + 1}:`, err);
+                }
+            }
+        }
+
+        // Process video using express-fileupload
+        let video = null;
+        if (req.files && req.files.video) {
+            const videoFile = req.files.video;
+            try {
+                const timestamp = Date.now();
+                const random = Math.round(Math.random() * 1E9);
+                const ext = path.extname(videoFile.name);
+                const filename = `video-${timestamp}-${random}${ext}`;
+                const uploadPath = path.join(productsUploadDir, filename);
+
+                await videoFile.mv(uploadPath);
+                video = `${BASE_URL}/uploads/products/${filename}`;
+                console.log(`🎬 Uploaded video: ${filename}`);
+            } catch (err) {
+                console.error("❌ Error uploading video:", err);
+            }
+        }
+
+        console.log(`📸 Total images uploaded: ${images.length}`);
+        console.log(`🎬 Video uploaded: ${video ? "Yes" : "No"}`);
+
+        // Parse JSON fields safely
+        const sizesArray = safeJsonParse(sizes, []);
+        const colorsArray = safeJsonParse(colors, []);
+        const featuresArray = safeJsonParse(features, []);
+        const tagsArray = safeJsonParse(tags, []);
+
+        // Convert booleans
+        const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
+        const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
+        const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
+        const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
+        const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
+        const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
+
+        // Parse numbers
+        const parsedPrice = safeParseNumber(price, 0);
+        const parsedDiscount = safeParseNumber(discount, 0);
+        const parsedStock = safeParseInt(stock, 0);
+        const parsedRating = safeParseNumber(rating, 0);
+        const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
+        const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
+        const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
+        const parsedShippingCost = safeParseNumber(shipping_cost, 0);
+
+        const sql = `
+            INSERT INTO products 
+            (name, description, short_description, price, discount, stock, 
+             category_id, sub_category_id, sub_sub_category_id, brand, 
+             images, status, rating, sizes, colors, material, weight, 
+             dimensions, warranty, features, tags, sku, 
+             is_featured, is_trending, is_bestseller, video, 
+             seo_title, seo_description, meta_keywords, return_policy, slug, 
+             min_order_quantity, max_order_quantity, low_stock_threshold, 
+             is_virtual, is_downloadable, download_link,
+             shipping_class, tax_class, shipping_cost, free_shipping) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [
+            name, description || "", short_description || "",
+            parsedPrice, parsedDiscount, parsedStock,
+            category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
+            JSON.stringify(images), status, parsedRating,
+            JSON.stringify(sizesArray), JSON.stringify(colorsArray),
+            material || "", weight || "", dimensions || "", warranty || "",
+            JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
+            isFeaturedBool, isTrendingBool, isBestsellerBool, video,
+            seo_title || "", seo_description || "", meta_keywords || "",
+            return_policy || "", slug || generateSlug(name),
+            parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
+            isVirtualBool, isDownloadableBool, download_link || "",
+            shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool
+        ];
+
+        db.query(sql, values, (err, result) => {
+            if (err) {
+                console.error("❌ DB Error:", err);
+                // Delete uploaded files if DB fails
+                if (images.length > 0 || video) {
+                    try {
+                        images.forEach(image => {
+                            const imagePath = path.join(productsUploadDir, path.basename(image));
+                            if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+                        });
+                        if (video) {
+                            const videoPath = path.join(productsUploadDir, path.basename(video));
+                            if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+                        }
+                        console.log("🗑️ Deleted uploaded files due to DB error");
+                    } catch (e) {
+                        console.error("Error deleting files:", e);
+                    }
+                }
+                return res.status(500).json({
+                    error: "Database operation failed",
+                    details: err.message
+                });
+            }
+
+            console.log("✅ Product added with ID:", result.insertId);
+            res.json({
+                message: "Product added successfully",
+                product: { id: result.insertId, name, sku },
+                images: images,
+                video: video
+            });
         });
-    });
+    } catch (error) {
+        console.error("❌ Error in product addition:", error);
+        res.status(500).json({
+            error: "Server error",
+            details: error.message
+        });
+    }
 });
 
 /* ================================
@@ -427,226 +1237,214 @@ router.get("/:id", (req, res) => {
 });
 
 /* ================================
-   ✅ 🔥🔥🔥 COMPLETE REWRITE - UPDATE PRODUCT
-   ================================ */
-router.put("/:id", (req, res) => {
+   ✅ UPDATE PRODUCT
+================================ */
+router.put("/:id", async (req, res) => {
     const { id } = req.params;
     console.log(`🔄 Processing update for product ID: ${id}`);
 
-    // ✅ Check if this is multipart/form-data or application/json
-    const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
+    try {
+        const body = req.body;
 
-    if (isMultipart) {
-        // Handle multipart form data with files
-        const uploadMiddleware = upload.fields([
-            { name: 'images', maxCount: 10 },
-            { name: 'video', maxCount: 1 }
-        ]);
+        const {
+            name, description, short_description, price, discount, stock,
+            category_id, sub_category_id, sub_sub_category_id, brand,
+            status = "active", rating = 0,
+            sizes, colors, material, weight, dimensions, warranty,
+            features, tags, sku,
+            is_featured = false, is_trending = false, is_bestseller = false,
+            seo_title, seo_description, meta_keywords,
+            return_policy, slug,
+            min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
+            is_virtual = false, is_downloadable = false, download_link,
+            shipping_class, tax_class, shipping_cost = 0, free_shipping = false,
+            oldImages, oldVideo
+        } = body;
 
-        return uploadMiddleware(req, res, (err) => {
+        // Validation
+        if (!name) return res.status(400).json({ error: "Product name is required" });
+        if (!sku) return res.status(400).json({ error: "SKU is required" });
+        if (!category_id) return res.status(400).json({ error: "Category is required" });
+
+        // Handle array fields
+        let sizesArray = [];
+        if (sizes) {
+            if (typeof sizes === 'string') {
+                if (sizes.startsWith('[')) {
+                    try { sizesArray = JSON.parse(sizes); } catch (e) { sizesArray = []; }
+                } else {
+                    sizesArray = sizes.split(',').filter(s => s.trim());
+                }
+            } else if (Array.isArray(sizes)) {
+                sizesArray = sizes;
+            }
+        }
+
+        let colorsArray = [];
+        if (colors) {
+            if (typeof colors === 'string') {
+                if (colors.startsWith('[')) {
+                    try { colorsArray = JSON.parse(colors); } catch (e) { colorsArray = []; }
+                } else {
+                    colorsArray = colors.split(',').filter(s => s.trim());
+                }
+            } else if (Array.isArray(colors)) {
+                colorsArray = colors;
+            }
+        }
+
+        let featuresArray = [];
+        if (features) {
+            if (typeof features === 'string') {
+                if (features.startsWith('[')) {
+                    try { featuresArray = JSON.parse(features); } catch (e) { featuresArray = []; }
+                } else {
+                    featuresArray = features.split(',').filter(s => s.trim());
+                }
+            } else if (Array.isArray(features)) {
+                featuresArray = features;
+            }
+        }
+
+        let tagsArray = [];
+        if (tags) {
+            if (typeof tags === 'string') {
+                if (tags.startsWith('[')) {
+                    try { tagsArray = JSON.parse(tags); } catch (e) { tagsArray = []; }
+                } else {
+                    tagsArray = tags.split(',').filter(s => s.trim());
+                }
+            } else if (Array.isArray(tags)) {
+                tagsArray = tags;
+            }
+        }
+
+        // Handle images
+        let finalImages = [];
+        if (oldImages) {
+            if (typeof oldImages === 'string') {
+                try { finalImages = JSON.parse(oldImages); } catch (e) { finalImages = []; }
+            } else if (Array.isArray(oldImages)) {
+                finalImages = oldImages;
+            }
+        }
+
+        // Add new images if they exist
+        if (req.files && req.files.images) {
+            const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+            for (const file of imageFiles) {
+                try {
+                    const timestamp = Date.now();
+                    const random = Math.round(Math.random() * 1E9);
+                    const ext = path.extname(file.name);
+                    const filename = `img-${timestamp}-${random}${ext}`;
+                    const uploadPath = path.join(productsUploadDir, filename);
+                    await file.mv(uploadPath);
+                    finalImages.push(`${BASE_URL}/uploads/products/${filename}`);
+                } catch (err) {
+                    console.error("Error uploading new image:", err);
+                }
+            }
+        }
+
+        // Handle video
+        let finalVideo = oldVideo || null;
+        if (req.files && req.files.video) {
+            const videoFile = req.files.video;
+            try {
+                const timestamp = Date.now();
+                const random = Math.round(Math.random() * 1E9);
+                const ext = path.extname(videoFile.name);
+                const filename = `video-${timestamp}-${random}${ext}`;
+                const uploadPath = path.join(productsUploadDir, filename);
+                await videoFile.mv(uploadPath);
+                finalVideo = `${BASE_URL}/uploads/products/${filename}`;
+
+                // Delete old video if it exists
+                if (oldVideo) {
+                    try {
+                        const oldVideoPath = path.join(productsUploadDir, path.basename(oldVideo));
+                        if (fs.existsSync(oldVideoPath)) fs.unlinkSync(oldVideoPath);
+                    } catch (fileErr) {
+                        console.error("Error deleting old video:", fileErr);
+                    }
+                }
+            } catch (err) {
+                console.error("Error uploading new video:", err);
+            }
+        }
+
+        // Convert booleans
+        const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
+        const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
+        const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
+        const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
+        const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
+        const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
+
+        // Parse numbers
+        const parsedPrice = safeParseNumber(price, 0);
+        const parsedDiscount = safeParseNumber(discount, 0);
+        const parsedStock = safeParseInt(stock, 0);
+        const parsedRating = safeParseNumber(rating, 0);
+        const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
+        const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
+        const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
+        const parsedShippingCost = safeParseNumber(shipping_cost, 0);
+
+        const sql = `
+            UPDATE products 
+            SET name=?, description=?, short_description=?, price=?, discount=?, stock=?, 
+                category_id=?, sub_category_id=?, sub_sub_category_id=?, brand=?, status=?, 
+                images=?, rating=?, sizes=?, colors=?, material=?, weight=?, dimensions=?, 
+                warranty=?, features=?, tags=?, sku=?, 
+                is_featured=?, is_trending=?, is_bestseller=?, video=?, 
+                seo_title=?, seo_description=?, meta_keywords=?, return_policy=?, slug=?, 
+                min_order_quantity=?, max_order_quantity=?, low_stock_threshold=?, 
+                is_virtual=?, is_downloadable=?, download_link=?, 
+                shipping_class=?, tax_class=?, shipping_cost=?, free_shipping=?,
+                updated_at=NOW()
+            WHERE id=?
+        `;
+
+        const values = [
+            name, description || "", short_description || "",
+            parsedPrice, parsedDiscount, parsedStock,
+            category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
+            status, JSON.stringify(finalImages), parsedRating,
+            JSON.stringify(sizesArray), JSON.stringify(colorsArray),
+            material || "", weight || "", dimensions || "", warranty || "",
+            JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
+            isFeaturedBool, isTrendingBool, isBestsellerBool, finalVideo,
+            seo_title || "", seo_description || "", meta_keywords || "",
+            return_policy || "", slug || generateSlug(name),
+            parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
+            isVirtualBool, isDownloadableBool, download_link || "",
+            shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool,
+            id
+        ];
+
+        db.query(sql, values, (err, result) => {
             if (err) {
-                console.error("❌ Multer Error:", err);
-                return res.status(400).json({
-                    error: "File upload error",
-                    details: err.message
-                });
+                console.error("❌ Update Error:", err);
+                return res.status(500).json({ error: "Update failed", details: err.message });
             }
 
-            // Process the multipart form data
-            processProductUpdate(req, res, id);
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: "Product not found" });
+            }
+
+            console.log(`✅ Product ${id} updated successfully`);
+            res.json({
+                message: "Product updated successfully",
+                affectedRows: result.affectedRows
+            });
         });
-    } else {
-        // Handle JSON data (no files)
-        processProductUpdate(req, res, id);
+    } catch (error) {
+        console.error("❌ Error updating product:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
     }
 });
-
-// Shared update function
-function processProductUpdate(req, res, id) {
-    const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
-
-    // Get data from either req.body (JSON) or req.body (multipart)
-    let body = req.body;
-
-    console.log("📦 Update data received");
-
-    const {
-        name, description, short_description, price, discount, stock,
-        category_id, sub_category_id, sub_sub_category_id, brand,
-        status = "active", rating = 0,
-        sizes, colors, material, weight, dimensions, warranty,
-        features, tags, sku,
-        is_featured = false, is_trending = false, is_bestseller = false,
-        seo_title, seo_description, meta_keywords,
-        return_policy, slug,
-        min_order_quantity = 1, max_order_quantity, low_stock_threshold = 10,
-        is_virtual = false, is_downloadable = false, download_link,
-        shipping_class, tax_class, shipping_cost = 0, free_shipping = false,
-        oldImages, oldVideo
-    } = body;
-
-    // Validation
-    if (!name) return res.status(400).json({ error: "Product name is required" });
-    if (!sku) return res.status(400).json({ error: "SKU is required" });
-    if (!category_id) return res.status(400).json({ error: "Category is required" });
-
-    // ✅ Handle array fields - support both JSON strings and comma-separated strings
-    let sizesArray = [];
-    if (sizes) {
-        if (typeof sizes === 'string') {
-            if (sizes.startsWith('[')) {
-                try { sizesArray = JSON.parse(sizes); } catch (e) { sizesArray = []; }
-            } else {
-                sizesArray = sizes.split(',').filter(s => s.trim());
-            }
-        } else if (Array.isArray(sizes)) {
-            sizesArray = sizes;
-        }
-    }
-
-    let colorsArray = [];
-    if (colors) {
-        if (typeof colors === 'string') {
-            if (colors.startsWith('[')) {
-                try { colorsArray = JSON.parse(colors); } catch (e) { colorsArray = []; }
-            } else {
-                colorsArray = colors.split(',').filter(s => s.trim());
-            }
-        } else if (Array.isArray(colors)) {
-            colorsArray = colors;
-        }
-    }
-
-    let featuresArray = [];
-    if (features) {
-        if (typeof features === 'string') {
-            if (features.startsWith('[')) {
-                try { featuresArray = JSON.parse(features); } catch (e) { featuresArray = []; }
-            } else {
-                featuresArray = features.split(',').filter(s => s.trim());
-            }
-        } else if (Array.isArray(features)) {
-            featuresArray = features;
-        }
-    }
-
-    let tagsArray = [];
-    if (tags) {
-        if (typeof tags === 'string') {
-            if (tags.startsWith('[')) {
-                try { tagsArray = JSON.parse(tags); } catch (e) { tagsArray = []; }
-            } else {
-                tagsArray = tags.split(',').filter(s => s.trim());
-            }
-        } else if (Array.isArray(tags)) {
-            tagsArray = tags;
-        }
-    }
-
-    // ✅ Handle images
-    let finalImages = [];
-    if (oldImages) {
-        if (typeof oldImages === 'string') {
-            try { finalImages = JSON.parse(oldImages); } catch (e) { finalImages = []; }
-        } else if (Array.isArray(oldImages)) {
-            finalImages = oldImages;
-        }
-    }
-
-    // Add new images if they exist (multipart only)
-    if (isMultipart && req.files && req.files['images']) {
-        const newImages = req.files['images'].map(f => `${BASE_URL}/uploads/${f.filename}`);
-        finalImages = [...finalImages, ...newImages];
-    }
-
-    // ✅ Handle video
-    let finalVideo = oldVideo || null;
-    if (isMultipart && req.files && req.files['video'] && req.files['video'][0]) {
-        finalVideo = `${BASE_URL}/uploads/${req.files['video'][0].filename}`;
-        // Delete old video if it exists
-        if (oldVideo) {
-            try {
-                const oldVideoPath = path.join(uploadDir, path.basename(oldVideo));
-                if (fs.existsSync(oldVideoPath)) fs.unlinkSync(oldVideoPath);
-            } catch (fileErr) {
-                console.error("Error deleting old video:", fileErr);
-            }
-        }
-    }
-
-    // Convert booleans
-    const isFeaturedBool = toBoolean(is_featured) ? 1 : 0;
-    const isTrendingBool = toBoolean(is_trending) ? 1 : 0;
-    const isBestsellerBool = toBoolean(is_bestseller) ? 1 : 0;
-    const isVirtualBool = toBoolean(is_virtual) ? 1 : 0;
-    const isDownloadableBool = toBoolean(is_downloadable) ? 1 : 0;
-    const freeShippingBool = toBoolean(free_shipping) ? 1 : 0;
-
-    // Parse numbers
-    const parsedPrice = safeParseNumber(price, 0);
-    const parsedDiscount = safeParseNumber(discount, 0);
-    const parsedStock = safeParseInt(stock, 0);
-    const parsedRating = safeParseNumber(rating, 0);
-    const parsedMinOrderQty = safeParseInt(min_order_quantity, 1);
-    const parsedMaxOrderQty = max_order_quantity ? safeParseInt(max_order_quantity) : null;
-    const parsedLowStockThreshold = safeParseInt(low_stock_threshold, 10);
-    const parsedShippingCost = safeParseNumber(shipping_cost, 0);
-
-    const sql = `
-        UPDATE products 
-        SET name=?, description=?, short_description=?, price=?, discount=?, stock=?, 
-            category_id=?, sub_category_id=?, sub_sub_category_id=?, brand=?, status=?, 
-            images=?, rating=?, sizes=?, colors=?, material=?, weight=?, dimensions=?, 
-            warranty=?, features=?, tags=?, sku=?, 
-            is_featured=?, is_trending=?, is_bestseller=?, video=?, 
-            seo_title=?, seo_description=?, meta_keywords=?, return_policy=?, slug=?, 
-            min_order_quantity=?, max_order_quantity=?, low_stock_threshold=?, 
-            is_virtual=?, is_downloadable=?, download_link=?, 
-            shipping_class=?, tax_class=?, shipping_cost=?, free_shipping=?,
-            updated_at=NOW()
-        WHERE id=?
-    `;
-
-    const values = [
-        name, description || "", short_description || "",
-        parsedPrice, parsedDiscount, parsedStock,
-        category_id, sub_category_id || null, sub_sub_category_id || null, brand || "",
-        status, JSON.stringify(finalImages), parsedRating,
-        JSON.stringify(sizesArray), JSON.stringify(colorsArray),
-        material || "", weight || "", dimensions || "", warranty || "",
-        JSON.stringify(featuresArray), JSON.stringify(tagsArray), sku,
-        isFeaturedBool, isTrendingBool, isBestsellerBool, finalVideo,
-        seo_title || "", seo_description || "", meta_keywords || "",
-        return_policy || "", slug || generateSlug(name),
-        parsedMinOrderQty, parsedMaxOrderQty, parsedLowStockThreshold,
-        isVirtualBool, isDownloadableBool, download_link || "",
-        shipping_class || "", tax_class || "", parsedShippingCost, freeShippingBool,
-        id
-    ];
-
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("❌ Update Error:", err);
-            // Delete uploaded files if DB fails
-            if (isMultipart && req.files) {
-                Object.values(req.files).flat().forEach(file => {
-                    try { if (fs.existsSync(file.path)) fs.unlinkSync(file.path); } catch (e) { }
-                });
-            }
-            return res.status(500).json({ error: "Update failed", details: err.message });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Product not found" });
-        }
-
-        console.log(`✅ Product ${id} updated successfully`);
-        res.json({
-            message: "Product updated successfully",
-            affectedRows: result.affectedRows
-        });
-    });
-}
 
 /* ================================
    ✅ DELETE PRODUCT
@@ -670,13 +1468,14 @@ router.delete("/:id", (req, res) => {
         try {
             const images = safeJsonParse(product.images, []);
             images.forEach(image => {
-                const imagePath = path.join(uploadDir, path.basename(image));
+                const imagePath = path.join(productsUploadDir, path.basename(image));
                 if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
             });
             if (product.video) {
-                const videoPath = path.join(uploadDir, path.basename(product.video));
+                const videoPath = path.join(productsUploadDir, path.basename(product.video));
                 if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
             }
+            console.log("🗑️ Deleted product files");
         } catch (fileErr) {
             console.error("File Deletion Error:", fileErr);
         }
@@ -730,5 +1529,107 @@ router.get("/search/:query", (req, res) => {
         res.json(parsed);
     });
 });
+// Add these routes to your product.js file after your existing routes
 
+/* ================================
+   ✅ GET CATEGORIES WITH SUB-CATEGORIES
+================================ */
+router.get("/categories/with-subcategories", (req, res) => {
+    const sql = `
+        SELECT 
+            c.id as category_id,
+            c.name as category_name,
+            c.description as category_description,
+            c.status as category_status,
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', sc.id,
+                        'name', sc.name,
+                        'description', sc.description,
+                        'status', sc.status
+                    )
+                )
+                FROM sub_categories sc
+                WHERE sc.category_id = c.id AND sc.status = 'active'
+            ) as sub_categories
+        FROM categories c
+        WHERE c.status = 'active'
+        ORDER BY c.name
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("Error fetching categories with sub-categories:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch categories",
+                error: err.message
+            });
+        }
+
+        // Parse the JSON sub_categories
+        const parsedResults = results.map(row => ({
+            ...row,
+            sub_categories: row.sub_categories ? JSON.parse(row.sub_categories) : []
+        }));
+
+        res.json({
+            success: true,
+            data: parsedResults
+        });
+    });
+});
+
+/* ================================
+   ✅ GET SUB-CATEGORIES BY CATEGORY ID
+================================ */
+router.get("/categories/:categoryId/sub-categories", (req, res) => {
+    const { categoryId } = req.params;
+
+    const sql = `
+        SELECT 
+            sc.id,
+            sc.name,
+            sc.description,
+            sc.status,
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', ssc.id,
+                        'name', ssc.name,
+                        'description', ssc.description,
+                        'status', ssc.status
+                    )
+                )
+                FROM sub_sub_categories ssc
+                WHERE ssc.sub_category_id = sc.id AND ssc.status = 'active'
+            ) as sub_sub_categories
+        FROM sub_categories sc
+        WHERE sc.category_id = ? AND sc.status = 'active'
+        ORDER BY sc.name
+    `;
+
+    db.query(sql, [categoryId], (err, results) => {
+        if (err) {
+            console.error("Error fetching sub-categories:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch sub-categories",
+                error: err.message
+            });
+        }
+
+        // Parse the JSON sub_sub_categories
+        const parsedResults = results.map(row => ({
+            ...row,
+            sub_sub_categories: row.sub_sub_categories ? JSON.parse(row.sub_sub_categories) : []
+        }));
+
+        res.json({
+            success: true,
+            data: parsedResults
+        });
+    });
+});
 module.exports = router;

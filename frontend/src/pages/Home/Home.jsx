@@ -942,7 +942,7 @@ const Home = () => {
                                         Add to Cart
                                     </button>
                                     <button className="view-details-btn" onClick={() => {
-                                        navigate(`/product/${quickViewProduct.id}`);
+                                        navigate(`/ProductDetail/${quickViewProduct.id}`);
                                         closeQuickView();
                                     }}>
                                         View Details

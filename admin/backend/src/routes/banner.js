@@ -333,7 +333,7 @@ router.post('/admin/create', checkAdmin, async (req, res) => {
         }
 
         // Optional image for updates
-        const imageFile = req.files && req.files.image ? req.files.image : null;
+        const imageFile = req.files?.image;
 
         // Validate position
         const validPositions = ['home_top', 'home_middle', 'category_top', 'product_page', 'sidebar'];
@@ -359,48 +359,63 @@ router.post('/admin/create', checkAdmin, async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
         `;
 
-        const values = [
-            title.trim(),
-            description ? description.trim() : null,
-            imageFile.name,
-            position,
-            parseInt(display_order) || 0,
-            status,
-            start_date || null,
-            end_date || null,
-            redirect_url || null,
-            discount_tag || null
-        ];
-
-        db.query(query, values, (error, result) => {
-            if (error) {
-                console.error('Database error:', error);
-
-                // Delete uploaded file if DB error
-                if (req.file && fs.existsSync(path.join(uploadsDir, req.file.filename))) {
-                    fs.unlinkSync(path.join(uploadsDir, req.file.filename));
-                }
-
+        // ✅ Move file BEFORE DB insert
+        const targetPath = path.join(uploadsDir, imageFile.name);
+        imageFile.mv(targetPath, (mvErr) => {
+            if (mvErr) {
+                console.error('❌ Create banner: File move failed:', mvErr);
+                // Cleanup temp file
+                try { fs.unlinkSync(imageFile.tempFilePath || targetPath); } catch (e) { }
                 return res.status(500).json({
                     success: false,
-                    message: 'Failed to create banner',
-                    error: error.message
+                    message: 'File upload failed',
+                    error: mvErr.message
                 });
             }
 
-            res.json({
-                success: true,
-                message: 'Banner created successfully!',
-                bannerId: result.insertId,
-                image_url: `${req.protocol}://${req.get('host')}/uploads/banners/${req.file.filename}`
+            const values = [
+                title.trim(),
+                description ? description.trim() : null,
+                imageFile.name,
+                position,
+                parseInt(display_order) || 0,
+                status,
+                start_date || null,
+                end_date || null,
+                redirect_url || null,
+                discount_tag || null
+            ];
+
+            db.query(query, values, (error, result) => {
+                if (error) {
+                    console.error('Database error:', error);
+
+                    // Delete uploaded file if DB error
+                    if (req.files && req.files.image && fs.existsSync(path.join(uploadsDir, req.files.image.name))) {
+                        fs.unlinkSync(path.join(uploadsDir, req.files.image.name));
+                    }
+
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to create banner',
+                        error: error.message
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Banner created successfully!',
+                    bannerId: result.insertId,
+                    image_url: `${req.protocol}://${req.get('host')}/uploads/banners/${imageFile.name}`
+                });
             });
         });
     } catch (error) {
         console.error('Error creating banner:', error);
 
         // Delete uploaded file if error
-        if (req.file && fs.existsSync(path.join(uploadsDir, req.file.filename))) {
-            fs.unlinkSync(path.join(uploadsDir, req.file.filename));
+        if (req.files && req.files.image && fs.existsSync(path.join(uploadsDir, req.files.image.name))) {
+            fs.unlinkSync(path.join(uploadsDir, req.files.image.name));
         }
 
         res.status(500).json({
@@ -442,7 +457,8 @@ router.put('/admin/update/:id', checkAdmin, async (req, res) => {
             let imagePath = currentBanner.image_path;
 
             // If new image uploaded, delete old one
-            if (req.file) {
+            if (req.files && req.files.image) {
+                const imageFile = req.files.image;
                 // Delete old image if exists
                 if (currentBanner.image_path) {
                     const oldImagePath = path.join(uploadsDir, currentBanner.image_path);
@@ -450,7 +466,12 @@ router.put('/admin/update/:id', checkAdmin, async (req, res) => {
                         fs.unlinkSync(oldImagePath);
                     }
                 }
-                imagePath = req.file.filename;
+                // Move file
+                const targetPath = path.join(uploadsDir, imageFile.name);
+                imageFile.mv(targetPath, (err) => {
+                    if (err) console.error('Banner image move error:', err);
+                });
+                imagePath = imageFile.name;
             }
 
             // Prepare update query
@@ -489,8 +510,8 @@ router.put('/admin/update/:id', checkAdmin, async (req, res) => {
                     console.error('Database error:', error);
 
                     // Delete new uploaded file if DB error
-                    if (req.file && fs.existsSync(path.join(uploadsDir, req.file.filename))) {
-                        fs.unlinkSync(path.join(uploadsDir, req.file.filename));
+                    if (req.files && req.files.image && fs.existsSync(path.join(uploadsDir, req.files.image.name))) {
+                        fs.unlinkSync(path.join(uploadsDir, req.files.image.name));
                     }
 
                     return res.status(500).json({
@@ -510,8 +531,8 @@ router.put('/admin/update/:id', checkAdmin, async (req, res) => {
         console.error('Error updating banner:', error);
 
         // Delete new uploaded file if error
-        if (req.file && fs.existsSync(path.join(uploadsDir, req.file.filename))) {
-            fs.unlinkSync(path.join(uploadsDir, req.file.filename));
+        if (req.files && req.files.image && fs.existsSync(path.join(uploadsDir, req.files.image.name))) {
+            fs.unlinkSync(path.join(uploadsDir, req.files.image.name));
         }
 
         res.status(500).json({
