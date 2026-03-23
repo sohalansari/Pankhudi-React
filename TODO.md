@@ -1,19 +1,28 @@
-# Banner Image Fixes - Admin Backend
+# Fix Category Page & Database Error
 
-## Current Status
-✅ Plan approved by user  
-🔄 Implementation in progress  
+## Current Task Progress
 
-## Steps
-1. ✅ [COMPLETE] Create/update this TODO.md  
-2. ⏳ Fix CREATE banner route (.mv() + req.file fix)  
-3. ⏳ Fix UPDATE banner route (.mv() + consistency)  
-4. ⏳ Restart server: cd admin/backend && npm start  
-5. ⏳ Test: Create new banner (no crash)  
-6. ⏳ Test: Update existing banner image  
-7. ⏳ Verify: ls admin/backend/src/uploads/banners/  
-8. ⏳ Frontend: Refresh → new banners display  
-9. ✅ [COMPLETE] Close task  
+### ✅ 1. Create TODO.md - [COMPLETED]
 
-## Files to Edit
-- admin/backend/src/routes/banner.js
+### ⏳ 2. Create `product_images` table migration
+- Add CREATE TABLE to backend/sql/PankhudiMain.sql
+- Migrate DB if needed
+
+### ⏳ 3. Clean up backend/routes/categories.js
+- Remove duplicate products.js code at end
+- Keep only category/subcategory routes
+- Fix any image queries to use new table
+
+### ⏳ 4. Verify /api/products endpoint supports all filters
+- Price range, brand, stock, sale, sorting by discount/rating/etc.
+
+### ⏳ 5. Restart backend server
+- cd backend && node server.js
+
+### ⏳ 6. Test category page features
+- Filters, sorting, discount display
+- Navigate to /category/[id]
+
+### ⏳ 7. attempt_completion
+
+**Next Step:** Create product_images table
