@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 23, 2026 at 06:01 PM
+-- Generation Time: Mar 24, 2026 at 08:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -126,29 +126,34 @@ CREATE TABLE `email_logs` (
   `status` enum('sent','failed','pending') DEFAULT 'pending',
   `message_id` varchar(255) DEFAULT NULL,
   `error` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `order_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `email_logs`
 --
 
-INSERT INTO `email_logs` (`id`, `recipient`, `subject`, `order_number`, `status`, `message_id`, `error`, `created_at`) VALUES
-(1, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-3761', 'ORD-20260214-3761', 'sent', '<ff0921d4-7d79-2bef-2710-11e577d35523@gmail.com>', NULL, '2026-02-14 09:34:02'),
-(2, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-6819', 'ORD-20260214-6819', 'sent', '<d516b9d6-8d16-f27a-d86e-d2e61d810f98@gmail.com>', NULL, '2026-02-14 09:45:15'),
-(3, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5912', 'ORD-20260214-5912', 'sent', '<335c1737-051a-9f36-0276-7ccd18c7084a@gmail.com>', NULL, '2026-02-14 09:51:01'),
-(4, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5204', 'ORD-20260214-5204', 'sent', '<d67fb206-12e3-3fac-2b0e-416a0a1fea12@gmail.com>', NULL, '2026-02-14 10:02:25'),
-(5, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-4329', 'ORD-20260214-4329', 'sent', '<7d64ec21-2c83-5cab-d55a-6024c8e9912b@gmail.com>', NULL, '2026-02-14 10:10:18'),
-(6, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-7855', 'ORD-20260214-7855', 'sent', '<ea37f588-0195-6209-0c8f-87bbe9924399@gmail.com>', NULL, '2026-02-14 10:53:10'),
-(7, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-3236', 'ORD-20260214-3236', 'sent', '<ec8506de-fdf4-1ecf-49f9-d6470c2892a2@gmail.com>', NULL, '2026-02-14 11:02:28'),
-(8, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5144', 'ORD-20260214-5144', 'sent', '<a9ff2e1e-123d-dbbd-c1d9-c801e55c9ab1@gmail.com>', NULL, '2026-02-14 16:47:08'),
-(9, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260217-8140', 'ORD-20260217-8140', 'sent', '<253e8877-a54b-4d90-e445-222eb09f4322@gmail.com>', NULL, '2026-02-17 11:26:02'),
-(10, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-4772', 'ORD-20260217-4772', 'sent', '<13ab053b-eb0f-fc90-d62b-bc9a9b22636c@gmail.com>', NULL, '2026-02-17 11:57:14'),
-(11, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-4218', 'ORD-20260217-4218', 'sent', '<d320ca8d-3bd2-ea54-d58e-70151954abc9@gmail.com>', NULL, '2026-02-17 17:36:39'),
-(12, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-9889', 'ORD-20260217-9889', 'sent', '<6df7b789-66d0-c974-2bef-8b585a9b8712@gmail.com>', NULL, '2026-02-17 17:38:46'),
-(13, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260218-8686', 'ORD-20260218-8686', 'sent', '<ffbf398d-e256-c016-b30e-0b565cdc8a4a@gmail.com>', NULL, '2026-02-18 07:53:29'),
-(14, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260305-1138', 'ORD-20260305-1138', 'sent', '<22cade9b-e3b5-40b0-1f23-999116a7076c@gmail.com>', NULL, '2026-03-05 12:44:45'),
-(15, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260323-6769', 'ORD-20260323-6769', 'sent', '<df112bb2-3e60-1103-554e-fef8fa2a6ce5@gmail.com>', NULL, '2026-03-23 15:44:29');
+INSERT INTO `email_logs` (`id`, `recipient`, `subject`, `order_number`, `status`, `message_id`, `error`, `created_at`, `order_id`) VALUES
+(1, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-3761', 'ORD-20260214-3761', 'sent', '<ff0921d4-7d79-2bef-2710-11e577d35523@gmail.com>', NULL, '2026-02-14 09:34:02', NULL),
+(2, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-6819', 'ORD-20260214-6819', 'sent', '<d516b9d6-8d16-f27a-d86e-d2e61d810f98@gmail.com>', NULL, '2026-02-14 09:45:15', NULL),
+(3, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5912', 'ORD-20260214-5912', 'sent', '<335c1737-051a-9f36-0276-7ccd18c7084a@gmail.com>', NULL, '2026-02-14 09:51:01', NULL),
+(4, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5204', 'ORD-20260214-5204', 'sent', '<d67fb206-12e3-3fac-2b0e-416a0a1fea12@gmail.com>', NULL, '2026-02-14 10:02:25', NULL),
+(5, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-4329', 'ORD-20260214-4329', 'sent', '<7d64ec21-2c83-5cab-d55a-6024c8e9912b@gmail.com>', NULL, '2026-02-14 10:10:18', NULL),
+(6, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-7855', 'ORD-20260214-7855', 'sent', '<ea37f588-0195-6209-0c8f-87bbe9924399@gmail.com>', NULL, '2026-02-14 10:53:10', NULL),
+(7, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-3236', 'ORD-20260214-3236', 'sent', '<ec8506de-fdf4-1ecf-49f9-d6470c2892a2@gmail.com>', NULL, '2026-02-14 11:02:28', NULL),
+(8, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260214-5144', 'ORD-20260214-5144', 'sent', '<a9ff2e1e-123d-dbbd-c1d9-c801e55c9ab1@gmail.com>', NULL, '2026-02-14 16:47:08', NULL),
+(9, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260217-8140', 'ORD-20260217-8140', 'sent', '<253e8877-a54b-4d90-e445-222eb09f4322@gmail.com>', NULL, '2026-02-17 11:26:02', NULL),
+(10, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-4772', 'ORD-20260217-4772', 'sent', '<13ab053b-eb0f-fc90-d62b-bc9a9b22636c@gmail.com>', NULL, '2026-02-17 11:57:14', NULL),
+(11, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-4218', 'ORD-20260217-4218', 'sent', '<d320ca8d-3bd2-ea54-d58e-70151954abc9@gmail.com>', NULL, '2026-02-17 17:36:39', NULL),
+(12, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260217-9889', 'ORD-20260217-9889', 'sent', '<6df7b789-66d0-c974-2bef-8b585a9b8712@gmail.com>', NULL, '2026-02-17 17:38:46', NULL),
+(13, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260218-8686', 'ORD-20260218-8686', 'sent', '<ffbf398d-e256-c016-b30e-0b565cdc8a4a@gmail.com>', NULL, '2026-02-18 07:53:29', NULL),
+(14, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260305-1138', 'ORD-20260305-1138', 'sent', '<22cade9b-e3b5-40b0-1f23-999116a7076c@gmail.com>', NULL, '2026-03-05 12:44:45', NULL),
+(15, 'mosohal496@gmail.com', 'Order Confirmation #ORD-20260323-6769', 'ORD-20260323-6769', 'sent', '<df112bb2-3e60-1103-554e-fef8fa2a6ce5@gmail.com>', NULL, '2026-03-23 15:44:29', NULL),
+(16, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260324-6288', 'ORD-20260324-6288', 'sent', '<dbf2415c-3607-18cb-9997-5da1a15eca80@gmail.com>', NULL, '2026-03-24 06:34:41', NULL),
+(17, 'sohalansari4934@gmail.com', 'Order Confirmation', NULL, 'sent', '<df6dad42-7c58-0223-283d-2fc57e95fe2c@gmail.com>', NULL, '2026-03-24 07:27:53', 34),
+(18, 'sohalansari4934@gmail.com', 'Order Confirmation', NULL, 'sent', '<0745872d-ed8b-9404-aead-e7c8483c1c60@gmail.com>', NULL, '2026-03-24 07:27:53', 34),
+(19, 'sohalansari4934@gmail.com', 'Order Confirmation #ORD-20260324-1762', 'ORD-20260324-1762', 'sent', '<0745872d-ed8b-9404-aead-e7c8483c1c60@gmail.com>', NULL, '2026-03-24 07:27:53', NULL);
 
 -- --------------------------------------------------------
 
@@ -206,7 +211,16 @@ INSERT INTO `login_activity` (`id`, `user_id`, `action`, `ip_address`, `user_age
 (75, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-03-12 06:44:23'),
 (76, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-12 06:44:38'),
 (77, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-23 08:45:25'),
-(78, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-23 08:45:46');
+(78, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-23 08:45:46'),
+(79, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:45:50'),
+(80, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:46:10'),
+(81, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:46:48'),
+(82, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:47:03'),
+(83, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:12'),
+(84, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:48:26'),
+(85, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:40'),
+(86, 7, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'pending_2fa', '2026-03-24 02:50:45'),
+(87, 11, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'success', '2026-03-24 02:51:07');
 
 -- --------------------------------------------------------
 
@@ -275,7 +289,9 @@ INSERT INTO `orders` (`id`, `order_number`, `user_id`, `shipping_full_name`, `sh
 (27, 'ORD-20260217-4772', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SHCisN8hXm2bOH', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'processing', NULL, '2026-02-17 11:57:08', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-02-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (29, 'ORD-20260217-9889', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 2008.63, 0.00, 0.00, 0.00, 2008.63, 'pending', NULL, '2026-02-17 17:38:43', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-02-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (31, 'ORD-20260305-1138', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', 'sohalansari4934@gmail.com', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SNY52dlWb5Orjl', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'processing', NULL, '2026-03-05 12:44:41', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(32, 'ORD-20260323-6769', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SUil2TyV2bt8UT', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'shipped', NULL, '2026-03-23 15:44:25', NULL, '2026-03-23 21:21:01', NULL, NULL, 'cart', NULL, NULL, '2026-03-28', NULL, NULL, NULL, NULL, NULL, NULL, '85748149952', 'Delhivery', 'http://localhost:3000/orders', NULL, NULL, NULL, '2026-03-23 21:22:08');
+(32, 'ORD-20260323-6769', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SUil2TyV2bt8UT', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'shipped', NULL, '2026-03-23 15:44:25', NULL, '2026-03-23 21:21:01', NULL, NULL, 'cart', NULL, NULL, '2026-03-28', NULL, NULL, NULL, NULL, NULL, NULL, '85748149952', 'Delhivery', 'http://localhost:3000/orders', NULL, NULL, NULL, '2026-03-23 21:22:08'),
+(33, 'ORD-20260324-6288', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 399.60, 0.00, 0.00, 0.00, 399.60, 'pending', NULL, '2026-03-24 06:34:36', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(34, 'ORD-20260324-1762', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 419.72, 0.00, 0.00, 0.00, 419.72, 'pending', NULL, '2026-03-24 07:27:49', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 --
 -- Triggers `orders`
@@ -332,7 +348,9 @@ INSERT INTO `order_items` (`id`, `order_id`, `order_number`, `product_id`, `prod
 (23, 27, 'ORD-20260217-4772', 7, 'DEELMO Men\'s Regular Fit Button Down Dress Shirts Textured Long Sleeve Casual Hawaiian Shirt', NULL, 'SKU - 6', 1, 1.00, 0.00, 1.00, 'L', 'Black', 0.00, 1, 0.00, 0.00, 1.00),
 (25, 29, 'ORD-20260217-9889', 2, 'Pankhudi Essentials x Sofia Grainge Unisex Babies\' Snug-Fit Cotton Footed Pajamas', NULL, 'SKU -2', 1, 2008.63, 0.00, 2008.63, 'XS', 'Gray', 50.00, 0, 0.00, 0.00, 2008.63),
 (27, 31, 'ORD-20260305-1138', 7, 'DEELMO Men\'s Regular Fit Button Down Dress Shirts Textured Long Sleeve Casual Hawaiian Shirt', NULL, 'SKU - 6', 1, 1.00, 0.00, 1.00, 'XL', 'Gray', 0.00, 1, 0.00, 0.00, 1.00),
-(28, 32, 'ORD-20260323-6769', 7, 'DEELMO Men\'s Regular Fit Button Down Dress Shirts Textured Long Sleeve Casual Hawaiian Shirt', NULL, 'SKU - 6', 1, 1.00, 0.00, 1.00, NULL, NULL, 0.00, 1, 0.00, 0.00, 1.00);
+(28, 32, 'ORD-20260323-6769', 7, 'DEELMO Men\'s Regular Fit Button Down Dress Shirts Textured Long Sleeve Casual Hawaiian Shirt', NULL, 'SKU - 6', 1, 1.00, 0.00, 1.00, NULL, NULL, 0.00, 1, 0.00, 0.00, 1.00),
+(29, 33, 'ORD-20260324-6288', 10, 'DINGDONG Sweatshirt and Pant Set | Kids Cotton Printed Casual Dress | Full Sleeves Sweatshirt Joggers Dress For Boys', NULL, 'SKU - 9', 1, 399.60, 0.00, 399.60, NULL, NULL, 0.00, 1, 0.00, 0.00, 399.60),
+(30, 34, 'ORD-20260324-1762', 9, 'Boys Cotton Clothing Set | Kids Dress for Boys Full Sleeve Printed T-Shirt & Pant | Soft Cotton Winter Wear Outfit for Boy | Comfortable for Wear', NULL, 'SKU - 8', 1, 419.72, 0.00, 419.72, NULL, NULL, 0.00, 1, 0.00, 0.00, 419.72);
 
 -- --------------------------------------------------------
 
@@ -406,7 +424,9 @@ INSERT INTO `order_status_history` (`id`, `order_id`, `status`, `comment`, `crea
 (9, 32, 'processing', 'Order created successfully', 7, '2026-03-23 21:14:25'),
 (10, 32, 'shipped', 'Status changed from processing to shipped', 1, '2026-03-23 21:18:38'),
 (11, 32, 'processing', 'Status changed from shipped to processing', 1, '2026-03-23 21:19:39'),
-(12, 32, 'shipped', 'Status changed from processing to shipped', 1, '2026-03-23 21:21:01');
+(12, 32, 'shipped', 'Status changed from processing to shipped', 1, '2026-03-23 21:21:01'),
+(13, 33, 'pending', 'Order created successfully', 11, '2026-03-24 12:04:36'),
+(14, 34, 'pending', 'Order created successfully', 11, '2026-03-24 12:57:49');
 
 -- --------------------------------------------------------
 
@@ -542,8 +562,8 @@ INSERT INTO `products` (`id`, `sku`, `name`, `description`, `short_description`,
 (5, 'SKU -4', 'KLOSIA Women\'s Rayon Printed Anarkali Kurta and Pant with Dupatta Set', '- Fit Type: Anarkali Kurta; Anarkali Kurta set for women: Anarkali Kurta Pant and printed Dupatta Set\r\n- Product Material :- Viscose | Colour :- Teal Blue | Pattern :- Printed | Dupatta :- Chanderi Cotton |\r\n- Style :- Anarkali Kurta | Sleeve Length :- 3/4 Sleeve | Bottom :- Pant Includes a coordinated A-line kurta, ankle-length pants, and a stunning printed dupatta, offering a complete traditional look with minimal styling effort.\r\n- Showcase timeless elegance with this beautifully crafted blue kurta set featuring intricate ethnic block prints and a contrasting maroon border — perfect for festive, casual, and semi-formal occasions.\r\n- Sizes:- S, M, L, XL, XXL,3XL,4XL,5XL (All Regular Sizes Available)\r\n', 'Material composition - Viscose\r\nLength - Calf Length\r\nSleeve type - 3/4 Sleeve\r\nNeck style - V-Neck\r\nStyle - Anarkali\r\nMaterial type - Rayon', 2999.00, 73.00, 4.90, 12, 0.00, '', 'Viscose', '[\"Blue\",\"Red\",\"Black\"]', '[\"S\",\"M\",\"L\",\"XL\",\"XXL\"]', '', '7 Days', 'klosia-womens-rayon-printed-anarkali-kurta-and-pant-with-dupatta-set', '', '', '', '[\"kurti\",\"Indian Faishan\"]', '[\"Eco-friendly\",\"Breathable\"]', 'http://localhost:5001/uploads/1770575322919-776004524.mp4', 1, 20, 10, '2026-02-08 18:28:42', '2026-02-14 10:02:20', 'Active', 2, 'Pankhudi', '[\"http://localhost:5001/uploads/1770575322902-615727992.jpg\",\"http://localhost:5001/uploads/1770575322905-113042154.jpg\",\"http://localhost:5001/uploads/1770575322907-574863204.jpg\",\"http://localhost:5001/uploads/1770575322909-513332254.jpg\",\"http://localhost:5001/uploads/1770575322911-2804883.jpg\",\"http://localhost:5001/uploads/1770575322913-101755810.jpg\",\"http://localhost:5001/uploads/1770575322916-871458861.jpg\",\"http://localhost:5001/uploads/1770575322917-853969946.jpg\"]', 6, 24, 1, 1, 0, 1, 0, '', 'Free', '0', 1, 0.00),
 (7, 'SKU - 6', 'DEELMO Men\'s Regular Fit Button Down Dress Shirts Textured Long Sleeve Casual Hawaiian Shirt', '- { FABRIC } : Soft & Breathable Polyster Fabric || Wrinkle-Resistant Fabric || Durable & Lightweight Material || Easy-Care Washable Blend || Stretchable – Offers Good Flexibility, Often Used In Stretchable Garments Like Tops And Dresses.\r\n- { PATTERN } : Elegant Minimal Pattern Detailing || Solid Design For Men || FIT TYPE : Tailored Regular Fit Design || Comfortable Regular Fit || Relaxed Casual Fit || Smart Structured Fit for Sharp Look\r\n- { NECK TYPE } : Button Down Collar || Round Neck with Placket || Stylish Collar Design || Classic V-Cut Neckline\r\n- { OCCASION } : Smart Casual Everyday Look || Party Ready Stylish Shirt || Weekend Brunch Wear || Formal Office Wear Shirt || Date Night Semi-Formal Premium Shirt || Wedding Wear Shirt || Elegant Shirt for Religious Functions\r\n- { WASH CARE INSTRUCTIONS } : Hand Wash || Do Not Bleach || Gentle Mashine Wash.', 'Material composition - Polyster , \r\nPattern - Solid , \r\nFit type - Regular Fit , \r\nSleeve type - Long Sleeve , \r\nCollar style - Spread Collar , \r\nNeck style - Collared Neck , \r\nCountry of Origin - India', 2.00, 50.00, 4.80, 188, 0.00, '', 'Polyster', '[\"Gray\",\"Brown\",\"Green\",\"Blue\",\"Red\",\"Black\"]', '[\"S\",\"M\",\"L\",\"XL\",\"XXL\",\"32\",\"34\",\"36\"]', '', '7 Days', 'deelmo-mens-regular-fit-button-down-dress-shirts-textured-long-sleeve-casual-hawaiian-shirt', '', '', '', '[\"Men\'s Shirts\",\"shirts\"]', '[\"Eco-friendly\",\"Machine Washable\",\"Wrinkle Resistant\"]', NULL, 1, 100, 10, '2026-02-08 19:03:32', '2026-03-23 15:44:25', 'Active', 1, 'Pankhudi', '[\"http://localhost:5001/uploads/1770577412352-792069910.jpg\",\"http://localhost:5001/uploads/1770577412354-368962446.jpg\",\"http://localhost:5001/uploads/1770577412354-218272047.jpg\",\"http://localhost:5001/uploads/1770577412355-250226279.jpg\",\"http://localhost:5001/uploads/1770577412356-543431877.jpg\",\"http://localhost:5001/uploads/1770577412357-376753291.jpg\",\"http://localhost:5001/uploads/1770577412357-109237902.jpg\"]', 1, 2, 0, 0, 0, 0, 0, '', 'Free', '0', 1, 0.00),
 (8, 'SKU - 7', 'R.G Kids Dress | Cotton Kids Clothes for Boys | Dinosaur Printed Half Sleeve T-shirt and Denim Shorts Baby Clothes | Casual Summer Clothes for Baby Boy', '- Premium kid dress made with soft, breathable cotton that feels gentle on skin. Perfect kids clothes for boys choice for all-day comfort. Ideal in baby clothes range for daily wear, outings, and playtime without irritation or overheating.\r\n- Stylish baby dress design with modern print and smart fit that upgrades your child’s look instantly. This kids dress boy outfit works great as a trendy baby boy dress for casual events, travel, photos, and home wear.\r\n- Built for durability and repeated washing, this kids wear for boys set keeps color and shape intact. Strong stitching and quality fabric make it reliable baby clothes parents can trust for long-term regular use.\r\n- Lightweight and airy summer clothes for baby boy that help reduce sweat and discomfort. This baby boy summer clothes set supports airflow and free movement, making it perfect for hot weather and outdoor activities.\r\n- Easy wear and removal design saves parents time during dressing. Comfortable waistband and relaxed cut make this kids summer wear boys outfit practical. A go-to kid dress option for daycare, trips, and quick outfit changes.\r\n- Versatile kids clothes for boys piece that pairs easily with shoes and accessories. Use as daily baby boy dress or occasion wear. A smart pick in kids summer wear boys collections for comfort, style, and value in one set.', 'Material type - Hoseiry & Denim, Denim\r\nFit type - Regular\r\nStyle - Casual\r\nTheme - Animal\r\nClosure type - Pull On\r\nCare instructions - Hand Wash Only\r\nCountry of Origin - India', 999.00, 50.00, 4.90, 48, 0.00, '', 'Cotton', '[\"Yellow\",\"Black\"]', '[\"3 - 6 M\",\"0 - 6 M\",\"1 - 2 Y\",\"2 - 3 Y\",\"3 - 4 Y\"]', '', '7 Days', 'rg-kids-dress-cotton-kids-clothes-for-boys-dinosaur-printed-half-sleeve-t-shirt-and-denim-shorts-baby-clothes-casual-summer-clothes-for-baby-boy', '', '', '', '[]', '[\"Eco-friendly\",\"Fast Drying\"]', 'http://localhost:5001/uploads/products/video-1774265484301-285171276.mp4', 1, NULL, 10, '2026-03-23 11:31:24', '2026-03-23 11:31:24', 'Active', 3, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774265484294-650885527.jpg\",\"http://localhost:5001/uploads/products/img-1774265484295-956663331.jpg\",\"http://localhost:5001/uploads/products/img-1774265484296-493909737.jpg\",\"http://localhost:5001/uploads/products/img-1774265484297-670255319.png\",\"http://localhost:5001/uploads/products/img-1774265484298-854293592.png\",\"http://localhost:5001/uploads/products/img-1774265484299-624051086.png\"]', 13, 54, 0, 1, 1, 0, 0, '', 'Normal', '0', 1, 0.00),
-(9, 'SKU - 8', 'Boys Cotton Clothing Set | Kids Dress for Boys Full Sleeve Printed T-Shirt & Pant | Soft Cotton Winter Wear Outfit for Boy | Comfortable for Wear', '- Premium Soft Cotton Fabric: Made from 100% breathable cotton, this boys clothing set is ultra-soft on delicate skin, ensuring all-day comfort for school, playtime, and home wear\r\n- Trendy Printed Full Sleeve T-Shirt: Stylish printed full sleeve t-shirt for boys paired with matching pants gives a modern and cute look for casual outings and daily wear\r\n- Comfortable Fit for Active Kids: Elastic waistband pants provide a snug yet flexible fit, allowing easy movement for running, playing, and relaxing\r\n- Versatile Kids Wear for All Seasons: Suitable as winter wear, mild cold weather outfit, or AC room wear, keeping kids warm without overheating\r\n- Easy Care & Durable Stitching: Fade-resistant fabric, strong stitching, and machine-wash friendly—designed to last even after multiple washes\r\n- Complete Coordinated Outfit Set: Full sleeve printed t-shirt and matching pants create a coordinated look that saves time in dressing and ensures style consistency for everyday wear', 'Material type - Cotton\r\nFit type - Regular\r\nStyle - Casual\r\nTheme - Printed\r\nClosure type - Pull On\r\nCare instructions - Machine Wash\r\nCountry of Origin - India', 1499.00, 72.00, 4.70, 50, 0.00, '', 'Cotton', '[\"White & Red\",\"Blue\",\"Pink\",\"Purple\"]', '[\"3 - 4 Y\",\"0 - 1 Y\",\"1 - 2 Y\",\"2 - 3 Y\",\"4 - 5 Y\"]', '', '', 'boys-cotton-clothing-set-kids-dress-for-boys-full-sleeve-printed-t-shirt-pant-soft-cotton-winter-wear-outfit-for-boy-comfortable-for-wear', '', '', '', '[\"Baby Clothes\",\"Baby Set\'s\"]', '[\"Eco-friendly\",\"Fast Drying\"]', 'http://localhost:5001/uploads/products/video-1774266063967-267674986.mp4', 1, 1, 10, '2026-03-23 11:41:03', '2026-03-23 11:41:03', 'Active', 3, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774266063957-518361488.png\",\"http://localhost:5001/uploads/products/img-1774266063958-718030271.png\",\"http://localhost:5001/uploads/products/img-1774266063960-284353552.png\",\"http://localhost:5001/uploads/products/img-1774266063962-201997971.png\",\"http://localhost:5001/uploads/products/img-1774266063963-221498163.png\",\"http://localhost:5001/uploads/products/img-1774266063966-982976429.png\"]', 13, 54, 1, 0, 0, 0, 0, '', 'Normal', '0', 1, 0.00),
-(10, 'SKU - 9', 'DINGDONG Sweatshirt and Pant Set | Kids Cotton Printed Casual Dress | Full Sleeves Sweatshirt Joggers Dress For Boys', '- Stylish Astronaut Design ? Bright yellow sweatshirt with cute astronaut print makes kids look trendy and fun.\r\n- Complete Outfit Set ? Comes with a cozy sweatshirt and black pants for a ready-to-wear combo.\r\n- soft\r\n- Unisex Fashion ? Suitable for both boys and girls, perfect for toddlers and kids.\r\n- Occasion Ready ? Ideal for daily wear, birthday parties, outings, or casual play.', 'Colour - Yellow ,\r\nStyle Name - Modern ,\r\nSleeve Type - Long Sleeve ,\r\nFit Type - Regular ,\r\nClosure Type - Pull On ,\r\nPattern - Cartoon ', 999.00, 60.00, 4.50, 100, 0.00, '', 'Cotton', '[\"Yellow\",\"Red\",\"Blue\"]', '[\"2 - 3 Y\",\"18 - 36 M\",\"3 - 4 Y\"]', '', '7 Days Only', 'dingdong-sweatshirt-and-pant-set-kids-cotton-printed-casual-dress-full-sleeves-sweatshirt-joggers-dress-for-boys', '', '', '', '[\"Baby Clothe\'s\",\"Baby Boys Clothes\"]', '[\"Eco-friendly\",\"Fast Drying\"]', NULL, 1, 1, 10, '2026-03-23 12:01:09', '2026-03-23 12:01:09', 'Active', 3, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774267269629-8211105.png\",\"http://localhost:5001/uploads/products/img-1774267269630-704236263.png\",\"http://localhost:5001/uploads/products/img-1774267269631-315999258.png\",\"http://localhost:5001/uploads/products/img-1774267269632-914057738.png\",\"http://localhost:5001/uploads/products/img-1774267269633-25536984.png\",\"http://localhost:5001/uploads/products/img-1774267269634-131534554.png\"]', 13, 54, 0, 0, 0, 0, 0, '', 'Normal', '0', 1, 0.00),
+(9, 'SKU - 8', 'Boys Cotton Clothing Set | Kids Dress for Boys Full Sleeve Printed T-Shirt & Pant | Soft Cotton Winter Wear Outfit for Boy | Comfortable for Wear', '- Premium Soft Cotton Fabric: Made from 100% breathable cotton, this boys clothing set is ultra-soft on delicate skin, ensuring all-day comfort for school, playtime, and home wear\r\n- Trendy Printed Full Sleeve T-Shirt: Stylish printed full sleeve t-shirt for boys paired with matching pants gives a modern and cute look for casual outings and daily wear\r\n- Comfortable Fit for Active Kids: Elastic waistband pants provide a snug yet flexible fit, allowing easy movement for running, playing, and relaxing\r\n- Versatile Kids Wear for All Seasons: Suitable as winter wear, mild cold weather outfit, or AC room wear, keeping kids warm without overheating\r\n- Easy Care & Durable Stitching: Fade-resistant fabric, strong stitching, and machine-wash friendly—designed to last even after multiple washes\r\n- Complete Coordinated Outfit Set: Full sleeve printed t-shirt and matching pants create a coordinated look that saves time in dressing and ensures style consistency for everyday wear', 'Material type - Cotton\r\nFit type - Regular\r\nStyle - Casual\r\nTheme - Printed\r\nClosure type - Pull On\r\nCare instructions - Machine Wash\r\nCountry of Origin - India', 1499.00, 72.00, 4.70, 49, 0.00, '', 'Cotton', '[\"White & Red\",\"Blue\",\"Pink\",\"Purple\"]', '[\"3 - 4 Y\",\"0 - 1 Y\",\"1 - 2 Y\",\"2 - 3 Y\",\"4 - 5 Y\"]', '', '', 'boys-cotton-clothing-set-kids-dress-for-boys-full-sleeve-printed-t-shirt-pant-soft-cotton-winter-wear-outfit-for-boy-comfortable-for-wear', '', '', '', '[\"Baby Clothes\",\"Baby Set\'s\"]', '[\"Eco-friendly\",\"Fast Drying\"]', 'http://localhost:5001/uploads/products/video-1774266063967-267674986.mp4', 1, 1, 10, '2026-03-23 11:41:03', '2026-03-24 07:27:49', 'Active', 3, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774266063957-518361488.png\",\"http://localhost:5001/uploads/products/img-1774266063958-718030271.png\",\"http://localhost:5001/uploads/products/img-1774266063960-284353552.png\",\"http://localhost:5001/uploads/products/img-1774266063962-201997971.png\",\"http://localhost:5001/uploads/products/img-1774266063963-221498163.png\",\"http://localhost:5001/uploads/products/img-1774266063966-982976429.png\"]', 13, 54, 1, 0, 0, 0, 0, '', 'Normal', '0', 1, 0.00),
+(10, 'SKU - 9', 'DINGDONG Sweatshirt and Pant Set | Kids Cotton Printed Casual Dress | Full Sleeves Sweatshirt Joggers Dress For Boys', '- Stylish Astronaut Design ? Bright yellow sweatshirt with cute astronaut print makes kids look trendy and fun.\r\n- Complete Outfit Set ? Comes with a cozy sweatshirt and black pants for a ready-to-wear combo.\r\n- soft\r\n- Unisex Fashion ? Suitable for both boys and girls, perfect for toddlers and kids.\r\n- Occasion Ready ? Ideal for daily wear, birthday parties, outings, or casual play.', 'Colour - Yellow ,\r\nStyle Name - Modern ,\r\nSleeve Type - Long Sleeve ,\r\nFit Type - Regular ,\r\nClosure Type - Pull On ,\r\nPattern - Cartoon ', 999.00, 60.00, 4.50, 99, 0.00, '', 'Cotton', '[\"Yellow\",\"Red\",\"Blue\"]', '[\"2 - 3 Y\",\"18 - 36 M\",\"3 - 4 Y\"]', '', '7 Days Only', 'dingdong-sweatshirt-and-pant-set-kids-cotton-printed-casual-dress-full-sleeves-sweatshirt-joggers-dress-for-boys', '', '', '', '[\"Baby Clothe\'s\",\"Baby Boys Clothes\"]', '[\"Eco-friendly\",\"Fast Drying\"]', NULL, 1, 1, 10, '2026-03-23 12:01:09', '2026-03-24 06:34:36', 'Active', 3, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774267269629-8211105.png\",\"http://localhost:5001/uploads/products/img-1774267269630-704236263.png\",\"http://localhost:5001/uploads/products/img-1774267269631-315999258.png\",\"http://localhost:5001/uploads/products/img-1774267269632-914057738.png\",\"http://localhost:5001/uploads/products/img-1774267269633-25536984.png\",\"http://localhost:5001/uploads/products/img-1774267269634-131534554.png\"]', 13, 54, 0, 0, 0, 0, 0, '', 'Normal', '0', 1, 0.00),
 (11, 'SKU - 10', 'Symbol Premium Men Stylish Solid All Day Fresh Buttondown Casual Shirt - Regular Fit | Plain | Full Sleeve | Cotton Semi Formal Wear (Available in Plus Size & Combo Pack)', '- Oxford cloth button down shirt – that timeless product\n- Anti-odor finish for all day freshness\n- Temperature control finish (Cool IT TM ) to keep you cool\n- Peached finish for a super soft touch\n- Pair up with a chino or a jeans for that smart casual look\n**Additional Information**\n*Manufacturer* Amazon Brand - Symbol, Formal Clothing Company (A Divn of Bang Overseas Ltd), #17/3, 9th Mile, Basapura Village, Begur Hobli, Electronic City (Post), Bangalore - 560100, Contact: +91 8574814934 pankhudi@pankhudi.com\n*Packer* Formal Clothing Company (A Divn of Bang Overseas Ltd), #17/3, 9th Mile, Basapura Village, Begur Hobli, Electronic City (Post), Bangalore - 560100, Contact: +91 8574814934,  pankhudi@pankhudishop.com\nItem Weight450 g\nItem Dimensions LxWxH20.3 x 24 x 10 Centimeters\nNet Quantity1 Count\nGeneric NameStylish Solid All Day Fresh Buttondown Casual Shirt - Regular Fit | Plain | Full Sleeve | Cotton Semi Formal Wear (Available in Plus Size & Combo Pack)', 'Material composition - 100% Cotton ,\r\nPattern - Solid ,\r\nFit type - Regular Fit ,\r\nSleeve type - Long Sleeve ,\r\nCollar style - Button Down ,\r\nLength - Standard Length \r\nCountry of OriginIndia', 2399.00, 35.00, 4.00, 200, 0.00, '', 'Cotton', '[\"Black\",\"Green\",\"Gray\",\"Blue\"]', '[\"XS\",\"S\",\"M\",\"L\",\"XL\",\"XXL\",\"XXXL\"]', '', '7 Dyas', 'symbol-premium-men-stylish-solid-all-day-fresh-buttondown-casual-shirt-regular-fit-plain-full-sleeve-cotton-semi-formal-wear-available-in-plus-size-combo-pack', '', '', '', '[\"Men\'s Shirt\"]', '[\"Eco-friendly\",\"Fast Drying\",\"Machine Washable\"]', 'http://localhost:5001/uploads/products/video-1774267943236-704375498.mp4', 1, NULL, 10, '2026-03-23 12:12:23', '2026-03-23 12:47:43', 'Active', 1, 'Pankhudi', '[\"http://localhost:5001/uploads/products/img-1774267943227-784483306.jpg\",\"http://localhost:5001/uploads/products/img-1774267943230-838276893.jpg\",\"http://localhost:5001/uploads/products/img-1774267943232-317590512.jpg\",\"http://localhost:5001/uploads/products/img-1774267943233-454679722.jpg\",\"http://localhost:5001/uploads/products/img-1774267943234-500696617.jpg\",\"http://localhost:5001/uploads/products/img-1774267943235-853615187.jpg\"]', 1, 2, 1, 0, 0, 0, 0, '', 'Normal', '0', 1, 0.00);
 
 -- --------------------------------------------------------
@@ -866,7 +886,7 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `phone`, `address`, `goo
 (4, 'Pankhudi Demo', 'pankhudiforyou@gmail.com', '$2b$12$SNwnPyfsAy7VwG2UA8bsieT/9NKaRhR7Bve9xOH30MN8tl2IuYA4e', '1478523698', 'asfghjkl;weeyuiopxcvbnmfghjkl; er fdghjkl fghjkms sdvcn knkj nbnkf bngb gbkj bnfgb kbnk nfgnbkjnb krnbk knbknbgngnb kgnkgn ngkblgf ', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:16:41', '2026-01-23 05:16:41', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
 (5, 'Kartik', 'shettykartik112@gmail.com', '$2b$10$zvu.2pvmKcRfenQDE0ACu.x.NCs85WDkGmqaIeCaMSjWguLwN1gyO', '1478523611', '123wydgferhri kdfjhjw kjrhhkjfbnk rkjjnkfn kfjjfkn kfjkjfn fkbfjkn kjfnbkjfn ', NULL, 'uploads/avatars/avatar_5.jpg', 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:23:27', '2026-02-08 20:23:42', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
 (7, 'sohail Ansari', 'mosohal496@gmail.com', '$2b$12$pg5p6PBTgFPaAl0mUmGAXeTYF85qe.y5F4ReExaWz1K5504i65J5W', '8574814920', 'near noorani masjid S G Brave Marge Kurla East', '108138111581736976242', 'https://lh3.googleusercontent.com/a/ACg8ocKqWBkR8XuKLdaHv03XcUKhZif2z_p5IG5CIUMJHmG5Nipbo2I=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-02-12 04:31:27', '2026-03-23 08:45:25', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(11, 'Sohal Ansari', 'sohalansari4934@gmail.com', '$2b$10$hkP9zZiSpP2EkfNqnP.3ie8APGFcurq5Mh.udrkqIxH1QEBP15.cS', '8574814934', 'Kurla East\nS G Brave Marge', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-03-05 12:34:46', '2026-03-05 12:40:29', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, '2026-03-05 12:35:22');
+(11, 'Sohal Ansari', 'sohalansari4934@gmail.com', '$2b$10$hkP9zZiSpP2EkfNqnP.3ie8APGFcurq5Mh.udrkqIxH1QEBP15.cS', '8574814934', 'Kurla East\nS G Brave Marge', '107588506937356749585', 'https://lh3.googleusercontent.com/a/ACg8ocJv8GL0p2oawNZ5pElX1m0edQtwsmfKlXI_PMhitihYXGKsBzFw=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-03-05 12:34:46', '2026-03-24 02:51:07', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, '2026-03-05 12:35:22');
 
 -- --------------------------------------------------------
 
@@ -968,7 +988,10 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `ip_address`, `user_
 (27, 11, '1f2869d9-123f-4986-a7a2-b46dc5a1a0c3', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-05 12:40:35', '2026-03-05 12:40:35', '2026-04-04 12:40:35', 1),
 (28, 7, '0c434ef1-2f9c-44f5-b442-3c4889621e80', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-12 06:43:39', '2026-03-12 06:43:39', '2026-04-11 06:43:39', 1),
 (29, 7, '190a71bf-fc7d-4e6e-b474-3d131b7a32a1', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-12 06:44:38', '2026-03-12 06:44:38', '2026-04-11 06:44:38', 1),
-(30, 7, '99befbe7-3601-4c7e-aefa-18db1bb475e8', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-23 08:45:46', '2026-03-23 08:45:46', '2026-04-22 08:45:46', 1);
+(30, 7, '99befbe7-3601-4c7e-aefa-18db1bb475e8', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-23 08:45:46', '2026-03-23 08:45:46', '2026-04-22 08:45:46', 1),
+(31, 7, 'ad46b0da-b37d-47b1-b58e-1cf09d36e527', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-24 02:46:10', '2026-03-24 02:46:10', '2026-04-23 02:46:10', 1),
+(32, 7, 'd754e1ce-bfac-41cd-96a1-fb2059051440', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-24 02:48:26', '2026-03-24 02:48:26', '2026-04-23 02:48:26', 1),
+(33, 11, '5f55a02d-7e6c-4b09-bc42-b7e3ebfdc26d', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', '2026-03-24 02:51:07', '2026-03-24 02:51:07', '2026-04-23 02:51:07', 1);
 
 -- --------------------------------------------------------
 
@@ -1032,7 +1055,8 @@ ALTER TABLE `email_logs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_order_number` (`order_number`),
   ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_created_at` (`created_at`);
+  ADD KEY `idx_created_at` (`created_at`),
+  ADD KEY `fk_order_email` (`order_id`);
 
 --
 -- Indexes for table `login_activity`
@@ -1248,7 +1272,7 @@ ALTER TABLE `banners`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -1260,25 +1284,25 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT for table `email_logs`
 --
 ALTER TABLE `email_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `login_activity`
 --
 ALTER TABLE `login_activity`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `order_returns`
@@ -1296,7 +1320,7 @@ ALTER TABLE `order_settings`
 -- AUTO_INCREMENT for table `order_status_history`
 --
 ALTER TABLE `order_status_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `order_status_timeouts`
@@ -1398,7 +1422,7 @@ ALTER TABLE `user_backup_codes`
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `user_settings`
@@ -1416,6 +1440,12 @@ ALTER TABLE `user_settings`
 ALTER TABLE `cart`
   ADD CONSTRAINT `fk_cart_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_cart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `email_logs`
+--
+ALTER TABLE `email_logs`
+  ADD CONSTRAINT `fk_order_email` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `login_activity`
