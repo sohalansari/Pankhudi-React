@@ -4028,7 +4028,7 @@ const Header = () => {
 
                     <Link to="/" className="logo-main" onClick={closeMobileMenu}>
                         <motion.h1
-                            className="logo-text-main"
+                            className="brand-name"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}

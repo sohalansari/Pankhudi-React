@@ -25,7 +25,6 @@ export const addToCart = async (product_id, quantity = 1) => {
     return res.json();
 };
 
-// Fetch all cart items for a user
 export const fetchCartItems = async () => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -41,7 +40,6 @@ export const fetchCartItems = async () => {
     return data.items || [];
 };
 
-// Fetch cart count
 export const fetchCartCount = async (userId) => {
     const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE_URL}/cart/count/${userId}`, {
@@ -50,10 +48,10 @@ export const fetchCartCount = async (userId) => {
         },
     });
     if (!res.ok) throw new Error("Failed to fetch cart count");
-    return res.json(); // returns { count: number }
+    return res.json();
 };
 
-// Update cart item quantity
+
 export const updateCartItem = async (cart_id, quantity) => {
     const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE_URL}/cart/update/${cart_id}`, {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 24, 2026 at 08:29 AM
+-- Generation Time: Mar 29, 2026 at 12:42 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -172,55 +172,69 @@ CREATE TABLE `login_activity` (
   `device_type` varchar(20) DEFAULT NULL,
   `location` varchar(100) DEFAULT NULL,
   `status` varchar(20) DEFAULT 'success',
-  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
+  `details` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `login_activity`
 --
 
-INSERT INTO `login_activity` (`id`, `user_id`, `action`, `ip_address`, `user_agent`, `browser`, `os`, `device_type`, `location`, `status`, `timestamp`) VALUES
-(40, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 10:54:38'),
-(45, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 16:29:34'),
-(46, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 16:29:45'),
-(47, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 16:30:09'),
-(48, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-02-17 16:30:15'),
-(49, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-02-17 16:30:37'),
-(50, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 16:30:47'),
-(51, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 17:41:55'),
-(52, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:42:16'),
-(53, 4, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:44:13'),
-(54, 4, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:44:38'),
-(55, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 17:57:12'),
-(56, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-18 07:42:58'),
-(57, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:43:10'),
-(58, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:44:24'),
-(59, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-18 07:45:38'),
-(60, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:45:46'),
-(62, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-21 11:05:40'),
-(63, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-21 11:12:52'),
-(64, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-21 11:12:58'),
-(67, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:34:46'),
-(68, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:37:01'),
-(69, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:38:24'),
-(70, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:40:35'),
-(71, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-12 06:43:22'),
-(72, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-12 06:43:39'),
-(73, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-12 06:43:57'),
-(74, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-03-12 06:44:05'),
-(75, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-03-12 06:44:23'),
-(76, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-12 06:44:38'),
-(77, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-23 08:45:25'),
-(78, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-23 08:45:46'),
-(79, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:45:50'),
-(80, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:46:10'),
-(81, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:46:48'),
-(82, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:47:03'),
-(83, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:12'),
-(84, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:48:26'),
-(85, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:40'),
-(86, 7, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'pending_2fa', '2026-03-24 02:50:45'),
-(87, 11, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'success', '2026-03-24 02:51:07');
+INSERT INTO `login_activity` (`id`, `user_id`, `action`, `ip_address`, `user_agent`, `browser`, `os`, `device_type`, `location`, `status`, `timestamp`, `details`) VALUES
+(40, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 10:54:38', NULL),
+(45, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 16:29:34', NULL),
+(46, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 16:29:45', NULL),
+(47, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 16:30:09', NULL),
+(48, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-02-17 16:30:15', NULL),
+(49, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-02-17 16:30:37', NULL),
+(50, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 16:30:47', NULL),
+(51, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 17:41:55', NULL),
+(52, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:42:16', NULL),
+(53, 4, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:44:13', NULL),
+(54, 4, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-17 17:44:38', NULL),
+(55, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-17 17:57:12', NULL),
+(56, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-18 07:42:58', NULL),
+(57, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:43:10', NULL),
+(58, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:44:24', NULL),
+(59, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-18 07:45:38', NULL),
+(60, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-18 07:45:46', NULL),
+(62, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-21 11:05:40', NULL),
+(63, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-02-21 11:12:52', NULL),
+(64, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-02-21 11:12:58', NULL),
+(67, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:34:46', NULL),
+(68, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:37:01', NULL),
+(69, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:38:24', NULL),
+(70, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-05 12:40:35', NULL),
+(71, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-12 06:43:22', NULL),
+(72, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-12 06:43:39', NULL),
+(73, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-12 06:43:57', NULL),
+(74, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-03-12 06:44:05', NULL),
+(75, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'failed_2fa', '2026-03-12 06:44:23', NULL),
+(76, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-12 06:44:38', NULL),
+(77, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-23 08:45:25', NULL),
+(78, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-23 08:45:46', NULL),
+(79, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:45:50', NULL),
+(80, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:46:10', NULL),
+(81, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:46:48', NULL),
+(82, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:47:03', NULL),
+(83, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:12', NULL),
+(84, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-24 02:48:26', NULL),
+(85, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-24 02:48:40', NULL),
+(86, 7, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'pending_2fa', '2026-03-24 02:50:45', NULL),
+(87, 11, 'Login', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', NULL, 'success', '2026-03-24 02:51:07', NULL),
+(88, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 04:57:44', NULL),
+(89, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-29 06:25:50', NULL),
+(90, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-29 06:26:13', NULL),
+(91, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 06:26:38', NULL),
+(92, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'pending_2fa', '2026-03-29 06:27:31', NULL),
+(93, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 06:27:53', NULL),
+(94, 7, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 06:28:21', NULL),
+(95, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 06:31:29', NULL),
+(96, 12, 'admin_login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, NULL, NULL, NULL, 'failed', '2026-03-29 07:44:48', 'Invalid password'),
+(97, 11, 'admin_login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, NULL, NULL, NULL, 'success', '2026-03-29 07:45:39', 'Login successful'),
+(98, 12, 'admin_login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, NULL, NULL, NULL, 'failed', '2026-03-29 07:46:18', 'Invalid password'),
+(99, 11, 'admin_login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, NULL, NULL, NULL, 'success', '2026-03-29 07:54:11', 'Login successful'),
+(100, 11, 'Login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', NULL, 'success', '2026-03-29 09:35:44', NULL);
 
 -- --------------------------------------------------------
 
@@ -287,11 +301,11 @@ CREATE TABLE `orders` (
 
 INSERT INTO `orders` (`id`, `order_number`, `user_id`, `shipping_full_name`, `shipping_address`, `shipping_city`, `shipping_state`, `shipping_postal_code`, `shipping_country`, `shipping_phone`, `shipping_email`, `billing_full_name`, `billing_address`, `billing_city`, `billing_state`, `billing_postal_code`, `billing_country`, `payment_method`, `payment_id`, `payment_status`, `payment_amount`, `subtotal`, `tax_amount`, `shipping_charge`, `discount_amount`, `total_amount`, `order_status`, `order_note`, `order_date`, `payment_date`, `shipped_date`, `delivered_date`, `cancelled_date`, `checkout_type`, `ip_address`, `user_agent`, `estimated_delivery`, `delivered_at`, `cancelled_at`, `cancelled_by`, `deleted_at`, `deleted_by`, `cancellation_reason`, `tracking_number`, `courier_name`, `courier_website`, `current_location`, `return_request_id`, `confirmed_at`, `updated_at`) VALUES
 (27, 'ORD-20260217-4772', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SHCisN8hXm2bOH', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'processing', NULL, '2026-02-17 11:57:08', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-02-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(29, 'ORD-20260217-9889', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 2008.63, 0.00, 0.00, 0.00, 2008.63, 'pending', NULL, '2026-02-17 17:38:43', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-02-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(29, 'ORD-20260217-9889', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'pending', 0.00, 2008.63, 0.00, 0.00, 0.00, 2008.63, 'pending', NULL, '2026-02-17 17:38:43', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-02-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 11:59:59'),
 (31, 'ORD-20260305-1138', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', 'sohalansari4934@gmail.com', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SNY52dlWb5Orjl', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'processing', NULL, '2026-03-05 12:44:41', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (32, 'ORD-20260323-6769', 7, 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'sohail Ansari', 'near noorani masjid S G Brave Marge Kurla East', 'Mumbai', 'Maharashtra', '400024', 'India', 'razorpay', 'pay_SUil2TyV2bt8UT', 'completed', 0.00, 1.00, 0.00, 0.00, 0.00, 1.00, 'shipped', NULL, '2026-03-23 15:44:25', NULL, '2026-03-23 21:21:01', NULL, NULL, 'cart', NULL, NULL, '2026-03-28', NULL, NULL, NULL, NULL, NULL, NULL, '85748149952', 'Delhivery', 'http://localhost:3000/orders', NULL, NULL, NULL, '2026-03-23 21:22:08'),
 (33, 'ORD-20260324-6288', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 399.60, 0.00, 0.00, 0.00, 399.60, 'pending', NULL, '2026-03-24 06:34:36', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(34, 'ORD-20260324-1762', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'completed', 0.00, 419.72, 0.00, 0.00, 0.00, 419.72, 'pending', NULL, '2026-03-24 07:27:49', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(34, 'ORD-20260324-1762', 11, 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', '8574814934', '', 'Sohal Ansari', 'Kurla East\nS G Brave Marge', 'Mumbai', 'Maharashtra', '400024', 'India', 'cod', NULL, 'failed', 0.00, 419.72, 0.00, 0.00, 0.00, 419.72, 'pending', NULL, '2026-03-24 07:27:49', NULL, NULL, NULL, NULL, 'cart', NULL, NULL, '2026-03-29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 12:00:55');
 
 --
 -- Triggers `orders`
@@ -651,22 +665,33 @@ CREATE TABLE `reviews` (
   `user_id` int(11) NOT NULL,
   `rating` int(11) NOT NULL,
   `review` text NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `approved` tinyint(1) DEFAULT 0,
+  `admin_reply` text DEFAULT NULL,
+  `admin_reply_date` datetime DEFAULT NULL,
+  `admin_reply_by` int(11) DEFAULT NULL,
+  `moderated_by` int(11) DEFAULT NULL,
+  `moderated_at` datetime DEFAULT NULL,
+  `moderation_note` text DEFAULT NULL,
+  `order_id` int(11) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `reviews`
 --
 
-INSERT INTO `reviews` (`id`, `product_id`, `user_id`, `rating`, `review`, `created_at`) VALUES
-(1, 1, 1, 5, 'I am 5\'5\", 150 lbs., and wear a 36D bra. I ordered large because I wanted this to be loose and comfy for pajamas. The fabric is a nice, thick sweatshirt fabric that is soft on the inside. The large fits perfectly through the shoulders, but is a bit big, square, and boxy through the torso. A medium probably would have been too snug across the shoulders, but a better loose fit through the torso, so the large is the best fit for what I wanted. Overall, I feel the quality is good, and I am happy with my purchase.', '2025-12-20 10:14:57'),
-(2, 2, 1, 5, 'kkjjk', '2026-01-10 10:20:44'),
-(3, 2, 1, 4, 'knkjnnjk\n', '2026-01-10 10:21:01'),
-(4, 2, 1, 5, 'knkn', '2026-01-10 10:21:07'),
-(5, 2, 1, 5, 'mn m', '2026-01-10 10:21:17'),
-(6, 2, 1, 5, 'mn kkkkkkj', '2026-01-10 10:21:23'),
-(7, 2, 1, 5, 'jhbnmjhb', '2026-01-10 10:21:32'),
-(8, 2, 1, 5, 'kj', '2026-01-10 10:22:05');
+INSERT INTO `reviews` (`id`, `product_id`, `user_id`, `rating`, `review`, `created_at`, `approved`, `admin_reply`, `admin_reply_date`, `admin_reply_by`, `moderated_by`, `moderated_at`, `moderation_note`, `order_id`, `updated_at`) VALUES
+(1, 1, 1, 5, 'I am 5\'5\", 150 lbs., and wear a 36D bra. I ordered large because I wanted this to be loose and comfy for pajamas. The fabric is a nice, thick sweatshirt fabric that is soft on the inside. The large fits perfectly through the shoulders, but is a bit big, square, and boxy through the torso. A medium probably would have been too snug across the shoulders, but a better loose fit through the torso, so the large is the best fit for what I wanted. Overall, I feel the quality is good, and I am happy with my purchase.', '2025-12-20 10:14:57', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(2, 2, 1, 5, 'kkjjk', '2026-01-10 10:20:44', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(3, 2, 1, 5, 'knkjnnjk\n', '2026-01-10 10:21:01', 1, NULL, NULL, NULL, 11, '2026-03-29 14:23:38', NULL, NULL, '2026-03-29 08:53:50'),
+(4, 2, 1, 5, 'knkn', '2026-01-10 10:21:07', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(5, 2, 1, 5, 'mn m', '2026-01-10 10:21:17', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(6, 2, 1, 5, 'mn kkkkkkj', '2026-01-10 10:21:23', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(7, 2, 1, 5, 'jhbnmjhb', '2026-01-10 10:21:32', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-29 06:55:46'),
+(8, 2, 1, 5, 'kj', '2026-01-10 10:22:05', 1, 'yes', '2026-03-29 13:55:30', 11, NULL, NULL, NULL, NULL, '2026-03-29 08:26:04'),
+(9, 10, 11, 5, 'hiiii', '2026-03-29 08:26:53', 1, NULL, NULL, NULL, 11, '2026-03-29 13:57:13', NULL, NULL, '2026-03-29 08:27:13'),
+(10, 10, 11, 5, 'hii helo', '2026-03-29 08:27:31', 0, 'he', '2026-03-29 13:58:00', 11, NULL, NULL, NULL, NULL, '2026-03-29 09:55:13');
 
 -- --------------------------------------------------------
 
@@ -839,7 +864,7 @@ CREATE TABLE `two_fa` (
 
 INSERT INTO `two_fa` (`id`, `user_id`, `secret`, `backup_codes`, `enabled`, `created_at`, `updated_at`) VALUES
 (2, 5, 'JRSFUYLWJJLTM4BPJI2W2ORFGZBWEY2N', NULL, 0, '2026-02-08 13:46:20', '2026-02-09 04:53:24'),
-(3, 7, 'GVFUSORIIFEUGKCUPVKDGT3OI4SEOWCU', '[\"RVBQ94Q9\",\"SHY4IW12\",\"EXCDBWKL\",\"17W83DZZ\",\"1QMQMXMJ\",\"OVU57M4U\",\"AUMFKNDT\",\"JAX2H1EG\"]', 1, '2026-02-14 08:43:46', '2026-02-18 07:45:06');
+(3, 7, 'GVFUSORIIFEUGKCUPVKDGT3OI4SEOWCU', NULL, 0, '2026-02-14 08:43:46', '2026-03-29 06:28:01');
 
 -- --------------------------------------------------------
 
@@ -873,20 +898,26 @@ CREATE TABLE `users` (
   `gender` enum('male','female','other') DEFAULT NULL,
   `newsletter_subscribed` tinyint(1) DEFAULT 0,
   `is_deleted` tinyint(1) DEFAULT 0,
-  `deleted_at` timestamp NULL DEFAULT NULL
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `is_admin` tinyint(1) DEFAULT 0,
+  `failed_attempts` int(11) DEFAULT 0,
+  `locked_until` datetime DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expiry` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `phone`, `address`, `google_id`, `avatar`, `auth_method`, `otp`, `otp_expiration`, `is_active`, `is_verified`, `is_premium`, `created_at`, `updated_at`, `last_login`, `city`, `state`, `postal_code`, `country`, `date_of_birth`, `gender`, `newsletter_subscribed`, `is_deleted`, `deleted_at`) VALUES
-(1, 'Sohal ansari', 'sss2424786@gmail.com', '$2b$12$LFpEWQGqxu9pKSS6rnaxFeTaFDAif/qMHawDHHCKEltvMrY7NVtQG', '1234567891', 'Near Noorani Masjid Kurla East Maharastra Mumbai', NULL, 'uploads/avatars/avatar_1.jpg', 'local', NULL, NULL, 1, 1, 1, '2025-12-20 06:13:26', '2025-12-28 12:37:42', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(3, 'Shaziya Khan', 'khanshaziya0221@gmail.com', '$2b$12$z0BVg3o/e/JALtU6dWPqme88a4OGcHLV03WZNfDD1UxuD60qczcfG', '8928242895', 'chirag nagar Ghatkopar West Mumbai Maharastra', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-01-10 10:34:35', '2026-03-12 07:32:55', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(4, 'Pankhudi Demo', 'pankhudiforyou@gmail.com', '$2b$12$SNwnPyfsAy7VwG2UA8bsieT/9NKaRhR7Bve9xOH30MN8tl2IuYA4e', '1478523698', 'asfghjkl;weeyuiopxcvbnmfghjkl; er fdghjkl fghjkms sdvcn knkj nbnkf bngb gbkj bnfgb kbnk nfgnbkjnb krnbk knbknbgngnb kgnkgn ngkblgf ', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:16:41', '2026-01-23 05:16:41', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(5, 'Kartik', 'shettykartik112@gmail.com', '$2b$10$zvu.2pvmKcRfenQDE0ACu.x.NCs85WDkGmqaIeCaMSjWguLwN1gyO', '1478523611', '123wydgferhri kdfjhjw kjrhhkjfbnk rkjjnkfn kfjjfkn kfjkjfn fkbfjkn kjfnbkjfn ', NULL, 'uploads/avatars/avatar_5.jpg', 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:23:27', '2026-02-08 20:23:42', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(7, 'sohail Ansari', 'mosohal496@gmail.com', '$2b$12$pg5p6PBTgFPaAl0mUmGAXeTYF85qe.y5F4ReExaWz1K5504i65J5W', '8574814920', 'near noorani masjid S G Brave Marge Kurla East', '108138111581736976242', 'https://lh3.googleusercontent.com/a/ACg8ocKqWBkR8XuKLdaHv03XcUKhZif2z_p5IG5CIUMJHmG5Nipbo2I=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-02-12 04:31:27', '2026-03-23 08:45:25', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL),
-(11, 'Sohal Ansari', 'sohalansari4934@gmail.com', '$2b$10$hkP9zZiSpP2EkfNqnP.3ie8APGFcurq5Mh.udrkqIxH1QEBP15.cS', '8574814934', 'Kurla East\nS G Brave Marge', '107588506937356749585', 'https://lh3.googleusercontent.com/a/ACg8ocJv8GL0p2oawNZ5pElX1m0edQtwsmfKlXI_PMhitihYXGKsBzFw=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-03-05 12:34:46', '2026-03-24 02:51:07', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, '2026-03-05 12:35:22');
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `phone`, `address`, `google_id`, `avatar`, `auth_method`, `otp`, `otp_expiration`, `is_active`, `is_verified`, `is_premium`, `created_at`, `updated_at`, `last_login`, `city`, `state`, `postal_code`, `country`, `date_of_birth`, `gender`, `newsletter_subscribed`, `is_deleted`, `deleted_at`, `is_admin`, `failed_attempts`, `locked_until`, `reset_token`, `reset_token_expiry`) VALUES
+(1, 'Sohal ansari', 'sss2424786@gmail.com', '$2b$12$LFpEWQGqxu9pKSS6rnaxFeTaFDAif/qMHawDHHCKEltvMrY7NVtQG', '1234567891', 'Near Noorani Masjid Kurla East Maharastra Mumbai', NULL, 'uploads/avatars/avatar_1.jpg', 'local', NULL, NULL, 1, 1, 1, '2025-12-20 06:13:26', '2025-12-28 12:37:42', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 0, 0, NULL, NULL, NULL),
+(3, 'Shaziya Khan', 'khanshaziya0221@gmail.com', '$2b$12$z0BVg3o/e/JALtU6dWPqme88a4OGcHLV03WZNfDD1UxuD60qczcfG', '8928242895', 'chirag nagar Ghatkopar West Mumbai Maharastra', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-01-10 10:34:35', '2026-03-12 07:32:55', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 0, 0, NULL, NULL, NULL),
+(4, 'Pankhudi Demo', 'pankhudiforyou@gmail.com', '$2b$12$SNwnPyfsAy7VwG2UA8bsieT/9NKaRhR7Bve9xOH30MN8tl2IuYA4e', '1478523698', 'asfghjkl;weeyuiopxcvbnmfghjkl; er fdghjkl fghjkms sdvcn knkj nbnkf bngb gbkj bnfgb kbnk nfgnbkjnb krnbk knbknbgngnb kgnkgn ngkblgf ', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:16:41', '2026-01-23 05:16:41', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 0, 0, NULL, NULL, NULL),
+(5, 'Kartik', 'shettykartik112@gmail.com', '$2b$10$zvu.2pvmKcRfenQDE0ACu.x.NCs85WDkGmqaIeCaMSjWguLwN1gyO', '1478523611', '123wydgferhri kdfjhjw kjrhhkjfbnk rkjjnkfn kfjjfkn kfjkjfn fkbfjkn kjfnbkjfn ', NULL, 'uploads/avatars/avatar_5.jpg', 'local', NULL, NULL, 1, 1, 0, '2026-01-23 05:23:27', '2026-02-08 20:23:42', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 0, 0, NULL, NULL, NULL),
+(7, 'sohail Ansari', 'mosohal496@gmail.com', '$2b$12$pg5p6PBTgFPaAl0mUmGAXeTYF85qe.y5F4ReExaWz1K5504i65J5W', '8574814920', 'near noorani masjid S G Brave Marge Kurla East', '108138111581736976242', 'https://lh3.googleusercontent.com/a/ACg8ocKqWBkR8XuKLdaHv03XcUKhZif2z_p5IG5CIUMJHmG5Nipbo2I=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-02-12 04:31:27', '2026-03-23 08:45:25', NULL, NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 0, 0, NULL, NULL, NULL),
+(11, 'Sohal Ansari', 'sohalansari4934@gmail.com', '$2b$10$tinXPLI/5naNfWFCmLllTOaLKr0hUS806eu.Y7sRj2EbzzSdcIjcy', '8574814934', 'Kurla East\nS G Brave Marge', '107588506937356749585', 'https://lh3.googleusercontent.com/a/ACg8ocJv8GL0p2oawNZ5pElX1m0edQtwsmfKlXI_PMhitihYXGKsBzFw=s96-c', 'local', NULL, NULL, 1, 1, 0, '2026-03-05 12:34:46', '2026-03-29 10:27:47', '2026-03-29 15:57:47', NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, '2026-03-05 12:35:22', 1, 0, NULL, NULL, NULL),
+(12, 'Admin User', 'admin@pankhudi.com', '$2b$10$7UkYyVz.TnGkjNM/KgIODuqfeL7PWSJQhyRl5WXxshxS1lA3VyCmK', '', '', NULL, NULL, 'local', NULL, NULL, 1, 1, 0, '2026-03-29 07:24:17', '2026-03-29 10:08:13', '2026-03-29 15:38:13', NULL, NULL, NULL, 'India', NULL, NULL, 0, 0, NULL, 1, 3, '2026-03-29 13:21:18', '53de4c58c4c1ef4913bbf591ff8299a5658908bbfbc23a2bcef2a8c348f8d947', '2026-03-29 14:21:17');
 
 -- --------------------------------------------------------
 
@@ -991,7 +1022,13 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `ip_address`, `user_
 (30, 7, '99befbe7-3601-4c7e-aefa-18db1bb475e8', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-23 08:45:46', '2026-03-23 08:45:46', '2026-04-22 08:45:46', 1),
 (31, 7, 'ad46b0da-b37d-47b1-b58e-1cf09d36e527', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-24 02:46:10', '2026-03-24 02:46:10', '2026-04-23 02:46:10', 1),
 (32, 7, 'd754e1ce-bfac-41cd-96a1-fb2059051440', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-24 02:48:26', '2026-03-24 02:48:26', '2026-04-23 02:48:26', 1),
-(33, 11, '5f55a02d-7e6c-4b09-bc42-b7e3ebfdc26d', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', '2026-03-24 02:51:07', '2026-03-24 02:51:07', '2026-04-23 02:51:07', 1);
+(33, 11, '5f55a02d-7e6c-4b09-bc42-b7e3ebfdc26d', '::1', 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', 'Chrome', 'Linux', 'mobile', '2026-03-24 02:51:07', '2026-03-24 02:51:07', '2026-04-23 02:51:07', 1),
+(34, 11, '85157e41-5621-470c-9d2d-288e57ca2672', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 04:57:44', '2026-03-29 04:57:44', '2026-04-28 04:57:44', 1),
+(35, 7, '56268017-200b-4313-af9c-25348ab8eb0b', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 06:26:38', '2026-03-29 06:26:38', '2026-04-28 06:26:38', 1),
+(36, 7, '43f42972-6fab-4a8b-a859-36ae48c8f83b', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 06:27:53', '2026-03-29 06:27:53', '2026-04-28 06:27:53', 1),
+(37, 7, 'a91c2d2f-3d54-4674-aacf-688d7c00573e', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 06:28:21', '2026-03-29 06:28:21', '2026-04-28 06:28:21', 1),
+(38, 11, '9a2ae06f-2428-4d72-9eb4-01b633e597cb', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 06:31:29', '2026-03-29 06:31:29', '2026-04-28 06:31:29', 1),
+(39, 11, '0bbcfab5-f332-4802-90e7-453df2caa19d', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', 'Chrome', 'Windows', 'desktop', '2026-03-29 09:35:44', '2026-03-29 09:35:44', '2026-04-28 09:35:44', 1);
 
 -- --------------------------------------------------------
 
@@ -1179,7 +1216,8 @@ ALTER TABLE `registration_otps`
 ALTER TABLE `reviews`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_reviews_product` (`product_id`),
-  ADD KEY `fk_reviews_user` (`user_id`);
+  ADD KEY `fk_reviews_user` (`user_id`),
+  ADD KEY `fk_reviews_order` (`order_id`);
 
 --
 -- Indexes for table `sessions`
@@ -1290,7 +1328,7 @@ ALTER TABLE `email_logs`
 -- AUTO_INCREMENT for table `login_activity`
 --
 ALTER TABLE `login_activity`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
 
 --
 -- AUTO_INCREMENT for table `orders`
@@ -1368,7 +1406,7 @@ ALTER TABLE `registration_otps`
 -- AUTO_INCREMENT for table `reviews`
 --
 ALTER TABLE `reviews`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `sessions`
@@ -1404,7 +1442,7 @@ ALTER TABLE `two_fa`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `user_addresses`
@@ -1422,7 +1460,7 @@ ALTER TABLE `user_backup_codes`
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `user_settings`
@@ -1513,6 +1551,7 @@ ALTER TABLE `promo_code_usage`
 -- Constraints for table `reviews`
 --
 ALTER TABLE `reviews`
+  ADD CONSTRAINT `fk_reviews_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_reviews_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_reviews_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 

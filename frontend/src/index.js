@@ -6,9 +6,8 @@ import reportWebVitals from './reportWebVitals';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-// Comprehensive ResizeObserver error handler
+
 const initErrorHandling = () => {
-  // Handle ResizeObserver loop errors
   const originalError = console.error;
   console.error = (...args) => {
     if (args.length > 0) {
@@ -18,14 +17,11 @@ const initErrorHandling = () => {
         message.includes('ResizeObserver') &&
         message.includes('loop')
       ) {
-        // Silently ignore ResizeObserver loop errors
         return;
       }
     }
     originalError.apply(console, args);
   };
-
-  // Handle uncaught errors related to ResizeObserver
   window.addEventListener('error', (event) => {
     if (
       event.error &&
@@ -39,11 +35,9 @@ const initErrorHandling = () => {
   });
 };
 
-// Initialize error handling
 initErrorHandling();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-
 root.render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId="311061587151-ggc8p3u0v9rkjtnboq6ttic11glpd9rt.apps.googleusercontent.com">
@@ -52,5 +46,4 @@ root.render(
   </React.StrictMode>
 );
 
-// Optional: For measuring performance
 reportWebVitals();

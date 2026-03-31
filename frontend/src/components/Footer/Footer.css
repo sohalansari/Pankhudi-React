@@ -85,7 +85,7 @@
 }
 
 /* Social links - Always horizontal */
-.social-linkss {
+.social-links {
     display: flex;
     gap: 12px;
     margin-top: 10px;
@@ -151,6 +151,7 @@
 
 /* Contact info */
 .contact-in {
+    display: contents;
     list-style: none;
     padding: 0;
     margin: 0 0 25px 0;

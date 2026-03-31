@@ -25,6 +25,8 @@
 
 // // Upload directory setup
 // const UPLOADS_DIR = path.join(__dirname, "uploads");
+// const TEMP_DIR = path.join(__dirname, "temp");
+
 // const ensureDirectoryExists = (dir) => {
 //     if (!fs.existsSync(dir)) {
 //         fs.mkdirSync(dir, { recursive: true });
@@ -32,45 +34,82 @@
 //     }
 // };
 // ensureDirectoryExists(UPLOADS_DIR);
+// ensureDirectoryExists(TEMP_DIR);
 
 // // ============================================
-// // 2. MIDDLEWARE - Core
+// // 2. MIDDLEWARE - Core (IMPORTANT: Order matters!)
 // // ============================================
 
-// // CORS Configuration
+// // ✅ Increase timeout for large file uploads - MUST be first
+// app.use((req, res, next) => {
+//     req.setTimeout(300000); // 5 minutes timeout
+//     res.setTimeout(300000); // 5 minutes timeout
+//     next();
+// });
+
+// // ✅ CORS Configuration
 // app.use(cors({
 //     origin: CLIENT_URLS,
 //     credentials: true,
 //     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-//     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-//     exposedHeaders: ["Content-Disposition"]
+//     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+//     exposedHeaders: ["Content-Disposition"],
+//     optionsSuccessStatus: 200
 // }));
 
+// // ✅ Body Parsers - INCREASED LIMITS for large form data
+// app.use(express.json({ limit: "50mb" }));
+// app.use(express.urlencoded({ extended: true, limit: "50mb", parameterLimit: 50000 }));
 
-// // Increase timeout for large file uploads
+// // ✅ File Upload - INCREASED LIMITS for product images
+// app.use(fileUpload({
+//     createParentPath: true,
+//     limits: {
+//         fileSize: 50 * 1024 * 1024, // 50MB total
+//         files: 25 // Max 25 files
+//     },
+//     abortOnLimit: true,
+//     responseOnLimit: "File size limit has been reached (50MB per file)",
+//     useTempFiles: true,
+//     tempFileDir: TEMP_DIR,
+//     parseNested: true,
+//     safeFileNames: true,
+//     preserveExtension: true,
+//     debug: NODE_ENV === "development", // Enable debug in development
+//     uploadTimeout: 300000, // 5 minutes upload timeout
+//     // Allow all file types for products
+//     fileFilter: (req, file) => {
+//         // Allow images and videos
+//         if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+//             return true;
+//         }
+//         return true; // Allow all files for now
+//     }
+// }));
+
+// // ✅ Add raw body logging for debugging (helps identify incomplete requests)
 // app.use((req, res, next) => {
-//     req.setTimeout(300000); // 5 minutes timeout
+//     if (req.method === 'POST' || req.method === 'PUT') {
+//         let bodySize = 0;
+//         req.on('data', chunk => {
+//             bodySize += chunk.length;
+//             if (bodySize > 50 * 1024 * 1024) {
+//                 console.warn(`⚠️ Large request body detected: ${(bodySize / 1024 / 1024).toFixed(2)}MB for ${req.url}`);
+//             }
+//         });
+//         req.on('end', () => {
+//             if (bodySize > 0) {
+//                 console.log(`📦 Request body size: ${(bodySize / 1024 / 1024).toFixed(2)}MB for ${req.method} ${req.url}`);
+//             }
+//         });
+//     }
 //     next();
 // });
 
 // // Static Files
-// app.use("/uploads", express.static(UPLOADS_DIR));
-
-// // Body Parsers
-// app.use(express.json({ limit: "10mb" }));
-// app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-// // File Upload
-// app.use(fileUpload({
-//     createParentPath: true,
-//     limits: { fileSize: 5 * 1024 * 1024 },
-//     abortOnLimit: true,
-//     responseOnLimit: "File size limit has been reached (5MB)",
-//     useTempFiles: true,
-//     tempFileDir: path.join(__dirname, 'temp'),
-//     parseNested: true,
-//     safeFileNames: true,
-//     preserveExtension: 4
+// app.use("/uploads", express.static(UPLOADS_DIR, {
+//     maxAge: '1d', // Cache static files for 1 day
+//     etag: true
 // }));
 
 // // ============================================
@@ -90,6 +129,11 @@
 //             console.log(
 //                 `${statusColor}${req.method}\x1b[0m ${req.url} - ${res.statusCode} - ${duration}ms`
 //             );
+
+//             // Log if response time is too high
+//             if (duration > 5000) {
+//                 console.warn(`⚠️ Slow request: ${req.method} ${req.url} took ${duration}ms`);
+//             }
 //         });
 //         next();
 //     });
@@ -127,6 +171,8 @@
 // const promoCodeRoutes = require("./routes/promoCodeRoutes");
 // const orderRoutes = require("./routes/orderRoutes");
 // const dashboardRoutes = require("./routes/dashboardRoutes");
+// const reviewRoutes = require("./routes/reviews");
+// const adminRoutes = require("./routes/adminRoutes");
 
 // // ============================================
 // // 6. ROUTES - Mount
@@ -142,6 +188,8 @@
 // app.use("/api", categoryManagementRoutes);
 // app.use("/api/promocodes", promoCodeRoutes);
 // app.use("/api/orders", orderRoutes);
+// app.use("/api/reviews", reviewRoutes);
+// app.use("/api/admin", require("./routes/adminRoutes"));
 
 // // ============================================
 // // 7. PUBLIC ENDPOINTS
@@ -177,6 +225,12 @@
 //         version: "1.0.0",
 //         environment: NODE_ENV,
 //         uptime: process.uptime(),
+//         limits: {
+//             fileSize: "50MB",
+//             maxFiles: 25,
+//             bodyLimit: "50MB",
+//             timeout: "5 minutes"
+//         },
 //         memory: {
 //             rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`,
 //             heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`,
@@ -361,11 +415,12 @@
 //         contentType: req.headers["content-type"],
 //         body: req.body,
 //         files: req.files ? Object.keys(req.files) : null,
+//         bodySize: req.rawBody ? req.rawBody.length : 0,
 //         timestamp: new Date().toISOString()
 //     });
 // });
 
-// // Test Upload Endpoint
+// // Test Upload Endpoint (with increased limits)
 // app.post("/api/test-upload", (req, res) => {
 //     try {
 //         if (!req.files || !req.files.image) {
@@ -397,6 +452,7 @@
 //                     fileName: image.name,
 //                     filePath: `/uploads/test/${path.basename(uploadPath)}`,
 //                     size: image.size,
+//                     sizeInMB: (image.size / 1024 / 1024).toFixed(2) + "MB",
 //                     mimetype: image.mimetype,
 //                     bodyFields: req.body
 //                 }
@@ -468,7 +524,32 @@
 
 // // Global Error Handler
 // app.use((err, req, res, next) => {
-//     console.error("🔥 Server Error:", err.stack);
+//     console.error("🔥 Server Error:", err.stack || err.message);
+
+//     // Handle multer errors from product route
+//     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Too many files uploaded",
+//             details: `Maximum ${err.field} files allowed`
+//         });
+//     }
+
+//     if (err.code === 'LIMIT_FILE_SIZE') {
+//         return res.status(413).json({
+//             success: false,
+//             message: "File too large",
+//             details: "Maximum file size is 50MB per file"
+//         });
+//     }
+
+//     if (err.code === 'LIMIT_PART_COUNT') {
+//         return res.status(413).json({
+//             success: false,
+//             message: "Form data too large",
+//             details: "Please reduce the number of fields or file sizes"
+//         });
+//     }
 
 //     // Handle JSON parsing errors
 //     if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
@@ -478,11 +559,28 @@
 //         });
 //     }
 
-//     // Handle file size limit
-//     if (err.code === "LIMIT_FILE_SIZE") {
+//     // Handle file size limit from express-fileupload
+//     if (err.message && err.message.includes("File size limit")) {
 //         return res.status(413).json({
 //             success: false,
-//             message: "File size too large. Maximum size is 5MB"
+//             message: "File size too large",
+//             details: "Maximum size is 50MB per file"
+//         });
+//     }
+
+//     // Handle unexpected end of form
+//     if (err.message === "Unexpected end of form") {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Form data is incomplete",
+//             details: "The form submission was cut off. Please check:",
+//             suggestions: [
+//                 "Try uploading fewer images at once",
+//                 "Reduce the size of images (compress them first)",
+//                 "Check your internet connection",
+//                 "Increase the request timeout in your frontend",
+//                 "Try submitting the form again"
+//             ]
 //         });
 //     }
 
@@ -494,20 +592,14 @@
 //         timestamp: new Date().toISOString()
 //     });
 // });
-// // ✅ Fixed: Removed duplicate fileUpload middleware
-// // Global fileUpload already configured above with proper Windows temp path
-// console.log('✅ App middleware configured: fileUpload active');
+
+// console.log('✅ App middleware configured: fileUpload active with 50MB limit');
 
 // // ============================================
 // // 10. EXPORT
 // // ============================================
 
 // module.exports = app;
-
-
-
-
-
 
 
 
@@ -695,6 +787,8 @@ const categoryManagementRoutes = require("./routes/categories");
 const promoCodeRoutes = require("./routes/promoCodeRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const reviewRoutes = require("./routes/reviews"); // Updated path
+const adminAuthRoutes = require("./routes/adminRoutes"); // Admin authentication routes
 
 // ============================================
 // 6. ROUTES - Mount
@@ -710,6 +804,8 @@ app.use("/api/banners", bannerRoutes);
 app.use("/api", categoryManagementRoutes);
 app.use("/api/promocodes", promoCodeRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes); // Review routes
+app.use("/api/admin", adminAuthRoutes); // Admin authentication routes
 
 // ============================================
 // 7. PUBLIC ENDPOINTS
@@ -726,12 +822,20 @@ app.get("/", (req, res) => {
         endpoints: {
             documentation: "See /api/health for available endpoints",
             health: "/api/health",
+            admin: {
+                login: "/api/admin/login",
+                verify: "/api/admin/verify",
+                logout: "/api/admin/logout",
+                forgotPassword: "/api/admin/forgot-password",
+                resetPassword: "/api/admin/reset-password"
+            },
             dashboard: "/api/dashboard",
             orders: "/api/orders",
             products: "/api/products",
             users: "/api/users",
             categories: "/api/categories",
-            promoCodes: "/api/promocodes"
+            promoCodes: "/api/promocodes",
+            reviews: "/api/reviews"
         }
     });
 });
@@ -763,7 +867,9 @@ app.get("/api/health", (req, res) => {
             users: true,
             promoCodes: true,
             orders: true,
-            dashboard: true
+            dashboard: true,
+            reviews: true,
+            adminAuth: true
         }
     });
 });
@@ -795,6 +901,13 @@ app.get("/api/db-health", async (req, res) => {
             });
         });
 
+        // Get review count
+        const reviewCount = await new Promise((resolve) => {
+            db.query("SELECT COUNT(*) as count FROM reviews", (err, results) => {
+                resolve(err ? "Error" : results[0]?.count || 0);
+            });
+        });
+
         res.json({
             success: true,
             message: "Database is connected",
@@ -803,6 +916,7 @@ app.get("/api/db-health", async (req, res) => {
             statistics: {
                 orders: orderCount,
                 users: userCount,
+                reviews: reviewCount,
                 connection: testResult[0]?.connected === 1 ? "OK" : "Failed"
             }
         });
@@ -830,11 +944,14 @@ app.get("/api/global-stats", async (req, res) => {
         activePromoCodes: "SELECT COUNT(*) as count FROM promo_codes WHERE is_active = 1",
         orders: "SELECT COUNT(*) as total FROM orders WHERE deleted_at IS NULL",
         todayOrders: "SELECT COUNT(*) as count FROM orders WHERE DATE(order_date) = CURDATE() AND deleted_at IS NULL",
+        reviews: "SELECT COUNT(*) as total FROM reviews",
+        pendingReviews: "SELECT COUNT(*) as count FROM reviews WHERE approved = 0",
         latestCategory: "SELECT name FROM categories ORDER BY created_at DESC LIMIT 1",
         latestSubCategory: "SELECT name FROM sub_categories ORDER BY created_at DESC LIMIT 1",
         latestSubSubCategory: "SELECT name FROM sub_sub_categories ORDER BY created_at DESC LIMIT 1",
         latestPromo: "SELECT code as name FROM promo_codes ORDER BY created_at DESC LIMIT 1",
-        latestOrder: "SELECT order_number as name FROM orders ORDER BY order_date DESC LIMIT 1"
+        latestOrder: "SELECT order_number as name FROM orders ORDER BY order_date DESC LIMIT 1",
+        latestReview: "SELECT review as name FROM reviews ORDER BY created_at DESC LIMIT 1"
     };
 
     try {
@@ -873,6 +990,11 @@ app.get("/api/global-stats", async (req, res) => {
                 total: results.orders?.total || 0,
                 today: results.todayOrders?.count || 0,
                 latest: results.latestOrder?.name || "N/A"
+            },
+            reviews: {
+                total: results.reviews?.total || 0,
+                pending: results.pendingReviews?.count || 0,
+                latest: results.latestReview?.name ? results.latestReview.name.substring(0, 50) + "..." : "N/A"
             }
         };
 
@@ -924,6 +1046,52 @@ app.get("/api/promocodes-test", (req, res) => {
             "POST /api/promocodes/:id/use - Use promo code",
             "GET /api/promocodes/stats/overview - Get promo code statistics"
         ]
+    });
+});
+
+// Admin Auth Test Endpoint
+app.get("/api/admin-test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Admin Auth API is working",
+        endpoints: {
+            login: "POST /api/admin/login - Admin login",
+            verify2FA: "POST /api/admin/verify-2fa - Verify 2FA code",
+            forgotPassword: "POST /api/admin/forgot-password - Forgot password",
+            resetPassword: "POST /api/admin/reset-password - Reset password",
+            verify: "GET /api/admin/verify - Verify token",
+            logout: "POST /api/admin/logout - Admin logout"
+        },
+        testCredentials: {
+            email: "admin@pankhudi.com",
+            password: "Pankhudi@123",
+            note: "These are test credentials. Change in production!"
+        }
+    });
+});
+
+// Reviews Test Endpoint
+app.get("/api/reviews-test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Reviews API is working",
+        endpoints: {
+            admin: {
+                list: "GET /api/reviews/admin - Get all reviews (admin)",
+                stats: "GET /api/reviews/admin/stats - Get review stats",
+                details: "GET /api/reviews/admin/:id - Get single review",
+                moderate: "PATCH /api/reviews/admin/:id/moderate - Approve/reject review",
+                update: "PATCH /api/reviews/admin/:id - Update review",
+                delete: "DELETE /api/reviews/admin/:id - Delete review",
+                reply: "POST /api/reviews/admin/:id/reply - Add admin reply",
+                bulk: "PATCH /api/reviews/admin/bulk - Bulk actions"
+            },
+            public: {
+                list: "GET /api/reviews - Get public reviews",
+                create: "POST /api/reviews - Create review",
+                product: "GET /api/reviews/product/:productId - Get product reviews"
+            }
+        }
     });
 });
 
@@ -1011,6 +1179,30 @@ app.get("/api/debug/orders", (req, res) => {
     );
 });
 
+// Debug Reviews Endpoint
+app.get("/api/debug/reviews", (req, res) => {
+    const db = req.db;
+
+    db.query(
+        "SELECT r.id, r.rating, r.review, r.approved, r.created_at, p.name as product_name, u.name as user_name FROM reviews r LEFT JOIN products p ON r.product_id = p.id LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 5",
+        (err, reviews) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Error fetching reviews",
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success: true,
+                count: reviews?.length || 0,
+                reviews: reviews || []
+            });
+        }
+    );
+});
+
 // ============================================
 // 9. ERROR HANDLING
 // ============================================
@@ -1026,19 +1218,42 @@ app.use((req, res) => {
         requestedMethod: req.method,
         timestamp: new Date().toISOString(),
         availableEndpoints: [
-            "GET /api/health - Health check",
-            "GET /api/db-health - Database health check",
-            "GET /api/global-stats - Global statistics",
-            "GET /api/orders-test - Orders API test",
-            "GET /api/promocodes-test - Promo codes API test",
-            "GET /api/orders - Orders management",
-            "GET /api/products - Products management",
-            "GET /api/users - Users management",
-            "GET /api/categories - Categories management",
-            "POST /api/test-body - Test request body",
-            "POST /api/test-upload - Test file upload"
+            "Admin Auth:",
+            "  POST /api/admin/login - Admin login",
+            "  POST /api/admin/verify-2fa - Verify 2FA",
+            "  POST /api/admin/forgot-password - Forgot password",
+            "  POST /api/admin/reset-password - Reset password",
+            "  GET /api/admin/verify - Verify token",
+            "  POST /api/admin/logout - Admin logout",
+            "",
+            "Reviews:",
+            "  GET /api/reviews/admin - Get all reviews (admin)",
+            "  GET /api/reviews/admin/stats - Get review stats",
+            "  PATCH /api/reviews/admin/:id/moderate - Moderate review",
+            "  PATCH /api/reviews/admin/:id - Update review",
+            "  DELETE /api/reviews/admin/:id - Delete review",
+            "  POST /api/reviews/admin/:id/reply - Add admin reply",
+            "  PATCH /api/reviews/admin/bulk - Bulk actions",
+            "  GET /api/reviews - Public reviews",
+            "  POST /api/reviews - Create review",
+            "  GET /api/reviews/product/:productId - Product reviews",
+            "",
+            "General:",
+            "  GET /api/health - Health check",
+            "  GET /api/db-health - Database health check",
+            "  GET /api/global-stats - Global statistics",
+            "  GET /api/orders-test - Orders API test",
+            "  GET /api/promocodes-test - Promo codes API test",
+            "  GET /api/admin-test - Admin auth test",
+            "  GET /api/reviews-test - Reviews API test",
+            "  GET /api/orders - Orders management",
+            "  GET /api/products - Products management",
+            "  GET /api/users - Users management",
+            "  GET /api/categories - Categories management",
+            "  POST /api/test-body - Test request body",
+            "  POST /api/test-upload - Test file upload"
         ],
-        note: "Check your HTTP method (GET, POST, PUT, DELETE)"
+        note: "Check your HTTP method (GET, POST, PUT, DELETE, PATCH)"
     });
 });
 
@@ -1114,6 +1329,14 @@ app.use((err, req, res, next) => {
 });
 
 console.log('✅ App middleware configured: fileUpload active with 50MB limit');
+console.log('✅ Routes mounted:');
+console.log('   - /api/admin (authentication)');
+console.log('   - /api/reviews (review management)');
+console.log('   - /api/orders (order management)');
+console.log('   - /api/products (product management)');
+console.log('   - /api/users (user management)');
+console.log('   - /api/categories (category management)');
+console.log('   - /api/promocodes (promo code management)');
 
 // ============================================
 // 10. EXPORT

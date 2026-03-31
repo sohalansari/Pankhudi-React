@@ -1,16 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2'); // ✅ mysql2 use karein
+const db = require('../db'); // Assuming you have a db.js for database connection
 
-// ✅ Create separate database connection for related products
-const db = mysql.createPool({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "user_db",
-    port: process.env.DB_PORT || 3306,
-    connectionLimit: 10,
-});
 
 // ✅ Promise wrapper for database queries
 const dbExecute = (query, params) => {

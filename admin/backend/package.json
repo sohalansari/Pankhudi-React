@@ -10,15 +10,19 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "express-fileupload": "^1.5.2",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "mysql2": "^3.14.4",
-    "razorpay": "^2.9.6"
+    "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.4",
+    "qrcode": "^1.5.4",
+    "razorpay": "^2.9.6",
+    "speakeasy": "^2.0.0"
   }
 }

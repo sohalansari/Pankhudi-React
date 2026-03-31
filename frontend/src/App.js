@@ -8,7 +8,6 @@ import React from "react";
 const AppContent = () => {
   const { token } = useAuth();
   return (
-    // key changes when login/logout happens -> router re-renders
     <AppRoutes key={token ? "logged-in" : "logged-out"} />
   );
 };

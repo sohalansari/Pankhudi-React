@@ -1,28 +1,8 @@
-// // routes/dashboardRoutes.js
-// const express = require('express');
-// const router = express.Router();
-// const dashboardController = require('../controllers/dashboardController'); // Make sure this path is correct
-// const authMiddleware = require('../middlewares/authMiddleware'); // Make sure this path is correct
-
-// // Apply auth middleware to all routes
-// // router.use(authMiddleware);
-
-// // Dashboard routes
-// router.get('/dashboard', dashboardController.getDashboardStats);
-// router.get('/recent-orders', dashboardController.getRecentOrders);
-// router.get('/sales-data', dashboardController.getSalesData);
-// router.get('/top-products', dashboardController.getTopProducts);
-// router.get('/traffic-sources', dashboardController.getTrafficSources);
-
-// module.exports = router;
-
-
-
-
 // routes/dashboardRoutes.js
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Simple auth bypass for development
 const bypassAuth = (req, res, next) => {

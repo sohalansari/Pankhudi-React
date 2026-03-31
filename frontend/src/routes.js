@@ -8,7 +8,7 @@ import Register from "./pages/Ragister/Register";
 import ForgotPassword from "./pages/Forget_Password/Forget";
 import TermsAndConditions from "./pages/Terms/Tearm";
 import NotFound from "./pages/404/NotFound";
-import Checkout from "./pages/Checkout/Checkout"; // ✅ UPDATED PATH
+import Checkout from "./pages/Checkout/Checkout";
 import Profile from "./pages/Profile/Profile";
 import OrderConfirmation from "./pages/OrderConfirmation/OrderConfirmation";
 import OrderHistory from "./pages/OrderHistory/MyOrders";
@@ -27,7 +27,6 @@ const AppRoutes = () => {
         <>
             <ScrollToTop />
             <Routes>
-                {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/cart" element={<Cart />} />
@@ -39,21 +38,13 @@ const AppRoutes = () => {
                 <Route path="/search" element={<SearchResults />} />
                 <Route path="/ProductDetail/:id" element={<ProductDetails />} />
                 <Route path="/category/:id" element={<CategoryPage />} />
-
-                {/* Login/Register ko PublicRoute se wrap kiya */}
                 <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
                 <Route path="/register" element={<PublicRoute> <Register /> </PublicRoute>} />
-
-                {/* ✅ UPDATED: Single Checkout Route for Both Flows */}
                 <Route path="/checkout" element={<Checkout />} />
-
-                {/* Protected Routes */}
                 <Route path="/profile/:id" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
                 <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
-
-                {/* 404 */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </>

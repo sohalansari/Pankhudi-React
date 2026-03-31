@@ -1,333 +1,222 @@
-/* Sidebar.css - Updated Version */
-
-.sidebar {
-    width: 250px;
-    height: 100vh;
-    background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
-    color: #ecf0f1;
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 1000;
+/* ============================================
+   SIDEBAR STYLES
+   ============================================ */
+.sidebar-container {
     display: flex;
     flex-direction: column;
-    transition: all 0.3s ease;
-    box-shadow: 3px 0 20px rgba(0, 0, 0, 0.2);
+    height: 100%;
+    padding: 20px 0;
 }
 
-.sidebar.collapsed {
-    width: 70px;
-}
-
-.sidebar-header {
-    padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+/* Logo */
+.logo {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    height: 70px;
+    padding: 0 20px;
+    margin-bottom: 40px;
+    gap: 12px;
 }
 
-.sidebar-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    background: linear-gradient(45deg, #3498db, #9b59b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.logo-icon {
+    font-size: 32px;
+    min-width: 40px;
+    text-align: center;
 }
 
-.toggle-btn {
+.logo-text {
+    flex: 1;
+}
+
+.logo-title {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.logo-subtitle {
+    display: block;
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+/* Navigation */
+.nav {
+    flex: 1;
+    padding: 0 12px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ecf0f1;
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
+    color: white;
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.nav-icon {
+    font-size: 20px;
+    min-width: 24px;
+    text-align: center;
+}
+
+.nav-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Toggle Button */
+/* Toggle Button Styles */
+.toggle-b {
+    bottom: 24px;
+    right: -12px;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+/* Hover Effect */
+.toggle-b:hover {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Active/Click Effect */
+.toggle-b:active {
+    transform: scale(0.95);
+}
+
+/* Focus Effect */
+.toggle-b:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+/* When sidebar is collapsed */
+.sidebar--collapsed .toggle-b {
+    right: -12px;
+    transform: rotate(0deg);
+}
+
+/* When sidebar is expanded */
+.sidebar:not(.sidebar--collapsed) .toggle-b {
+    transform: rotate(0deg);
+}
+
+/* Animation for arrow */
+.toggle-b {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 2px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .toggle-b {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        bottom: 20px;
+        right: -16px;
+    }
+}
+
+/* Hover tooltip effect (optional) */
+.toggle-b::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: #1a1a2e;
+    color: white;
+    font-size: 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
     transition: all 0.3s ease;
-    font-size: 14px;
+    pointer-events: none;
+    margin-bottom: 8px;
 }
 
-.toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
+.toggle-b:hover::before {
+    opacity: 1;
+    visibility: visible;
 }
 
-.sidebar-menu {
-    list-style: none;
-    padding: 15px 10px;
-    margin: 0;
-    flex: 1;
-    overflow-y: auto;
+/* Collapsed Sidebar */
+.sidebar--collapsed .nav-link {
+    justify-content: center;
+    padding: 12px;
 }
 
-/* Custom scrollbar */
-.sidebar-menu::-webkit-scrollbar {
+.sidebar--collapsed .nav-icon {
+    font-size: 22px;
+    min-width: auto;
+}
+
+.sidebar--collapsed .logo-text {
+    display: none;
+}
+
+.sidebar--collapsed .logo {
+    justify-content: center;
+    padding: 0;
+}
+
+/* Scrollbar */
+.sidebar-container::-webkit-scrollbar {
     width: 4px;
 }
 
-.sidebar-menu::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+.sidebar-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.sidebar-menu::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-}
-
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
+.sidebar-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
-}
-
-/* Menu Categories */
-.menu-category {
-    padding: 10px 15px;
-    margin-top: 15px;
-}
-
-.category-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #95a5a6;
-    font-weight: 600;
-    display: block;
-}
-
-/* Menu Items */
-.menu-item {
-    margin: 4px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-.menu-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.menu-item.active {
-    background: linear-gradient(90deg, #3498db, #2980b9);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-}
-
-.menu-item a {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    color: #ecf0f1;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    gap: 12px;
-}
-
-.menu-item.active a {
-    color: white;
-    font-weight: 500;
-}
-
-.menu-icon {
-    font-size: 20px;
-    min-width: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.menu-text {
-    font-size: 14px;
-    font-weight: 400;
-    white-space: nowrap;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
-
-.sidebar.collapsed .menu-text {
-    opacity: 0;
-    width: 0;
-    overflow: hidden;
-}
-
-.sidebar.collapsed .category-label {
-    display: none;
-}
-
-/* Sidebar Footer */
-.sidebar-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 15px;
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #e74c3c, #e67e22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 16px;
-    color: white;
-    flex-shrink: 0;
-}
-
-.user-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.user-name {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #ecf0f1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.user-role {
-    margin: 2px 0 0 0;
-    font-size: 12px;
-    color: #95a5a6;
-}
-
-.sidebar.collapsed .user-info {
-    display: none;
-}
-
-.logout-btn {
-    width: 100%;
-    padding: 10px;
-    background: rgba(231, 76, 60, 0.1);
-    border: 1px solid rgba(231, 76, 60, 0.3);
-    color: #e74c3c;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.logout-btn:hover {
-    background: rgba(231, 76, 60, 0.2);
-    transform: translateY(-1px);
-}
-
-.logout-icon {
-    font-size: 16px;
-}
-
-.logout-text {
-    font-weight: 500;
-}
-
-.sidebar.collapsed .logout-text {
-    display: none;
-}
-
-.sidebar.collapsed .logout-btn {
-    justify-content: center;
-    padding: 10px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .sidebar:not(.collapsed) {
-        width: 70px;
-    }
-
-    .sidebar:not(.collapsed) .menu-text,
-    .sidebar:not(.collapsed) .user-info,
-    .sidebar:not(.collapsed) .logout-text {
-        display: none;
-    }
-
-    .sidebar:not(.collapsed) .sidebar-header h2 {
-        display: none;
-    }
-
-    .sidebar:not(.collapsed) .category-label {
-        display: none;
-    }
-}
-
-/* Animation for menu items */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.menu-item {
-    animation: slideIn 0.3s ease forwards;
-    animation-delay: calc(var(--item-index, 0) * 0.05s);
-}
-
-/* Special styling for Banner menu item */
-.menu-item:nth-child(7),
-/* Banners position adjustment */
-.menu-item:nth-child(8),
-.menu-item:nth-child(9) {
-    --item-index: 6;
-}
-
-.menu-item:nth-child(7) .menu-icon {
-    color: #f39c12;
-    /* Orange for banners */
-}
-
-.menu-item:nth-child(7).active .menu-icon {
-    color: white;
-}
-
-/* Tooltip for collapsed sidebar */
-.sidebar.collapsed .menu-item {
-    position: relative;
-}
-
-.sidebar.collapsed .menu-item:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 75px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #2c3e50;
-    color: white;
-    padding: 8px 12px;
     border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1001;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-/* Add tooltip data attribute */
-/* In your JSX, you can add: data-tooltip={item.name} */
