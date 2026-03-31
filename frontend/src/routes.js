@@ -21,6 +21,7 @@ import PublicRoute from "./context/PublicRoute";
 import ProductDetails from "./pages/ProductDetail/ProductDetail";
 import SearchResults from "./pages/SearchResult/SearchResults";
 import CategoryPage from "./pages/CategoryPage/CategoryPage";
+import NotificationDropdown from "./components/Notification/NotificationDropdown";
 
 const AppRoutes = () => {
     return (
@@ -45,6 +46,7 @@ const AppRoutes = () => {
                 <Route path="/order-confirmation" element={<ProtectedRoute> <OrderConfirmation /></ProtectedRoute>} />
                 <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute> <NotificationDropdown /> </ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </>

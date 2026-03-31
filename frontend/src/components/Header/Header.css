@@ -1,12 +1,3 @@
-/* Header.css - Enhanced & Well Structured */
-
-/* ===== CSS RESET & BASE ===== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 /* ===== CSS VARIABLES ===== */
 :root {
     /* Colors */
@@ -3388,5 +3379,643 @@ button,
 
     .user-address-display {
         display: none;
+    }
+}
+
+
+/* Notification Bell Styling for Desktop */
+.notification-dropdown {
+    position: relative;
+    display: inline-flex;
+    margin-right: 8px;
+}
+
+.notification-bell {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.notification-bell:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.notification-bell.has-notifications {
+    animation: bellShake 0.5s ease;
+}
+
+@keyframes bellShake {
+
+    0%,
+    100% {
+        transform: rotate(0);
+    }
+
+    25% {
+        transform: rotate(15deg);
+    }
+
+    75% {
+        transform: rotate(-15deg);
+    }
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff4757;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Mobile Notification Styling */
+.mobile-notification-wrapper {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.mobile-notification-wrapper .notification-bell {
+    color: #333;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-notification-wrapper .notification-bell:hover {
+    background: white;
+}
+
+
+
+
+
+/* Add this to your existing CSS file */
+
+/* ===== NOTIFICATION STYLES - UPDATED ===== */
+
+/* Desktop Notification Bell - Positioned in user actions section */
+.desktop-user-actions-container .notification-dropdown {
+    position: relative;
+    display: inline-flex;
+    margin-right: 8px;
+}
+
+.notification-bell {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.notification-bell:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.notification-bell.has-notifications {
+    animation: bellShake 0.5s ease;
+}
+
+@keyframes bellShake {
+
+    0%,
+    100% {
+        transform: rotate(0);
+    }
+
+    25% {
+        transform: rotate(15deg);
+    }
+
+    75% {
+        transform: rotate(-15deg);
+    }
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff4757;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    animation: badgePulse 0.5s ease;
+    line-height: 1;
+}
+
+@keyframes badgePulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Notification Header */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.notification-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.mark-all-read {
+    background: none;
+    border: none;
+    color: #ff9900;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.mark-all-read:hover {
+    background: rgba(255, 153, 0, 0.1);
+    text-decoration: underline;
+}
+
+/* Notification List */
+.notification-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    overflow-x: hidden;
+}
+
+/* Notification Item */
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background: white;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: #fff9e6;
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #ff9900;
+}
+
+/* Notification Icon */
+.notification-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 50%;
+}
+
+/* Notification Content */
+.notification-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.notification-message {
+    font-size: 0.85rem;
+    color: #2c3e50;
+    line-height: 1.4;
+    margin: 0;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Notification Meta */
+.notification-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.notification-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.notification-time::before {
+    content: '🕒';
+    font-size: 0.65rem;
+}
+
+.notification-product {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.notification-product::before {
+    content: '📦';
+    font-size: 0.65rem;
+}
+
+/* Delete Button */
+.notification-delete {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #adb5bd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.notification-item:hover .notification-delete {
+    opacity: 1;
+}
+
+.notification-delete:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* Notification Type Specific Styles */
+.notification-reply {
+    border-left: 3px solid #28a745;
+}
+
+.notification-mention {
+    border-left: 3px solid #ff9900;
+}
+
+.notification-admin {
+    border-left: 3px solid #6f42c1;
+}
+
+/* Loading State */
+.notification-loading {
+    text-align: center;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-loading .spinner {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #e9ecef;
+    border-top-color: #ff9900;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.notification-loading p {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Empty State */
+.notification-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6c757d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-empty span {
+    font-size: 3rem;
+    display: block;
+    opacity: 0.6;
+}
+
+.notification-empty p {
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.notification-empty small {
+    font-size: 0.7rem;
+    color: #adb5bd;
+}
+
+/* Footer */
+.notification-footer {
+    padding: 12px 20px;
+    text-align: center;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.notification-footer a {
+    color: #ff9900;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.notification-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ===== MOBILE MENU NOTIFICATION STYLES ===== */
+
+/* Mobile Notification Badge on Menu Toggle Button */
+.mobile-menu-toggle-btn {
+    position: relative;
+}
+
+.mobile-menu-toggle-btn .notification-badge-mobile {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    z-index: 10;
+}
+
+/* Mobile Notification Wrapper - Hidden by default, appears only in mobile menu */
+.mobile-notification-wrapper {
+    position: relative;
+    margin: 0 10px;
+}
+
+.mobile-notification-wrapper .notification-bell {
+    color: #333;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+}
+
+.mobile-notification-wrapper .notification-bell:hover {
+    background: white;
+}
+
+.notification-panel .mobile-notification-wrapper {
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    width: auto;
+    max-width: none;
+    max-height: 70vh;
+    transform: none;
+}
+
+/* Mobile Menu Header with Notification */
+.mobile-menu-header-section {
+    position: relative;
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+}
+
+.mobile-menu-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Mobile User Profile with Notification */
+.mobile-user-profile-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) 0;
+    position: relative;
+}
+
+.mobile-user-profile-wrapper .mobile-notification-wrapper {
+    margin-left: auto;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Desktop: Notification bell visible in user actions */
+@media (min-width: 769px) {
+    .mobile-notification-wrapper {
+        display: none !important;
+    }
+
+    .mobile-menu-toggle-btn .notification-badge-mobile {
+        display: none !important;
+    }
+}
+
+/* Mobile: Notification bell hidden from desktop user actions, shown in mobile menu */
+@media (max-width: 768px) {
+    .desktop-user-actions-container .notification-dropdown {
+        display: none !important;
+    }
+
+    .mobile-notification-wrapper {
+        display: block;
+    }
+
+    .mobile-menu-toggle-btn {
+        position: relative;
+    }
+
+    .notification-badge-mobile {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background: #ff4757;
+        color: white;
+        font-size: 0.6rem;
+        font-weight: bold;
+        padding: 2px 4px;
+        border-radius: 10px;
+        min-width: 14px;
+        text-align: center;
+        z-index: 10;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .notification-panel {
+        background: #2d2d2d;
+        border: 1px solid #3d3d3d;
+    }
+
+    .notification-header {
+        background: #252525;
+        border-bottom-color: #3d3d3d;
+    }
+
+    .notification-header h3 {
+        color: #e5e5e5;
+    }
+
+    .notification-item {
+        background: #2d2d2d;
+        border-bottom-color: #3d3d3d;
+    }
+
+    .notification-item:hover {
+        background: #353535;
+    }
+
+    .notification-item.unread {
+        background: #3a2e1f;
+    }
+
+    .notification-message {
+        color: #e5e5e5;
+    }
+
+    .notification-meta {
+        color: #9c9c9c;
+    }
+
+    .notification-icon {
+        background: #3d3d3d;
+    }
+
+    .notification-footer {
+        background: #252525;
+        border-top-color: #3d3d3d;
+    }
+
+    .notification-empty {
+        color: #9c9c9c;
+    }
+
+    .notification-empty small {
+        color: #6c6c6c;
+    }
+
+    .mobile-notification-wrapper .notification-bell {
+        background: rgba(45, 45, 45, 0.9);
+        color: #e5e5e5;
+    }
+}
+
+
+/* Print Styles */
+@media print {
+
+    .notification-dropdown,
+    .mobile-notification-wrapper {
+        display: none !important;
     }
 }

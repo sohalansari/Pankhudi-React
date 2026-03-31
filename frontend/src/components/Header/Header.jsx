@@ -1,7 +1,8 @@
-// import React, { useState, useEffect, useRef } from 'react';
+// import React, { useState, useEffect, useRef, useCallback } from 'react';
 // import { Link, NavLink, useNavigate } from 'react-router-dom';
 // import { fetchCartCount } from '../../utils/api';
 // import { useAuth } from '../../context/AuthContext';
+// import NotificationDropdown from '../Notification/NotificationDropdown';
 // import {
 //     FiSearch,
 //     FiUser,
@@ -24,13 +25,44 @@
 //     FiTag,
 //     FiLayers,
 //     FiGrid,
-//     FiHash,
 //     FiCheck,
-//     FiChevronRight
+//     FiChevronRight,
+//     FiMail,
+//     FiPhone
 // } from 'react-icons/fi';
+// import { FaGoogle } from 'react-icons/fa';
 // import { motion, AnimatePresence } from 'framer-motion';
 // import { RiChatAiLine } from "react-icons/ri";
 // import './Header.css';
+
+// // API Configuration
+// const API_CONFIG = {
+//     USER_ME: 'http://localhost:5000/api/user/me',
+//     UPDATE_ADDRESS: 'http://localhost:5000/api/user/address',
+//     UPLOADS: 'http://localhost:5000/'
+// };
+
+// // Helper function to format avatar URL
+// const formatAvatarUrl = (avatar) => {
+//     if (!avatar) return null;
+
+//     // If it's already a full URL (Google avatar or complete URL)
+//     if (avatar.startsWith('http')) {
+//         return avatar;
+//     }
+
+//     // If it starts with /uploads/
+//     if (avatar.startsWith('/uploads/')) {
+//         return API_CONFIG.UPLOADS + avatar.replace(/^\/+/, "");
+//     }
+
+//     // If it's just a filename
+//     if (!avatar.startsWith('/') && !avatar.startsWith('http')) {
+//         return API_CONFIG.UPLOADS + 'uploads/avatars/' + avatar;
+//     }
+
+//     return avatar;
+// };
 
 // const Header = () => {
 //     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -50,6 +82,7 @@
 //     const [searchLoading, setSearchLoading] = useState(false);
 //     const [trendingRefreshTime, setTrendingRefreshTime] = useState(0);
 //     const [isRefreshingTrending, setIsRefreshingTrending] = useState(false);
+//     const [avatarError, setAvatarError] = useState(false);
 
 //     // NEW: Category-based search states
 //     const [allCategories, setAllCategories] = useState([]);
@@ -113,25 +146,91 @@
 //         { id: 'discount', label: 'Best Discount' }
 //     ];
 
+//     // Fetch user data from API
+//     const fetchUserData = useCallback(async () => {
+//         const token = localStorage.getItem('token');
+//         setIsLoggedIn(!!token);
+
+//         if (!token) {
+//             setUserData(null);
+//             setUserAddress('');
+//             return;
+//         }
+
+//         try {
+//             const response = await fetch(API_CONFIG.USER_ME, {
+//                 headers: {
+//                     'Authorization': `Bearer ${token}`,
+//                     'Content-Type': 'application/json'
+//                 }
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+//                 if (data.success) {
+//                     const user = data.user;
+//                     setUserData(user);
+
+//                     // Format and set address
+//                     const savedAddress = user.address || 'Add your delivery address';
+//                     setUserAddress(savedAddress);
+
+//                     // Reset avatar error when new data arrives
+//                     setAvatarError(false);
+
+//                     // Save to localStorage for backward compatibility
+//                     localStorage.setItem('user', JSON.stringify(user));
+//                 } else {
+//                     // Token might be invalid
+//                     localStorage.removeItem('token');
+//                     localStorage.removeItem('user');
+//                     setIsLoggedIn(false);
+//                     setUserData(null);
+//                 }
+//             } else if (response.status === 401 || response.status === 403) {
+//                 // Token expired or invalid
+//                 localStorage.removeItem('token');
+//                 localStorage.removeItem('user');
+//                 setIsLoggedIn(false);
+//                 setUserData(null);
+//             }
+//         } catch (error) {
+//             console.error('Error fetching user data:', error);
+
+//             // Fallback to localStorage if API fails
+//             try {
+//                 const userFromStorage = localStorage.getItem('user');
+//                 if (userFromStorage) {
+//                     const userData = JSON.parse(userFromStorage);
+//                     setUserData(userData);
+
+//                     const savedAddress = localStorage.getItem('userAddress') ||
+//                         userData.address ||
+//                         'Add your delivery address';
+//                     setUserAddress(savedAddress);
+//                 }
+//             } catch (e) {
+//                 console.error('Error parsing user data:', e);
+//             }
+//         }
+//     }, []);
+
 //     // Fetch categories from API
 //     useEffect(() => {
 //         const fetchCategories = async () => {
 //             try {
-//                 // Fetch main categories
 //                 const categoriesRes = await fetch('http://localhost:5000/api/categories');
 //                 const categoriesData = await categoriesRes.json();
 //                 if (categoriesData.success) {
 //                     setAllCategories(categoriesData.data || []);
 //                 }
 
-//                 // Fetch sub categories
 //                 const subCategoriesRes = await fetch('http://localhost:5000/api/subcategories');
 //                 const subCategoriesData = await subCategoriesRes.json();
 //                 if (subCategoriesData.success) {
 //                     setAllSubCategories(subCategoriesData.data || []);
 //                 }
 
-//                 // Fetch sub-sub categories
 //                 const subSubCategoriesRes = await fetch('http://localhost:5000/api/subsubcategories');
 //                 const subSubCategoriesData = await subSubCategoriesRes.json();
 //                 if (subSubCategoriesData.success) {
@@ -139,7 +238,6 @@
 //                 }
 //             } catch (error) {
 //                 console.error('Error fetching categories:', error);
-//                 // Fallback data
 //                 setAllCategories([
 //                     { id: 1, name: 'Women', slug: 'women' },
 //                     { id: 2, name: 'Men', slug: 'men' },
@@ -151,6 +249,43 @@
 
 //         fetchCategories();
 //     }, []);
+
+
+//     // Initialize component and listen for auth changes
+//     useEffect(() => {
+//         fetchUserData();
+
+//         // Listen for storage changes (login/logout in other tabs)
+//         const handleStorageChange = (e) => {
+//             if (e.key === 'token' || e.key === 'user') {
+//                 fetchUserData();
+//             }
+//         };
+
+//         // Listen for custom auth events
+//         const handleAuthChange = () => {
+//             fetchUserData();
+//         };
+
+//         window.addEventListener('storage', handleStorageChange);
+//         window.addEventListener('auth-change', handleAuthChange);
+
+//         return () => {
+//             window.removeEventListener('storage', handleStorageChange);
+//             window.removeEventListener('auth-change', handleAuthChange);
+//         };
+//     }, [fetchUserData]);
+
+//     // Refresh user data periodically
+//     useEffect(() => {
+//         if (!isLoggedIn) return;
+
+//         const interval = setInterval(() => {
+//             fetchUserData();
+//         }, 5 * 60 * 1000); // Every 5 minutes
+
+//         return () => clearInterval(interval);
+//     }, [isLoggedIn, fetchUserData]);
 
 //     // Get sub-categories for selected category
 //     const getSubCategoriesForCategory = (categoryId) => {
@@ -178,33 +313,6 @@
 //     const getSubSubCategoryNameById = (id) => {
 //         const subSubCategory = allSubSubCategories.find(subSub => subSub.id === id);
 //         return subSubCategory ? subSubCategory.name : '';
-//     };
-
-//     // Fetch user data and recent searches
-//     const fetchUserData = () => {
-//         const token = localStorage.getItem('token');
-//         setIsLoggedIn(!!token);
-
-//         try {
-//             const userFromStorage = localStorage.getItem('user');
-//             if (userFromStorage) {
-//                 const userData = JSON.parse(userFromStorage);
-//                 setUserData(userData);
-
-//                 const savedAddress = localStorage.getItem('userAddress') ||
-//                     userData.address ||
-//                     'Add your delivery address';
-//                 setUserAddress(savedAddress);
-//             }
-//         } catch (error) {
-//             console.error('Error parsing user data:', error);
-//         }
-
-//         // Load recent searches
-//         const savedSearches = localStorage.getItem('recentSearches');
-//         if (savedSearches) {
-//             setRecentSearches(JSON.parse(savedSearches));
-//         }
 //     };
 
 //     // Save search to recent searches
@@ -240,7 +348,7 @@
 //         }
 //     };
 
-//     // Auto-refresh trending products every 2 minutes
+//     // Auto-refresh trending products
 //     useEffect(() => {
 //         const interval = setInterval(() => {
 //             refreshTrendingProducts();
@@ -266,16 +374,6 @@
 //         return () => clearInterval(interval);
 //     }, [userData]);
 
-//     // Initialize component
-//     useEffect(() => {
-//         fetchUserData();
-//         const handleStorageChange = () => {
-//             fetchUserData();
-//         };
-//         window.addEventListener('storage', handleStorageChange);
-//         return () => window.removeEventListener('storage', handleStorageChange);
-//     }, []);
-
 //     // Handle scroll
 //     useEffect(() => {
 //         const handleScroll = () => {
@@ -298,7 +396,7 @@
 //         return () => window.removeEventListener('storage', updateCounts);
 //     }, []);
 
-//     // NEW: Enhanced search toggle functionality
+//     // Toggle search
 //     const toggleSearch = () => {
 //         if (isSearchExpanded) {
 //             closeSearch();
@@ -307,7 +405,7 @@
 //         }
 //     };
 
-//     // Open search function
+//     // Open search
 //     const openSearch = () => {
 //         setIsSearchExpanded(true);
 //         setTimeout(() => {
@@ -315,7 +413,7 @@
 //         }, 100);
 //     };
 
-//     // Close search function
+//     // Close search
 //     const closeSearch = () => {
 //         setIsSearchExpanded(false);
 //         setShowSearchSuggestions(false);
@@ -327,37 +425,27 @@
 //         }
 //     };
 
-//     // NEW: Escape key to close search
+//     // Escape key handler
 //     useEffect(() => {
 //         const handleEscapeKey = (event) => {
 //             if (event.key === 'Escape') {
-//                 if (isSearchExpanded) {
-//                     closeSearch();
-//                 }
-//                 if (showSearchSuggestions) {
-//                     setShowSearchSuggestions(false);
-//                 }
-//                 if (showCategoryFilter) {
-//                     setShowCategoryFilter(false);
-//                 }
+//                 if (isSearchExpanded) closeSearch();
+//                 if (showSearchSuggestions) setShowSearchSuggestions(false);
+//                 if (showCategoryFilter) setShowCategoryFilter(false);
 //             }
 //         };
 
 //         document.addEventListener('keydown', handleEscapeKey);
-//         return () => {
-//             document.removeEventListener('keydown', handleEscapeKey);
-//         };
+//         return () => document.removeEventListener('keydown', handleEscapeKey);
 //     }, [isSearchExpanded, showSearchSuggestions, showCategoryFilter]);
 
-//     // NEW: Enhanced click outside handler with category filter
+//     // Click outside handler
 //     useEffect(() => {
 //         const handleClickOutside = (event) => {
-//             // Close dropdowns
 //             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
 //                 setActiveDropdown(null);
 //             }
 
-//             // Close category filter when clicking outside
 //             if (showCategoryFilter &&
 //                 categoryFilterRef.current &&
 //                 !categoryFilterRef.current.contains(event.target) &&
@@ -365,21 +453,18 @@
 //                 setShowCategoryFilter(false);
 //             }
 
-//             // Close expanded desktop search when clicking outside
 //             if (isSearchExpanded &&
 //                 searchContainerRef.current &&
 //                 !searchContainerRef.current.contains(event.target)) {
 //                 closeSearch();
 //             }
 
-//             // Close search suggestions when clicking outside (desktop)
 //             if (searchContainerRef.current &&
 //                 !searchContainerRef.current.contains(event.target) &&
 //                 !isMobileMenuOpen) {
 //                 setShowSearchSuggestions(false);
 //             }
 
-//             // Don't close mobile menu when clicking on search suggestions
 //             if (isMobileMenuOpen &&
 //                 mobileMenuRef.current &&
 //                 !mobileMenuRef.current.contains(event.target) &&
@@ -401,12 +486,10 @@
 //         };
 
 //         document.addEventListener('mousedown', handleClickOutside);
-//         return () => {
-//             document.removeEventListener('mousedown', handleClickOutside);
-//         };
+//         return () => document.removeEventListener('mousedown', handleClickOutside);
 //     }, [isMobileMenuOpen, isSearchExpanded, showCategoryFilter]);
 
-//     // NEW: Enhanced search with category filtering
+//     // Enhanced search with category filtering
 //     useEffect(() => {
 //         if (!searchQuery.trim()) {
 //             setSearchResults([]);
@@ -417,21 +500,13 @@
 //         setSearchLoading(true);
 //         const timer = setTimeout(async () => {
 //             try {
-//                 // Build query parameters
 //                 const params = new URLSearchParams({
 //                     q: encodeURIComponent(searchQuery)
 //                 });
 
-//                 // Add category filters if selected
-//                 if (selectedCategory) {
-//                     params.append('category_id', selectedCategory);
-//                 }
-//                 if (selectedSubCategory) {
-//                     params.append('sub_category_id', selectedSubCategory);
-//                 }
-//                 if (selectedSubSubCategory) {
-//                     params.append('sub_sub_category_id', selectedSubSubCategory);
-//                 }
+//                 if (selectedCategory) params.append('category_id', selectedCategory);
+//                 if (selectedSubCategory) params.append('sub_category_id', selectedSubCategory);
+//                 if (selectedSubSubCategory) params.append('sub_sub_category_id', selectedSubSubCategory);
 
 //                 const res = await fetch(`http://localhost:5000/api/search/suggestions?${params}`);
 //                 if (!res.ok) throw new Error('Suggestions failed');
@@ -483,41 +558,26 @@
 //         fetchTrending();
 //     }, [trendingRefreshTime]);
 
-//     // NEW: Enhanced Search Handler with Category Filtering
+//     // Enhanced Search Handler
 //     const handleSearch = async (e) => {
 //         if (e) e.preventDefault();
 //         if (searchQuery.trim() || selectedCategory || selectedSubCategory || selectedSubSubCategory) {
 //             try {
 //                 const analyzedQuery = analyzeSearchQuery(searchQuery);
 
-//                 // Build search query with filters
 //                 const params = new URLSearchParams();
-//                 if (searchQuery.trim()) {
-//                     params.append('q', encodeURIComponent(searchQuery));
-//                 }
-//                 if (selectedCategory) {
-//                     params.append('category_id', selectedCategory);
-//                 }
-//                 if (selectedSubCategory) {
-//                     params.append('sub_category_id', selectedSubCategory);
-//                 }
-//                 if (selectedSubSubCategory) {
-//                     params.append('sub_sub_category_id', selectedSubSubCategory);
-//                 }
-//                 if (appliedFilters.price_range) {
-//                     params.append('price_range', appliedFilters.price_range);
-//                 }
-//                 if (appliedFilters.sort_by) {
-//                     params.append('sort_by', appliedFilters.sort_by);
-//                 }
+//                 if (searchQuery.trim()) params.append('q', encodeURIComponent(searchQuery));
+//                 if (selectedCategory) params.append('category_id', selectedCategory);
+//                 if (selectedSubCategory) params.append('sub_category_id', selectedSubCategory);
+//                 if (selectedSubSubCategory) params.append('sub_sub_category_id', selectedSubSubCategory);
+//                 if (appliedFilters.price_range) params.append('price_range', appliedFilters.price_range);
+//                 if (appliedFilters.sort_by) params.append('sort_by', appliedFilters.sort_by);
 
 //                 const response = await fetch(`http://localhost:5000/api/search?${params}`);
 //                 if (!response.ok) throw new Error('Search failed');
 //                 const data = await response.json();
 
-//                 if (searchQuery.trim()) {
-//                     saveToRecentSearches(searchQuery);
-//                 }
+//                 if (searchQuery.trim()) saveToRecentSearches(searchQuery);
 
 //                 navigate('/search', {
 //                     state: {
@@ -532,7 +592,7 @@
 //                             sub_sub_category: selectedSubSubCategory
 //                         },
 //                         filters: data.filters || {},
-//                         message: data.message || getSearchMessage(searchQuery, selectedCategory, selectedSubCategory, selectedSubSubCategory)
+//                         message: getSearchMessage(searchQuery, selectedCategory, selectedSubCategory, selectedSubSubCategory)
 //                     }
 //                 });
 
@@ -549,7 +609,7 @@
 //         }
 //     };
 
-//     // Get appropriate search message
+//     // Get search message
 //     const getSearchMessage = (query, categoryId, subCategoryId, subSubCategoryId) => {
 //         if (query.trim() && categoryId) {
 //             return `Search results for "${query}" in ${getCategoryNameById(categoryId)}`;
@@ -571,7 +631,7 @@
 //         return 'Search results';
 //     };
 
-//     // Analyze search query for natural language processing
+//     // Analyze search query
 //     const analyzeSearchQuery = (query) => {
 //         const analyzed = {
 //             originalQuery: query,
@@ -582,7 +642,6 @@
 //             sub_sub_category: null
 //         };
 
-//         // Price filters
 //         const pricePatterns = [
 //             { pattern: /under\s*(\d+)/i, key: 'maxPrice' },
 //             { pattern: /below\s*(\d+)/i, key: 'maxPrice' },
@@ -600,7 +659,6 @@
 //             }
 //         });
 
-//         // Category detection
 //         const categories = [
 //             { pattern: /saree|sarees|sari/i, category: 'Sarees' },
 //             { pattern: /dress|dresses|gown/i, category: 'Dresses' },
@@ -639,13 +697,12 @@
 //         closeSearch();
 //     };
 
-//     // NEW: Handle category-based search
+//     // Handle category-based search
 //     const handleCategorySearch = (categoryId = null, subCategoryId = null, subSubCategoryId = null) => {
 //         setSelectedCategory(categoryId);
 //         setSelectedSubCategory(subCategoryId);
 //         setSelectedSubSubCategory(subSubCategoryId);
 
-//         // If category is selected, trigger search automatically
 //         if (categoryId || subCategoryId || subSubCategoryId) {
 //             const searchParams = new URLSearchParams();
 //             if (categoryId) searchParams.append('category_id', categoryId);
@@ -669,7 +726,7 @@
 //         }
 //     };
 
-//     // Clear all category filters
+//     // Clear category filters
 //     const clearCategoryFilters = () => {
 //         setSelectedCategory(null);
 //         setSelectedSubCategory(null);
@@ -793,7 +850,45 @@
 //         localStorage.removeItem('recentSearches');
 //     };
 
-//     // Enhanced Logout Handlers
+//     // Update user address
+//     const updateUserAddress = async (newAddress) => {
+//         const token = localStorage.getItem('token');
+//         if (!token) return;
+
+//         try {
+//             const response = await fetch(API_CONFIG.UPDATE_ADDRESS, {
+//                 method: 'PUT',
+//                 headers: {
+//                     'Authorization': `Bearer ${token}`,
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify({ address: newAddress })
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+//                 if (data.success) {
+//                     setUserAddress(newAddress);
+//                     localStorage.setItem('userAddress', newAddress);
+
+//                     // Update user data in state
+//                     setUserData(prev => ({
+//                         ...prev,
+//                         address: newAddress
+//                     }));
+
+//                     // Update localStorage
+//                     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+//                     storedUser.address = newAddress;
+//                     localStorage.setItem('user', JSON.stringify(storedUser));
+//                 }
+//             }
+//         } catch (error) {
+//             console.error('Error updating address:', error);
+//         }
+//     };
+
+//     // Logout Handlers
 //     const handleLogout = () => {
 //         setShowLogoutConfirm(true);
 //     };
@@ -807,6 +902,7 @@
 //         setUserData(null);
 //         setUserAddress('');
 //         setActiveDropdown(null);
+//         setAvatarError(false);
 
 //         if (logout) {
 //             logout();
@@ -816,6 +912,9 @@
 //         setShowLogoutSuccess(true);
 
 //         closeMobileMenu();
+
+//         // Dispatch auth change event
+//         window.dispatchEvent(new Event('auth-change'));
 //     };
 
 //     const cancelLogout = () => {
@@ -878,7 +977,31 @@
 //         return colors[hash % colors.length];
 //     };
 
-//     // Enhanced Navigation Handler for Mobile Menu
+//     // Handle avatar error
+//     const handleAvatarError = () => {
+//         console.log('Avatar failed to load:', userData?.avatar);
+//         setAvatarError(true);
+//     };
+
+//     // Get avatar URL
+//     const getAvatarUrl = () => {
+//         if (!userData?.avatar || avatarError) return null;
+//         return formatAvatarUrl(userData.avatar);
+//     };
+
+//     // Get auth method badge
+//     const getAuthMethodBadge = () => {
+//         if (userData?.auth_method === 'google') {
+//             return (
+//                 <span className="auth-method-badge">
+//                     <FaGoogle size={10} /> Google
+//                 </span>
+//             );
+//         }
+//         return null;
+//     };
+
+//     // Handle mobile navigation
 //     const handleMobileNavigation = (path) => {
 //         navigate(path);
 //         closeMobileMenu();
@@ -900,7 +1023,7 @@
 //         };
 //     };
 
-//     // NEW: Category Filter Component
+//     // Category Filter Component
 //     const renderCategoryFilter = () => {
 //         if (!showCategoryFilter) return null;
 
@@ -926,7 +1049,6 @@
 //                 </div>
 
 //                 <div className="category-filter-content">
-//                     {/* Main Categories */}
 //                     <div className="category-filter-section">
 //                         <h5>Main Categories</h5>
 //                         <div className="category-list">
@@ -947,7 +1069,6 @@
 //                         </div>
 //                     </div>
 
-//                     {/* Sub Categories (if main category selected) */}
 //                     {selectedCategory && subCategories.length > 0 && (
 //                         <div className="category-filter-section">
 //                             <h5>
@@ -972,7 +1093,6 @@
 //                         </div>
 //                     )}
 
-//                     {/* Sub-Sub Categories (if sub category selected) */}
 //                     {selectedSubCategory && subSubCategories.length > 0 && (
 //                         <div className="category-filter-section">
 //                             <h5>
@@ -994,7 +1114,6 @@
 //                         </div>
 //                     )}
 
-//                     {/* Selected Filters Display */}
 //                     {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
 //                         <div className="selected-filters-section">
 //                             <h5>Selected Filters:</h5>
@@ -1021,7 +1140,6 @@
 //                         </div>
 //                     )}
 
-//                     {/* Apply Button */}
 //                     <div className="category-filter-actions">
 //                         <button
 //                             className="apply-filters-btn"
@@ -1049,7 +1167,6 @@
 //                 className="search-suggestions-dropdown"
 //                 onClick={(e) => e.stopPropagation()}
 //             >
-//                 {/* Active Filters Display */}
 //                 {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
 //                     <div className="active-filters-section">
 //                         <div className="active-filters-header">
@@ -1076,7 +1193,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Recent Searches */}
 //                 {hasRecentSearches && !searchQuery && (
 //                     <div className="suggestions-section">
 //                         <div className="suggestions-header">
@@ -1109,7 +1225,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Popular Searches with Categories */}
 //                 {!searchQuery && (
 //                     <div className="suggestions-section">
 //                         <div className="suggestions-header">
@@ -1135,7 +1250,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Search Results */}
 //                 {searchQuery && hasSearchResults && (
 //                     <div className="suggestions-section">
 //                         <div className="suggestions-header">
@@ -1188,7 +1302,6 @@
 //                                 </div>
 //                             );
 //                         })}
-//                         {/* View All Results */}
 //                         {searchResults.length > 5 && (
 //                             <div
 //                                 className="view-all-results"
@@ -1204,7 +1317,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* No Results */}
 //                 {searchQuery && !hasSearchResults && !searchLoading && (
 //                     <div className="suggestions-section">
 //                         <div className="no-results-suggestion">
@@ -1223,7 +1335,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Trending Products when no search query */}
 //                 {!searchQuery && hasTrendingProducts && (
 //                     <div className="suggestions-section">
 //                         <div className="suggestions-header">
@@ -1307,7 +1418,6 @@
 //                     e.stopPropagation();
 //                 }}
 //             >
-//                 {/* Active Filters in Mobile */}
 //                 {(selectedCategory || selectedSubCategory || selectedSubSubCategory) && (
 //                     <div className="mobile-active-filters">
 //                         <div className="mobile-active-filters-header">
@@ -1340,7 +1450,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Recent Searches */}
 //                 {hasRecentSearches && !searchQuery && (
 //                     <div className="mobile-suggestions-section">
 //                         <div className="mobile-suggestions-header">
@@ -1373,7 +1482,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Popular Searches */}
 //                 {!searchQuery && (
 //                     <div className="mobile-suggestions-section">
 //                         <div className="mobile-suggestions-header">
@@ -1397,7 +1505,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Search Results */}
 //                 {searchQuery && hasSearchResults && (
 //                     <div className="mobile-suggestions-section">
 //                         <div className="mobile-suggestions-header">
@@ -1450,7 +1557,6 @@
 //                                 </div>
 //                             );
 //                         })}
-//                         {/* View All Results */}
 //                         {searchResults.length > 5 && (
 //                             <div
 //                                 className="mobile-view-all-results"
@@ -1466,7 +1572,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* No Results */}
 //                 {searchQuery && !hasSearchResults && !searchLoading && (
 //                     <div className="mobile-suggestions-section">
 //                         <div className="mobile-no-results-suggestion">
@@ -1485,7 +1590,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Trending Products */}
 //                 {!searchQuery && hasTrendingProducts && (
 //                     <div className="mobile-suggestions-section">
 //                         <div className="mobile-suggestions-header">
@@ -1546,7 +1650,6 @@
 //                     </div>
 //                 )}
 
-//                 {/* Loading State */}
 //                 {searchLoading && (
 //                     <div className="mobile-search-loading">
 //                         <div className="mobile-loading-spinner"></div>
@@ -1573,7 +1676,7 @@
 
 //                     <Link to="/" className="logo-main" onClick={closeMobileMenu}>
 //                         <motion.h1
-//                             className="logo-text-main"
+//                             className="brand-name"
 //                             initial={{ opacity: 0, y: -10 }}
 //                             animate={{ opacity: 1, y: 0 }}
 //                             transition={{ duration: 0.5 }}
@@ -1603,6 +1706,7 @@
 //                                 transition={{ delay: 0.2 }}
 //                             >
 //                                 Hi, <span className="user-name-highlight">{userData.name?.split(' ')[0]}</span>
+//                                 {getAuthMethodBadge()}
 //                             </motion.div>
 //                             <motion.div
 //                                 className="user-address-display"
@@ -1632,7 +1736,7 @@
 //                                     className="desktop-nav-link"
 //                                     activeClassName="active-nav-link"
 //                                 >
-//                                     <RiChatAiLine size={20} />  AI Chat
+//                                     <RiChatAiLine size={20} /> AI Chat
 //                                 </NavLink>
 //                             </motion.li>
 //                             <motion.li
@@ -1683,7 +1787,6 @@
 //                         ref={searchContainerRef}
 //                     >
 //                         <form onSubmit={handleSearch} className="desktop-search-form">
-//                             {/* Category Filter Toggle Button */}
 //                             <motion.button
 //                                 type="button"
 //                                 className={`category-filter-toggle-btn ${showCategoryFilter ? 'active' : ''}`}
@@ -1737,7 +1840,6 @@
 //                                 </div>
 //                             </motion.div>
 
-//                             {/* Search Toggle Button */}
 //                             <motion.button
 //                                 type="button"
 //                                 className="desktop-search-toggle-btn"
@@ -1750,15 +1852,13 @@
 //                             </motion.button>
 //                         </form>
 
-//                         {/* Category Filter Dropdown */}
 //                         {renderCategoryFilter()}
-
-//                         {/* Enhanced Search Suggestions */}
 //                         {renderSearchSuggestions()}
 //                     </div>
 
 //                     {/* User Actions */}
 //                     <div className="desktop-user-actions-container" ref={dropdownRef}>
+//                         <NotificationDropdown userId={userData?.id} userName={userData?.name} />
 //                         {isLoggedIn ? (
 //                             <div className="user-profile-dropdown-wrapper">
 //                                 <motion.button
@@ -1772,10 +1872,15 @@
 //                                         className="user-avatar-circle"
 //                                         style={{ backgroundColor: getUserAvatarColor() }}
 //                                     >
-//                                         {userData?.name ? (
-//                                             <span className="avatar-initials-text">{getUserInitials()}</span>
+//                                         {getAvatarUrl() && !avatarError ? (
+//                                             <img
+//                                                 src={getAvatarUrl()}
+//                                                 alt={userData.name}
+//                                                 className="avatar-image"
+//                                                 onError={handleAvatarError}
+//                                             />
 //                                         ) : (
-//                                             <FiUser size={20} />
+//                                             <span className="avatar-initials-text">{getUserInitials()}</span>
 //                                         )}
 //                                     </div>
 //                                     <span className="user-name-text">
@@ -1798,16 +1903,28 @@
 //                                                     className="dropdown-avatar-large"
 //                                                     style={{ backgroundColor: getUserAvatarColor() }}
 //                                                 >
-//                                                     {userData?.name ? (
-//                                                         <span className="avatar-initials-large">{getUserInitials()}</span>
+//                                                     {getAvatarUrl() && !avatarError ? (
+//                                                         <img
+//                                                             src={getAvatarUrl()}
+//                                                             alt={userData.name}
+//                                                             className="avatar-image-large"
+//                                                             onError={handleAvatarError}
+//                                                         />
 //                                                     ) : (
-//                                                         <FiUser size={24} />
+//                                                         <span className="avatar-initials-large">{getUserInitials()}</span>
 //                                                     )}
 //                                                 </div>
 //                                                 <div className="user-info-section">
 //                                                     <p className="user-fullname-text">{userData?.name || 'Hi, User'}</p>
-//                                                     <p className="user-email-text">{userData?.email || 'youremail@gmail.com'}</p>
-//                                                     {userData?.phone && <p className="user-phone-text">{userData.phone}</p>}
+//                                                     <p className="user-email-text">
+//                                                         <FiMail size={12} /> {userData?.email || 'youremail@gmail.com'}
+//                                                     </p>
+//                                                     {userData?.phone && (
+//                                                         <p className="user-phone-text">
+//                                                             <FiPhone size={12} /> {userData.phone}
+//                                                         </p>
+//                                                     )}
+//                                                     {getAuthMethodBadge()}
 //                                                 </div>
 //                                             </div>
 //                                             <div className="dropdown-items-container">
@@ -1954,18 +2071,29 @@
 
 //                                 {isLoggedIn ? (
 //                                     <div className="mobile-user-profile-wrapper">
+//                                         <div className="mobile-notification-wrapper">
+//                                             <NotificationDropdown userId={userData?.id} userName={userData?.name} />
+//                                         </div>
 //                                         <div
 //                                             className="mobile-user-avatar-circle"
 //                                             style={{ backgroundColor: getUserAvatarColor() }}
 //                                         >
-//                                             {userData?.name ? (
-//                                                 <span className="mobile-avatar-initials">{getUserInitials()}</span>
+//                                             {getAvatarUrl() && !avatarError ? (
+//                                                 <img
+//                                                     src={getAvatarUrl()}
+//                                                     alt={userData.name}
+//                                                     className="mobile-avatar-image"
+//                                                     onError={handleAvatarError}
+//                                                 />
 //                                             ) : (
-//                                                 <FiUser size={28} />
+//                                                 <span className="mobile-avatar-initials">{getUserInitials()}</span>
 //                                             )}
 //                                         </div>
 //                                         <div className="mobile-user-info-section">
-//                                             <p className="mobile-user-name-text">{userData?.name || 'Hi, User'}</p>
+//                                             <p className="mobile-user-name-text">
+//                                                 {userData?.name || 'Hi, User'}
+//                                                 {getAuthMethodBadge()}
+//                                             </p>
 //                                             <p className="mobile-user-email-text">{userData?.email || 'yourmail@gmail.com'}</p>
 //                                             {userAddress && (
 //                                                 <div
@@ -2009,12 +2137,10 @@
 //                                     e.stopPropagation();
 //                                 }}
 //                             >
-//                                 {/* Category Filter Button in Mobile */}
 //                                 <div className="mobile-category-filter-section">
 //                                     <button
 //                                         className="mobile-category-filter-btn"
 //                                         onClick={() => {
-//                                             // Open category filter modal or page
 //                                             handleMobileNavigation('/categories');
 //                                         }}
 //                                     >
@@ -2118,7 +2244,6 @@
 //                                     </div>
 //                                 </form>
 
-//                                 {/* Mobile Search Suggestions */}
 //                                 {renderMobileSearchSuggestions()}
 //                             </div>
 
@@ -2180,7 +2305,6 @@
 //                                         </button>
 //                                     </motion.li>
 
-//                                     {/* Category Navigation in Mobile Menu */}
 //                                     <li className="mobile-nav-section-title">Browse Categories</li>
 //                                     {allCategories.slice(0, 5).map(category => (
 //                                         <motion.li
@@ -2352,10 +2476,18 @@
 
 
 
+
+
+
+
+
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // ✅ ADD THIS IMPORT
 import { fetchCartCount } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import NotificationDropdown from '../Notification/NotificationDropdown';
 import {
     FiSearch,
     FiUser,
@@ -2437,6 +2569,9 @@ const Header = () => {
     const [isRefreshingTrending, setIsRefreshingTrending] = useState(false);
     const [avatarError, setAvatarError] = useState(false);
 
+    // ✅ ADD THIS: Mobile notification unread count state
+    const [mobileUnreadCount, setMobileUnreadCount] = useState(0);
+
     // NEW: Category-based search states
     const [allCategories, setAllCategories] = useState([]);
     const [allSubCategories, setAllSubCategories] = useState([]);
@@ -2466,6 +2601,30 @@ const Header = () => {
     const [cartItemsCount, setCartItemsCount] = useState(0);
     const navigate = useNavigate();
     const { token, logout } = useAuth();
+
+    // ✅ ADD THIS: Fetch unread notification count for mobile badge
+    const fetchUnreadCount = useCallback(async () => {
+        if (!userData?.id) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`http://localhost:5000/api/reviews/notifications/${userData.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMobileUnreadCount(response.data.unreadCount || 0);
+        } catch (err) {
+            console.error('Error fetching unread count:', err);
+        }
+    }, [userData?.id]);
+
+    // ✅ ADD THIS: Poll for unread notifications
+    useEffect(() => {
+        if (userData?.id) {
+            fetchUnreadCount();
+            const interval = setInterval(fetchUnreadCount, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [userData?.id, fetchUnreadCount]);
 
     // Popular search suggestions with categories
     const popularSearches = [
@@ -2602,6 +2761,7 @@ const Header = () => {
 
         fetchCategories();
     }, []);
+
 
     // Initialize component and listen for auth changes
     useEffect(() => {
@@ -3255,6 +3415,7 @@ const Header = () => {
         setUserAddress('');
         setActiveDropdown(null);
         setAvatarError(false);
+        setMobileUnreadCount(0);
 
         if (logout) {
             logout();
@@ -4024,6 +4185,9 @@ const Header = () => {
                         whileTap={{ scale: 0.9 }}
                     >
                         {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                        {mobileUnreadCount > 0 && !isMobileMenuOpen && (
+                            <span className="notification-badge-mobile">{mobileUnreadCount > 99 ? '99+' : mobileUnreadCount}</span>
+                        )}
                     </motion.button>
 
                     <Link to="/" className="logo-main" onClick={closeMobileMenu}>
@@ -4210,6 +4374,7 @@ const Header = () => {
 
                     {/* User Actions */}
                     <div className="desktop-user-actions-container" ref={dropdownRef}>
+                        <NotificationDropdown userId={userData?.id} userName={userData?.name} />
                         {isLoggedIn ? (
                             <div className="user-profile-dropdown-wrapper">
                                 <motion.button
@@ -4409,6 +4574,7 @@ const Header = () => {
                             <div className="mobile-menu-header-section">
                                 <div className="mobile-menu-header-top">
                                     <h3 className="brand-name">Pankhudi</h3>
+
                                     <motion.button
                                         className="mobile-menu-close-btn"
                                         onClick={closeMobileMenu}
@@ -4422,6 +4588,7 @@ const Header = () => {
 
                                 {isLoggedIn ? (
                                     <div className="mobile-user-profile-wrapper">
+
                                         <div
                                             className="mobile-user-avatar-circle"
                                             style={{ backgroundColor: getUserAvatarColor() }}
@@ -4596,6 +4763,9 @@ const Header = () => {
                             </div>
 
                             <nav className="mobile-nav-section">
+                                <div className="mobile-notification-wrapper">
+                                    <NotificationDropdown userId={userData?.id} userName={userData?.name} />
+                                </div>
                                 <ul className="mobile-nav-list-container">
                                     <motion.li
                                         className="mobile-nav-item"

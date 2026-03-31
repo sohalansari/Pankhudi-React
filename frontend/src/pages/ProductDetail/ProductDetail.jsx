@@ -11,6 +11,10 @@ marked.setOptions({
     gfm: true,
 });
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 // Helper function for date formatting
 const formatDate = (dateString) => {
     if (!dateString) return "Just now";
@@ -27,6 +31,57 @@ const formatDate = (dateString) => {
     } catch (e) {
         return "Invalid Date";
     }
+};
+
+// Helper function to format image URL
+const formatImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return imagePath;
+    }
+    if (imagePath.startsWith('/uploads')) {
+        return `http://localhost:5000${imagePath}`;
+    }
+    return `http://localhost:5000/uploads/avatars/${imagePath}`;
+};
+
+// Helper function to build nested replies structure
+const buildNestedReplies = (replies) => {
+    const replyMap = {};
+    const nestedReplies = [];
+
+    // First, create a map of all replies
+    replies.forEach(reply => {
+        replyMap[reply.id] = {
+            ...reply,
+            nested_replies: [],
+            user_image: formatImageUrl(reply.user_image)
+        };
+    });
+
+    // Then, build the nested structure
+    replies.forEach(reply => {
+        if (reply.parent_reply_id && replyMap[reply.parent_reply_id]) {
+            // This is a reply to another reply - add to parent's nested_replies
+            replyMap[reply.parent_reply_id].nested_replies.push(replyMap[reply.id]);
+        } else if (!reply.parent_reply_id) {
+            // This is a top-level reply
+            nestedReplies.push(replyMap[reply.id]);
+        }
+    });
+
+    // Sort all replies by date (oldest first for proper threading)
+    const sortReplies = (replyList) => {
+        replyList.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        replyList.forEach(reply => {
+            if (reply.nested_replies && reply.nested_replies.length > 0) {
+                sortReplies(reply.nested_replies);
+            }
+        });
+    };
+    sortReplies(nestedReplies);
+
+    return nestedReplies;
 };
 
 // ============================================
@@ -505,12 +560,78 @@ const ProductFeatures = ({ features }) => {
 };
 
 // ============================================
-// REVIEW REPLY COMPONENT
+// REPLY FORM COMPONENT
 // ============================================
-const ReviewReply = ({ reply, currentUser, onDeleteReply, onLikeReply }) => {
+const ReplyForm = ({ onReplySubmit, onCancel, placeholder = "Write a reply...", autoMention = "" }) => {
+    const [replyText, setReplyText] = useState(autoMention);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        if (textareaRef.current && autoMention) {
+            textareaRef.current.focus();
+            const length = autoMention.length;
+            textareaRef.current.setSelectionRange(length, length);
+        }
+    }, [autoMention]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!replyText.trim() || replyText.trim() === autoMention.trim()) {
+            setError("Please enter a reply");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+            await onReplySubmit(replyText);
+            setReplyText("");
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to submit reply");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form className="reply-form" onSubmit={handleSubmit}>
+            <div className="reply-input-container">
+                <textarea
+                    ref={textareaRef}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={placeholder}
+                    rows="2"
+                    maxLength="500"
+                />
+                <div className="reply-form-actions">
+                    <button type="button" className="cancel-reply-btn" onClick={onCancel}>Cancel</button>
+                    <button type="submit" className="submit-reply-btn" disabled={loading || !replyText.trim()}>
+                        {loading ? 'Posting...' : 'Post Reply'}
+                    </button>
+                </div>
+                {error && <div className="reply-error">{error}</div>}
+            </div>
+        </form>
+    );
+};
+
+// ============================================
+// NESTED REPLY COMPONENT
+// ============================================
+const NestedReply = ({ reply, currentUser, onDeleteReply, onLikeReply, onReplyToReply, level = 0 }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(reply.likes_count || 0);
+    const [showReplyForm, setShowReplyForm] = useState(false);
+    const [showReplies, setShowReplies] = useState(false);
+
+    useEffect(() => {
+        if (currentUser && reply.liked_by_user) {
+            setIsLiked(true);
+        }
+    }, [currentUser, reply.liked_by_user]);
 
     const getUserInitial = (userName) => {
         if (!userName || userName === 'Anonymous User') return "U";
@@ -548,9 +669,179 @@ const ReviewReply = ({ reply, currentUser, onDeleteReply, onLikeReply }) => {
         }
     };
 
+    const handleReplyClick = () => {
+        if (!currentUser) {
+            alert("Please login to reply");
+            return;
+        }
+        setShowReplyForm(!showReplyForm);
+    };
+
+    const handleReplySubmit = async (replyText) => {
+        await onReplyToReply(reply.id, replyText);
+        setShowReplyForm(false);
+        setShowReplies(true);
+    };
+
     const userInitial = getUserInitial(reply.user_name);
     const avatarColor = getAvatarColor(reply.user_name);
     const isAuthor = currentUser && reply.user_id === currentUser.id;
+    const hasNestedReplies = reply.nested_replies && reply.nested_replies.length > 0;
+
+    return (
+        <div className={`nested-reply ${isDeleting ? 'deleting' : ''}`} style={{ marginLeft: level > 0 ? '32px' : '0' }}>
+            <div className="reply-header">
+                <div className="reply-avatar">
+                    {reply.user_image ? (
+                        <img
+                            src={reply.user_image}
+                            alt={reply.user_name}
+                            className="reply-avatar-img"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                            }}
+                        />
+                    ) : null}
+                    <div
+                        className="avatar-fallback small"
+                        style={{
+                            backgroundColor: avatarColor,
+                            display: reply.user_image ? 'none' : 'flex'
+                        }}
+                    >
+                        {userInitial}
+                    </div>
+                </div>
+                <div className="reply-content">
+                    <div className="reply-author-info">
+                        <span className="reply-author-name">{reply.user_name || 'Anonymous User'}</span>
+                        <span className="reply-date">
+                            {formatDate(reply.created_at)}
+                        </span>
+                    </div>
+                    <p className="reply-text">{reply.reply_text}</p>
+                    <div className="reply-actions">
+                        <button className={`reply-like-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike}>
+                            ❤️ {likesCount > 0 && likesCount}
+                        </button>
+                        <button className="reply-reply-btn" onClick={handleReplyClick}>
+                            💬 Reply
+                        </button>
+                        {isAuthor && (
+                            <button className="reply-delete-btn" onClick={handleDelete} disabled={isDeleting}>
+                                🗑️ Delete
+                            </button>
+                        )}
+                    </div>
+
+                    {showReplyForm && (
+                        <ReplyForm
+                            onReplySubmit={handleReplySubmit}
+                            onCancel={() => setShowReplyForm(false)}
+                            placeholder={`Reply to ${reply.user_name}...`}
+                            autoMention={`@${reply.user_name} `}
+                        />
+                    )}
+
+                    {hasNestedReplies && (
+                        <div className="nested-replies-section">
+                            <button className="toggle-nested-replies" onClick={() => setShowReplies(!showReplies)}>
+                                {showReplies ? '▼ Hide replies' : `▶ View ${reply.nested_replies.length} ${reply.nested_replies.length === 1 ? 'reply' : 'replies'}`}
+                            </button>
+                            {showReplies && (
+                                <div className="nested-replies-list">
+                                    {reply.nested_replies.map((nestedReply) => (
+                                        <NestedReply
+                                            key={nestedReply.id}
+                                            reply={nestedReply}
+                                            currentUser={currentUser}
+                                            onDeleteReply={onDeleteReply}
+                                            onLikeReply={onLikeReply}
+                                            onReplyToReply={onReplyToReply}
+                                            level={level + 1}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ============================================
+// REVIEW REPLY COMPONENT
+// ============================================
+const ReviewReply = ({ reply, currentUser, onDeleteReply, onLikeReply, onReplyToReply }) => {
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+    const [likesCount, setLikesCount] = useState(reply.likes_count || 0);
+    const [showReplyForm, setShowReplyForm] = useState(false);
+    const [showNestedReplies, setShowNestedReplies] = useState(false);
+
+    useEffect(() => {
+        if (currentUser && reply.liked_by_user) {
+            setIsLiked(true);
+        }
+    }, [currentUser, reply.liked_by_user]);
+
+    const getUserInitial = (userName) => {
+        if (!userName || userName === 'Anonymous User') return "U";
+        return userName.charAt(0).toUpperCase();
+    };
+
+    const getAvatarColor = (userName) => {
+        if (!userName || userName === 'Anonymous User') return "#007bff";
+        const colors = ["#007bff", "#28a745", "#dc3545", "#ffc107", "#6f42c1", "#fd7e14", "#20c997", "#e83e8c"];
+        const index = userName.charCodeAt(0) % colors.length;
+        return colors[index];
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm("Are you sure you want to delete this reply?")) return;
+        setIsDeleting(true);
+        try {
+            await onDeleteReply(reply.id);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleLike = async () => {
+        if (!currentUser) {
+            alert("Please login to like replies");
+            return;
+        }
+        try {
+            const result = await onLikeReply(reply.id, !isLiked);
+            setIsLiked(!isLiked);
+            setLikesCount(result.likes_count);
+        } catch (err) {
+            console.error("Error liking reply:", err);
+        }
+    };
+
+    const handleReplyClick = () => {
+        if (!currentUser) {
+            alert("Please login to reply");
+            return;
+        }
+        setShowReplyForm(!showReplyForm);
+    };
+
+    const handleReplySubmit = async (replyText) => {
+        await onReplyToReply(reply.id, replyText);
+        setShowReplyForm(false);
+        setShowNestedReplies(true);
+    };
+
+    const userInitial = getUserInitial(reply.user_name);
+    const avatarColor = getAvatarColor(reply.user_name);
+    const isAuthor = currentUser && reply.user_id === currentUser.id;
+    const hasNestedReplies = reply.nested_replies && reply.nested_replies.length > 0;
 
     return (
         <div className={`review-reply ${isDeleting ? 'deleting' : ''}`}>
@@ -589,12 +880,46 @@ const ReviewReply = ({ reply, currentUser, onDeleteReply, onLikeReply }) => {
                         <button className={`reply-like-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike}>
                             ❤️ {likesCount > 0 && likesCount}
                         </button>
+                        <button className="reply-reply-btn" onClick={handleReplyClick}>
+                            💬 Reply
+                        </button>
                         {isAuthor && (
                             <button className="reply-delete-btn" onClick={handleDelete} disabled={isDeleting}>
                                 🗑️ Delete
                             </button>
                         )}
                     </div>
+
+                    {showReplyForm && (
+                        <ReplyForm
+                            onReplySubmit={handleReplySubmit}
+                            onCancel={() => setShowReplyForm(false)}
+                            placeholder={`Reply to ${reply.user_name}...`}
+                            autoMention={`@${reply.user_name} `}
+                        />
+                    )}
+
+                    {hasNestedReplies && (
+                        <div className="nested-replies-section">
+                            <button className="toggle-nested-replies" onClick={() => setShowNestedReplies(!showNestedReplies)}>
+                                {showNestedReplies ? '▼ Hide replies' : `▶ View ${reply.nested_replies.length} ${reply.nested_replies.length === 1 ? 'reply' : 'replies'}`}
+                            </button>
+                            {showNestedReplies && (
+                                <div className="nested-replies-list">
+                                    {reply.nested_replies.map((nestedReply) => (
+                                        <NestedReply
+                                            key={nestedReply.id}
+                                            reply={nestedReply}
+                                            currentUser={currentUser}
+                                            onDeleteReply={onDeleteReply}
+                                            onLikeReply={onLikeReply}
+                                            onReplyToReply={onReplyToReply}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -602,7 +927,7 @@ const ReviewReply = ({ reply, currentUser, onDeleteReply, onLikeReply }) => {
 };
 
 // ============================================
-// REVIEW REPLY FORM COMPONENT
+// REVIEW REPLY FORM
 // ============================================
 const ReviewReplyForm = ({ reviewId, onReplySubmit, currentUser, onCancel }) => {
     const [replyText, setReplyText] = useState("");
@@ -657,7 +982,7 @@ const ReviewReplyForm = ({ reviewId, onReplySubmit, currentUser, onCancel }) => 
 // ============================================
 // REVIEW ITEM COMPONENT
 // ============================================
-const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor, onAddReply, onDeleteReply, onLikeReply, replies = [] }) => {
+const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor, onAddReply, onDeleteReply, onLikeReply, onReplyToReply, replies = [] }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showReplyForm, setShowReplyForm] = useState(false);
@@ -821,6 +1146,7 @@ const ReviewItem = ({ review, currentUser, onDeleteReview, isReviewAuthor, onAdd
                                     currentUser={currentUser}
                                     onDeleteReply={onDeleteReply}
                                     onLikeReply={onLikeReply}
+                                    onReplyToReply={onReplyToReply}
                                 />
                             ))}
                         </div>
@@ -995,25 +1321,22 @@ const ProductDetailsEnhanced = () => {
         }
     }, []);
 
-    // Fetch reviews with replies
+    // Fetch reviews with nested replies
     const fetchReviews = async (productId, showLoading = true) => {
         try {
             if (showLoading) setReviewsLoading(true);
-            const { data } = await axios.get(`http://localhost:5000/api/reviews/${productId}?t=${Date.now()}`);
 
-            const reviewsWithReplies = await Promise.all(
-                (data || []).map(async (review) => {
-                    try {
-                        const repliesResponse = await axios.get(`http://localhost:5000/api/reviews/${review.id}/replies`);
-                        return { ...review, replies: repliesResponse.data || [] };
-                    } catch (err) {
-                        console.error(`Error fetching replies for review ${review.id}:`, err);
-                        return { ...review, replies: [] };
-                    }
-                })
-            );
+            // Fetch reviews with nested=true parameter
+            const { data } = await axios.get(`http://localhost:5000/api/reviews/${productId}?nested=true&t=${Date.now()}`);
 
-            setReviews(reviewsWithReplies || []);
+            // Format user images and ensure proper structure
+            const formattedReviews = (data || []).map(review => ({
+                ...review,
+                user_image: formatImageUrl(review.user_image),
+                replies: review.replies || []
+            }));
+
+            setReviews(formattedReviews);
         } catch (err) {
             console.error("Error fetching reviews:", err);
             setReviews([]);
@@ -1033,7 +1356,7 @@ const ProductDetailsEnhanced = () => {
         setNotifications(prev => prev.filter(notif => notif.id !== id));
     };
 
-    // Add reply to review
+    // Add top-level reply
     const handleAddReply = async (reviewId, replyText) => {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -1043,29 +1366,38 @@ const ProductDetailsEnhanced = () => {
         }
 
         try {
-            const response = await axios.post(`http://localhost:5000/api/reviews/${reviewId}/replies`, {
-                reply_text: replyText
+            await axios.post(`http://localhost:5000/api/reviews/${reviewId}/replies`, {
+                reply_text: replyText,
+                parent_reply_id: null
             }, { headers: { Authorization: `Bearer ${token}` } });
 
-            const newReply = response.data.reply;
-
-            setReviews(prevReviews =>
-                prevReviews.map(review => {
-                    if (review.id === reviewId) {
-                        return {
-                            ...review,
-                            replies: [...(review.replies || []), newReply]
-                        };
-                    }
-                    return review;
-                })
-            );
-
-            addNotification("Reply posted successfully!", "success");
+            await fetchReviews(product.id, false);
+            addNotification("✅ Reply posted successfully!", "reply");
         } catch (err) {
             console.error("Error adding reply:", err);
             addNotification(err.response?.data?.message || "Failed to post reply", "error");
-            throw err;
+        }
+    };
+
+    // Add nested reply (reply to a reply)
+    const handleReplyToReply = async (parentReplyId, replyText) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login to reply");
+            navigate('/login');
+            return;
+        }
+
+        try {
+            await axios.post(`http://localhost:5000/api/reviews/replies/${parentReplyId}/reply`, {
+                reply_text: replyText
+            }, { headers: { Authorization: `Bearer ${token}` } });
+
+            await fetchReviews(product.id, false);
+            addNotification("✅ Reply posted successfully!", "reply");
+        } catch (err) {
+            console.error("Error adding nested reply:", err);
+            addNotification(err.response?.data?.message || "Failed to post reply", "error");
         }
     };
 
@@ -1082,14 +1414,8 @@ const ProductDetailsEnhanced = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            setReviews(prevReviews =>
-                prevReviews.map(review => ({
-                    ...review,
-                    replies: (review.replies || []).filter(reply => reply.id !== replyId)
-                }))
-            );
-
-            addNotification("Reply deleted successfully!", "success");
+            await fetchReviews(product.id, false);
+            addNotification("✅ Reply deleted successfully!", "success");
         } catch (err) {
             console.error("Error deleting reply:", err);
             addNotification(err.response?.data?.message || "Failed to delete reply", "error");
@@ -1109,6 +1435,8 @@ const ProductDetailsEnhanced = () => {
             const response = await axios.post(`http://localhost:5000/api/reviews/replies/${replyId}/like`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            await fetchReviews(product.id, false);
             return response.data;
         } catch (err) {
             console.error("Error liking reply:", err);
@@ -1121,7 +1449,11 @@ const ProductDetailsEnhanced = () => {
     const startLiveFetching = () => {
         if (!product || pollingIntervalRef.current) return;
         setIsLiveFetching(true);
-        pollingIntervalRef.current = setInterval(() => fetchReviews(product.id, false), 30000);
+        pollingIntervalRef.current = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                fetchReviews(product.id, false);
+            }
+        }, 60000);
     };
 
     const stopLiveFetching = () => {
@@ -1177,7 +1509,22 @@ const ProductDetailsEnhanced = () => {
         }
     };
 
-    useEffect(() => { fetchProductData(); return () => stopLiveFetching(); }, [id]);
+    useEffect(() => {
+        fetchProductData();
+        return () => stopLiveFetching();
+    }, [id]);
+
+    // Visibility change handler
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && product && !reviewsLoading) {
+                fetchReviews(product.id, false);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [product, reviewsLoading]);
 
     // Quantity handlers
     const handleQuantityChange = (e) => {
@@ -1249,17 +1596,26 @@ const ProductDetailsEnhanced = () => {
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem("token");
-        if (!token) { setReviewError("Please login to submit a review"); setTimeout(() => navigate('/login'), 2000); return; }
-        if (!reviewText.trim()) { setReviewError("Write a review first."); return; }
+        if (!token) {
+            setReviewError("Please login to submit a review");
+            setTimeout(() => navigate('/login'), 2000);
+            return;
+        }
+        if (!reviewText.trim()) {
+            setReviewError("Write a review first.");
+            return;
+        }
         try {
             setReviewLoading(true);
             setReviewError("");
+
             await axios.post("http://localhost:5000/api/reviews", {
                 product_id: product.id,
                 rating: selectedRating,
                 review: reviewText,
                 approved: true
             }, { headers: { Authorization: `Bearer ${token}` } });
+
             setReviewText("");
             setSelectedRating(5);
             await fetchReviews(product.id, false);
@@ -1267,7 +1623,9 @@ const ProductDetailsEnhanced = () => {
         } catch (err) {
             console.error("Error submitting review:", err);
             setReviewError(err.response?.data?.message || "Failed to submit review.");
-        } finally { setReviewLoading(false); }
+        } finally {
+            setReviewLoading(false);
+        }
     };
 
     // Delete review handler
@@ -1337,6 +1695,7 @@ const ProductDetailsEnhanced = () => {
             {cartMessage && <div className={`cart-message ${cartMessageType}`}>{cartMessage}</div>}
 
             <main className="product-main">
+                {/* Desktop View */}
                 <div className="desktop-view">
                     <div className="product-container-desktop">
                         <div className="gallery-column">
@@ -1399,6 +1758,7 @@ const ProductDetailsEnhanced = () => {
                     </div>
                 </div>
 
+                {/* Mobile View */}
                 <div className="mobile-view">
                     <ProductBadges product={product} />
                     <div className="product-title-mobile"><h1>{product.name}</h1>{product.sku && <div className="product-sku-mobile">SKU: {product.sku}</div>}</div>
@@ -1413,6 +1773,7 @@ const ProductDetailsEnhanced = () => {
                     <div className="policies-section-mobile"><ProductPolicies product={product} /></div>
                 </div>
 
+                {/* Product Details Tabs */}
                 <section className="product-tabs-section">
                     <div className="tabs-container">
                         <div className="tab-headers">
@@ -1448,6 +1809,7 @@ const ProductDetailsEnhanced = () => {
                                                 onAddReply={handleAddReply}
                                                 onDeleteReply={handleDeleteReply}
                                                 onLikeReply={handleLikeReply}
+                                                onReplyToReply={handleReplyToReply}
                                                 replies={review.replies || []}
                                             />
                                         ))) : (<div className="no-reviews"><p>No reviews yet. Be the first to review this product!</p></div>)}
